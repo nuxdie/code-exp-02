@@ -67,6 +67,17 @@ TextTarget Application::source_text_target(Vec2 pointer)
 }
 TextTarget Application::text_at(Vec2 pointer)
 {
+    if (search.active) {
+        if (contains(search.editor, pointer))
+            return {
+                TextSurface::Search,
+                "",
+                &search.query.text,
+                search.input.layout.get(),
+                nullptr,
+                {search.editor.origin.x + 12 - search.editor_scroll, search.editor.origin.y + 10}};
+        return {};
+    }
     if (!popup_text.empty() && contains(popup_bounds, pointer) && agent_menu)
         return {};
     if (!popup_text.empty() && contains(popup_bounds, pointer))
@@ -112,6 +123,16 @@ TextTarget Application::text_at(Vec2 pointer)
 TextTarget Application::active_text_target()
 {
     switch (text_selection.surface) {
+    case TextSurface::Search:
+        if (search.active)
+            return {
+                TextSurface::Search,
+                "",
+                &search.query.text,
+                search.input.layout.get(),
+                nullptr,
+                {search.editor.origin.x + 12 - search.editor_scroll, search.editor.origin.y + 10}};
+        return {};
     case TextSurface::Source:
         for (const auto& panel : panels)
             if (panel.path == text_selection.key)
@@ -224,7 +245,8 @@ std::size_t Application::text_byte_at(const TextTarget& target, Vec2 pointer, bo
         static_cast<int>((pointer.y - target.origin.y) / target.scale * PANGO_SCALE), &index,
         &trailing);
     if (inside)
-        *inside = hit || target.surface == TextSurface::Composer ||
+        *inside = hit || target.surface == TextSurface::Search ||
+                  target.surface == TextSurface::Composer ||
                   target.surface == TextSurface::Rationale;
     const auto* raw = pango_layout_get_text(target.layout);
     const auto byte = std::min(std::strlen(raw), static_cast<std::size_t>(std::max(0, index)));

@@ -121,7 +121,8 @@ void Application::poll_project()
     const auto changes = project_watcher->take_changes();
     if (changes.empty())
         return;
-    hide_popup();
+    if (!shortcuts_visible)
+        hide_popup();
     std::vector<std::string> previous_paths;
     for (const auto& panel : panels)
         previous_paths.push_back(panel.path);
@@ -147,6 +148,8 @@ void Application::poll_project()
             saved.panel = index_for(previous_paths[saved.panel]);
     focused_line.reset();
     refresh_project_geometry();
+    if (search.active)
+        update_search();
     const bool runtime_change = std::any_of(changes.begin(), changes.end(), [](const auto& change) {
         return needs_viewer_build(change.path);
     });

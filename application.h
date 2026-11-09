@@ -9,6 +9,7 @@
 #include "math_typesetter.h"
 #include "popup_markup.h"
 #include "project_watch.h"
+#include "search_canvas.h"
 #include "source_graph.h"
 #include "source_panel.h"
 #include "syntax.h"
@@ -73,6 +74,8 @@ class Application {
     XIC input_context = nullptr;
     std::string clipboard_text, primary_text;
     CanvasSelection text_selection;
+    SearchCanvas search;
+    bool shortcuts_visible = false;
     Clock::time_point save_due = Clock::time_point::max();
     std::unique_ptr<GpuRenderer> renderer;
     Window window = 0;
@@ -207,6 +210,22 @@ class Application {
     void intent_action(const std::string& action);
     void open_intent_conversation(const std::string& id);
     void draw_chat_card();
+    void open_search();
+    void close_search();
+    void update_search();
+    void draw_search();
+    void draw_search_match(SearchMatch& match, Vec2 origin, double row_width);
+    void search_line(DocumentView& view, const std::string& text, int row_width, bool code,
+                     bool cmake = false);
+    void move_search(int direction);
+    void open_search_match(std::size_t index);
+    bool search_key(const XEvent& event);
+    bool search_edit_key(const XEvent& event, KeySym key);
+    bool search_button(const XEvent& event, Vec2 pointer);
+    void paste_search(const XEvent& event);
+    bool canvas_shortcut_key(const XEvent& event);
+    void show_shortcuts();
+    bool shortcuts_key(KeySym key);
     void poll_agent_window();
     void start_agent_windows();
     ChatCanvas* chat_at(Vec2 pointer);

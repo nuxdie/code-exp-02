@@ -198,6 +198,10 @@ add_library(
     application.cpp
     application_model.cpp
     application_popups.cpp
+    application_search.cpp
+    application_search_input.cpp
+    application_search_view.cpp
+    application_shortcuts.cpp
     application_agent_windows.cpp
     application_agent_context.cpp
     application_agent_menu.cpp
@@ -340,6 +344,16 @@ if(BUILD_TESTING)
     endif()
     set_tests_properties(selection PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30)
     add_executable(agent_windows_tests tests/agent_windows_test.cpp)
+    add_executable(search_tests tests/search_test.cpp)
+    target_link_libraries(search_tests PRIVATE application_core)
+    if(XVFB_RUN_EXECUTABLE)
+        add_test(NAME search COMMAND "${XVFB_RUN_EXECUTABLE}" -a
+                                     $<TARGET_FILE:search_tests>
+        )
+    else()
+        add_test(NAME search COMMAND search_tests)
+    endif()
+    set_tests_properties(search PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30)
     target_link_libraries(agent_windows_tests PRIVATE application_core)
     if(XVFB_RUN_EXECUTABLE)
         add_test(NAME agent_windows COMMAND "${XVFB_RUN_EXECUTABLE}" -a
@@ -409,6 +423,7 @@ if(BUILD_TESTING)
         quality
         selection_tests
         agent_windows_tests
+        search_tests
         cmake_canvas_tests
         intent_canvas_tests
         system_theme_tests

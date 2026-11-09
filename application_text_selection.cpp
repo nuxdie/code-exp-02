@@ -3,6 +3,8 @@
 
 TextInput& Application::selected_input()
 {
+    if (text_selection.surface == TextSurface::Search)
+        return search.query;
     if (text_selection.surface == TextSurface::Composer)
         return chat->input;
     if (text_selection.surface == TextSurface::Rationale)
@@ -106,7 +108,8 @@ void Application::selection_click(const XEvent& event)
 }
 std::string Application::selected_text()
 {
-    if (text_selection.surface == TextSurface::Composer ||
+    if (text_selection.surface == TextSurface::Search ||
+        text_selection.surface == TextSurface::Composer ||
         text_selection.surface == TextSurface::Rationale)
         return selected_input().selected();
     const auto target = active_text_target();

@@ -25,6 +25,11 @@ void Application::load_session()
         return;
     try {
         intent_session = state.value("intent", lsp::Json::object());
+        const auto saved_search = state.value("globalSearch", lsp::Json::object());
+        search.query.set(saved_search.value("query", ""));
+        search.active = saved_search.value("active", false);
+        if (search.active)
+            update_search();
         const auto origin = state.value("originThread", "");
         load_agent_window(*chat, state);
         if (environment_thread && origin != environment_thread) {
@@ -105,6 +110,7 @@ void Application::save_session()
     state.update(
         {{"root", workspace_root},
          {"originThread", origin ? origin : ""},
+         {"globalSearch", {{"query", search.query.text}, {"active", search.active}}},
          {"additionalAgents", additional},
          {"camera", {{"x", camera.center.x}, {"y", camera.center.y}, {"zoom", camera.zoom}}},
          {"window", {{"x", x}, {"y", y}, {"width", width}, {"height", height}}},

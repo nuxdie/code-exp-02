@@ -1559,6 +1559,84 @@
         "kind": "recorded_live",
         "precision": "artifact_changes"
       }
+    },
+    {
+      "id": "decision-01a1c1dd-068d-70b1-80fa-aa240efe56bc",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c1dd-068d-70b1-80fa-aa240efe56bc",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c1dd-067b-7832-b3cf-0f2a966b815f"
+      },
+      "statement": "i want global search when i press /",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T19:50:50.259912+00:00",
+      "statement_hash": "5b20d9490f7a2f9e65571344186a6190ded8e543b50a944ea90eb1ed2d7ba2d5",
+      "artifacts": [
+        "CMakeLists.txt",
+        "application.h",
+        "application_events.cpp",
+        "application_live.cpp",
+        "application_popups.cpp",
+        "application_search.cpp",
+        "application_search_input.cpp",
+        "application_search_view.cpp",
+        "application_session.cpp",
+        "application_text_selection.cpp",
+        "application_text_targets.cpp",
+        "application_view.cpp",
+        "canvas_selection.h",
+        "search_canvas.h",
+        "tests/search_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "author_role": "agent",
+        "basis": "recorded_agent_summary",
+        "summary": "Use slash to open a dedicated search overlay from the canvas while preserving normal punctuation in editors. Search live project file names and every literal text occurrence with Unicode case-insensitive matching; show bounded, syntax-highlighted previews and distinguish file-name results. Keyboard and mouse navigation reuse canvas location jumps so hidden blocks are revealed and Unicode positions remain correct. Keep query editing, selection and clipboard routing separate from agent drafts, refresh results on disk changes, preserve search state across viewer reload, and release cached result GPU meshes when replacing matches. Validate these interactions on an isolated X display."
+      },
+      "association": {
+        "kind": "recorded_live",
+        "precision": "artifact_changes"
+      }
+    },
+    {
+      "id": "decision-01a1c1dd-3a9f-7872-81d4-8e2912f0c667",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c1dd-3a9f-7872-81d4-8e2912f0c667",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c1dd-067b-7832-b3cf-0f2a966b815f"
+      },
+      "statement": "and i want all shortcuts shown when i press ?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T19:51:03.591880+00:00",
+      "statement_hash": "56fe028356ce4fe8235107dcea1739bb1d5acfa2f034300086fd5ed603115f56",
+      "artifacts": [
+        "application_shortcuts.cpp",
+        "application.h",
+        "application_events.cpp",
+        "application_popups.cpp",
+        "application_live.cpp",
+        "CMakeLists.txt",
+        "tests/search_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "author_role": "agent",
+        "basis": "recorded_agent_summary",
+        "summary": "Make question mark open a complete, grouped shortcut guide and retain F1 as an alias. Decode the actual typed punctuation so shifted slash opens help while slash opens search. Keep punctuation ordinary in text editors. Include camera, search, code navigation, agent cards, provenance, text selection and editing controls. Keep the guide visible while the pointer moves or project files change; support scrolling with keyboard or wheel and closing with Escape. Validate modifier handling, completeness markers, scrolling and dismissal in the native canvas test."
+      },
+      "association": {
+        "kind": "recorded_live",
+        "precision": "artifact_changes"
+      }
     }
   ]
 }

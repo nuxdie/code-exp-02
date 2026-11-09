@@ -13,6 +13,13 @@ void Application::handle_event(const XEvent& event)
         redraw = true;
         break;
     case SelectionNotify:
+        if (event.xselection.property ==
+            XInternAtom(display, "SOURCE_CANVAS_SEARCH_PASTE", False)) {
+            paste_search(event);
+            break;
+        }
+        chat_selection(event);
+        break;
     case SelectionRequest:
         chat_selection(event);
         break;
@@ -33,7 +40,9 @@ void Application::handle_event(const XEvent& event)
         if (!drag_button) {
             mouse_position = {static_cast<double>(event.xcrossing.x),
                               static_cast<double>(event.xcrossing.y)};
-            popup_dismiss_due = Clock::now() + std::chrono::milliseconds(300);
+            popup_dismiss_due = search.active || shortcuts_visible
+                                    ? Clock::time_point::max()
+                                    : Clock::now() + std::chrono::milliseconds(300);
             mouse_position = {-1, -1};
             redraw = true;
         }
@@ -56,6 +65,8 @@ void Application::handle_button(const XEvent& event)
     const auto view = viewport();
     mouse_position = pointer;
     redraw = true;
+    if (search_button(event, pointer))
+        return;
     if (event.xbutton.button == Button3 && !drag_button) {
         show_agent_menu(pointer);
         return;
@@ -108,6 +119,10 @@ void Application::handle_motion(const XEvent& event)
     mouse_position = pointer;
     redraw = true;
     update_cursor();
+    if ((search.active || shortcuts_visible) && !drag_button) {
+        hover_due = popup_dismiss_due = Clock::time_point::max();
+        return;
+    }
     if (text_selection.dragging) {
         move_text_selection(pointer);
         return;
@@ -197,8 +212,8 @@ bool Application::cancel_pointer_drag(const XEvent& event)
 
 void Application::handle_key(const XEvent& event)
 {
-    if (agent_window_key(event) || cancel_pointer_drag(event) || selection_key(event) ||
-        intent_key(event) || chat_key(event)) {
+    if (cancel_pointer_drag(event) || canvas_shortcut_key(event) || agent_window_key(event) ||
+        selection_key(event) || intent_key(event) || chat_key(event)) {
         redraw = true;
         return;
     }
@@ -292,20 +307,7 @@ void Application::handle_key(const XEvent& event)
         hover_request = query_at_pointer("textDocument/hover");
         break;
     case XK_F1:
-        show_popup(
-            "Right-click / Ctrl+Shift+A — new agent here\nD — decisions · I / Alt+click source — "
-            "intent and diff\nAlt+click a human message — "
-            "select intent\nAlt+click agent response — record rationale for selected intent\nTab / "
-            "Ctrl+L — "
-            "conversation\nEnter — send, Shift+Enter — newline\n\nHover or K — "
-            "inspect symbol\nCtrl+click or F12 — go to "
-            "definition\nShift+F12 — references (click to jump)\nCtrl+Space — "
-            "completion suggestions\nAlt+Left — go back\n\nWheel — smooth "
-            "zoom\nBlank/middle drag — pan\nDrag file title — move file\nClick "
-            "title or S — symbols\nHover block header, click ▸/▾ — fold block\nC / Shift+C — "
-            "collapse / expand\nL — Graphviz layout   G — arrows\nW — fit width "
-            "  F — fit all   0 — reset",
-            mouse_position);
+        show_shortcuts();
         break;
     case XK_F12:
         if (!(event.xkey.state & ShiftMask) && open_document_link(mouse_position))
