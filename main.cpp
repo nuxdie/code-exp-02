@@ -1,6 +1,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
+#include <X11/cursorfont.h>
 #include <cairo-xlib.h>
 #include <fontconfig/fontconfig.h>
 #include <pango/pangocairo.h>
@@ -8,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cmath>
 #include <filesystem>
 #include <iostream>
 #include <sstream>
@@ -15,6 +17,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "camera.h"
 #include "source_text.h"
 
 // Style complete lines so programming ligatures keep their natural spacing.
@@ -53,7 +56,7 @@ std::vector<Token> highlight(const std::string& line, HighlightState& state)
         "string", "vector", "array", "unordered_set", "istringstream",
         "Display", "Window", "Atom", "XEvent", "PangoLayout", "PangoAttribute",
         "PangoAttrList", "PangoFontDescription", "cairo_t", "cairo_surface_t",
-        "Syntax", "Token", "HighlightState"
+        "Syntax", "Token", "HighlightState", "Vec2", "Viewport", "Camera"
     };
     auto identifier = [](char c) {
         return std::isalnum(static_cast<unsigned char>(c)) || c == '_';
@@ -185,7 +188,10 @@ int main()
 
     XStoreName(display, window, "Source Code - White Window");
     XSelectInput(display, window, ExposureMask | StructureNotifyMask |
-                                 KeyPressMask | ButtonPressMask);
+        KeyPressMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask);
+    Cursor hand_cursor = XCreateFontCursor(display, XC_hand1);
+    Cursor drag_cursor = XCreateFontCursor(display, XC_fleur);
+    XDefineCursor(display, window, hand_cursor);
 
     cairo_surface_t* surface = cairo_xlib_surface_create(
         display, window, DefaultVisual(display, screen), 800, 600);
@@ -193,6 +199,7 @@ int main()
     auto* options = cairo_font_options_create();
     cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_GRAY);
     cairo_font_options_set_hint_style(options, CAIRO_HINT_STYLE_SLIGHT);
+    cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_OFF);
     cairo_set_font_options(cr, options);
 
     PangoLayout* base_layout = pango_cairo_create_layout(cr);
@@ -248,39 +255,47 @@ int main()
     }
     g_object_unref(base_layout);
 
-    constexpr int margin = 24;
     const int line_height = font_height + 4;
     int width = 800;
     int height = 600;
-    int first_line = 0;
-    int horizontal_offset = 0;
-
-    auto visible_lines = [&]() {
-        return std::max(1, (height - 2 * margin) / line_height);
+    auto viewport = [&]() -> Viewport {
+        return {0, 0, static_cast<double>(std::max(1, width)),
+            static_cast<double>(std::max(1, height))};
     };
+    Camera camera;
+    camera.reset(viewport());
+    const Vec2 content_size{static_cast<double>(text_width + 4),
+        static_cast<double>(layouts.size()) * line_height};
+    unsigned int drag_button = 0;
+    Vec2 last_pointer;
 
     auto draw = [&]() {
-        first_line = std::clamp(first_line, 0,
-            std::max(0, static_cast<int>(layouts.size()) - visible_lines()));
-        horizontal_offset = std::clamp(horizontal_offset, 0,
-            std::max(0, text_width - std::max(1, width - 2 * margin)));
+        const auto view = viewport();
         // Paint a complete frame before presenting it to avoid scroll flicker.
         cairo_push_group(cr);
         cairo_set_source_rgb(cr, 1, 1, 1);
         cairo_paint(cr);
         cairo_save(cr);
-        cairo_rectangle(cr, margin, margin,
-            std::max(0, width - 2 * margin), std::max(0, height - 2 * margin));
+        cairo_rectangle(cr, view.x, view.y, view.width, view.height);
         cairo_clip(cr);
-        for (int row = 0; row < visible_lines(); ++row) {
-            const int index = first_line + row;
-            if (index >= static_cast<int>(layouts.size())) {
-                break;
-            }
-            cairo_move_to(cr, margin - horizontal_offset, margin + row * line_height);
+        const auto origin = view.center();
+        cairo_translate(cr, origin.x, origin.y);
+        cairo_scale(cr, camera.zoom, camera.zoom);
+        cairo_translate(cr, -camera.center.x, -camera.center.y);
+
+        // Cull in world space; partial lines remain visible at viewport edges.
+        const double top = camera.screen_to_world({view.x, view.y}, view).y;
+        const double bottom = top + view.height / camera.zoom;
+        const double count = static_cast<double>(layouts.size());
+        const int first = static_cast<int>(std::clamp(std::floor(top / line_height) - 1, 0.0, count));
+        const int last = static_cast<int>(std::clamp(std::ceil(bottom / line_height) + 1, 0.0, count));
+        for (int index = first; index < last; ++index) {
+            cairo_move_to(cr, 0, index * line_height);
+            pango_cairo_update_layout(cr, layouts[index]);
             pango_cairo_show_layout(cr, layouts[index]);
         }
         cairo_restore(cr);
+
         cairo_pop_group_to_source(cr);
         cairo_paint(cr);
         cairo_surface_flush(surface);
@@ -294,37 +309,76 @@ int main()
 
     bool running = true;
     bool window_destroyed = false;
+    bool redraw = true;
     while (running) {
         XEvent event{};
         XNextEvent(display, &event);
         if (event.type == Expose) {
             if (event.xexpose.count == 0) {
-                draw();
+                redraw = true;
             }
         } else if (event.type == ConfigureNotify) {
             width = event.xconfigure.width;
             height = event.xconfigure.height;
             cairo_xlib_surface_set_size(surface, width, height);
-            draw();
+            redraw = true;
         } else if (event.type == ButtonPress) {
-            if (event.xbutton.button == Button4) {
-                first_line -= 3;
-            } else if (event.xbutton.button == Button5) {
-                first_line += 3;
+            const Vec2 pointer{static_cast<double>(event.xbutton.x),
+                static_cast<double>(event.xbutton.y)};
+            const auto view = viewport();
+            if (event.xbutton.button == Button4 || event.xbutton.button == Button5) {
+                if (drag_button) {
+                    camera.pan({pointer.x - last_pointer.x, pointer.y - last_pointer.y});
+                    last_pointer = pointer;
+                }
+                camera.zoom_at(event.xbutton.button == Button4 ? 1.15 : 1 / 1.15,
+                    drag_button || view.contains(pointer) ? pointer : view.center(), view);
+            } else if ((event.xbutton.button == Button1 || event.xbutton.button == Button2) &&
+                       !drag_button && view.contains(pointer)) {
+                // Keep receiving wheel presses while either pan button is held.
+                if (XGrabPointer(display, window, False,
+                        ButtonPressMask | ButtonReleaseMask | PointerMotionMask,
+                        GrabModeAsync, GrabModeAsync, None, drag_cursor, CurrentTime) == GrabSuccess) {
+                    drag_button = event.xbutton.button;
+                    last_pointer = pointer;
+                }
             }
-            draw();
+            redraw = true;
+        } else if (event.type == MotionNotify && drag_button) {
+            const Vec2 pointer{static_cast<double>(event.xmotion.x),
+                static_cast<double>(event.xmotion.y)};
+            camera.pan({pointer.x - last_pointer.x, pointer.y - last_pointer.y});
+            last_pointer = pointer;
+            redraw = true;
+        } else if (event.type == ButtonRelease && event.xbutton.button == drag_button) {
+            drag_button = 0;
+            XUngrabPointer(display, CurrentTime);
         } else if (event.type == KeyPress) {
+            const auto view = viewport();
             switch (XLookupKeysym(&event.xkey, 0)) {
-            case XK_Up:    --first_line; break;
-            case XK_Down:  ++first_line; break;
-            case XK_Left:  horizontal_offset -= 40; break;
-            case XK_Right: horizontal_offset += 40; break;
-            case XK_Page_Up:   first_line -= visible_lines(); break;
-            case XK_Page_Down: first_line += visible_lines(); break;
-            case XK_Home: first_line = 0; horizontal_offset = 0; break;
-            case XK_End: first_line = static_cast<int>(layouts.size()); break;
+            case XK_Up:    camera.pan({0, 40}); break;
+            case XK_Down:  camera.pan({0, -40}); break;
+            case XK_Left:  camera.pan({40, 0}); break;
+            case XK_Right: camera.pan({-40, 0}); break;
+            case XK_Page_Up:   camera.pan({0, view.height * 0.9}); break;
+            case XK_Page_Down: camera.pan({0, -view.height * 0.9}); break;
+            case XK_Home: camera.home(view); break;
+            case XK_End:
+                camera.home(view);
+                camera.center.y += std::max(0.0, content_size.y - view.height / camera.zoom);
+                break;
+            case XK_0: case XK_KP_0: camera.reset(view); break;
+            case XK_f: case XK_F: camera.fit(content_size, view); break;
+            case XK_equal: case XK_plus: case XK_KP_Add:
+                camera.zoom_at(1.15, view.center(), view); break;
+            case XK_minus: case XK_KP_Subtract:
+                camera.zoom_at(1 / 1.15, view.center(), view); break;
+            case XK_Escape:
+                drag_button = 0;
+                XUngrabPointer(display, CurrentTime);
+                break;
             }
-            draw();
+            redraw = true;
         } else if (event.type == ClientMessage &&
                    event.xclient.message_type == protocols &&
                    event.xclient.format == 32 &&
@@ -334,8 +388,16 @@ int main()
             window_destroyed = true;
             running = false;
         }
+        // Apply queued pan and zoom input together before presenting a frame.
+        if (running && redraw && XPending(display) == 0) {
+            draw();
+            redraw = false;
+        }
     }
 
+    if (drag_button) XUngrabPointer(display, CurrentTime);
+    XFreeCursor(display, hand_cursor);
+    XFreeCursor(display, drag_cursor);
     for (auto* layout : layouts) g_object_unref(layout);
     cairo_destroy(cr);
     cairo_surface_destroy(surface);

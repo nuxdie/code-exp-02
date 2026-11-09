@@ -145,6 +145,191 @@
         "original_git_history": false,
         "evidence": "public_file_change_patch_replay"
       }
+    },
+    {
+      "id": "decision-01a1bffc-35e6-7981-80e1-edd0c0e7fbcd",
+      "statement": "lets do zoom and pan. think camera, viewport etc",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1bffc-35d5-7373-83a6-28754055a431",
+        "message_id": "01a1bffc-35e6-7981-80e1-edd0c0e7fbcd",
+        "turn_started_at": 1794222339,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531085+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Keeping camera coordinates separate from screen pixels makes zoom anchoring and panning composable. Easing the zoom target lets new pan and wheel input continue during animation."
+      },
+      "artifacts": [
+        "camera.h",
+        "main.cpp",
+        "application_events.cpp",
+        "application_view.cpp",
+        "tests/camera_test.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "public_file_change_patch_replay"
+      }
+    },
+    {
+      "id": "decision-01a1bffc-a8a7-75d1-8c8e-b5048926854a",
+      "statement": "just wheel, no ctrl+wheel",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1bffc-35d5-7373-83a6-28754055a431",
+        "message_id": "01a1bffc-a8a7-75d1-8c8e-b5048926854a",
+        "turn_started_at": 1794222339,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531088+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Keeping camera coordinates separate from screen pixels makes zoom anchoring and panning composable. Easing the zoom target lets new pan and wheel input continue during animation."
+      },
+      "artifacts": [
+        "camera.h",
+        "main.cpp",
+        "application_events.cpp",
+        "application_view.cpp",
+        "tests/camera_test.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "public_file_change_patch_replay"
+      }
+    },
+    {
+      "id": "decision-01a1bfff-1f55-70b1-9a15-4968c9bb33cc",
+      "statement": "get rid of status bar",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1bffc-35d5-7373-83a6-28754055a431",
+        "message_id": "01a1bfff-1f55-70b1-9a15-4968c9bb33cc",
+        "turn_started_at": 1794222339,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531093+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Keeping camera coordinates separate from screen pixels makes zoom anchoring and panning composable. Easing the zoom target lets new pan and wheel input continue during animation."
+      },
+      "artifacts": [
+        "camera.h",
+        "main.cpp",
+        "application_events.cpp",
+        "application_view.cpp",
+        "tests/camera_test.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "public_file_change_patch_replay"
+      }
+    },
+    {
+      "id": "decision-01a1bfff-ab86-7073-8ee2-6a789845ed35",
+      "statement": "get rid of white borders",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1bffc-35d5-7373-83a6-28754055a431",
+        "message_id": "01a1bfff-ab86-7073-8ee2-6a789845ed35",
+        "turn_started_at": 1794222339,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531096+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Keeping camera coordinates separate from screen pixels makes zoom anchoring and panning composable. Easing the zoom target lets new pan and wheel input continue during animation."
+      },
+      "artifacts": [
+        "camera.h",
+        "main.cpp",
+        "application_events.cpp",
+        "application_view.cpp",
+        "tests/camera_test.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "public_file_change_patch_replay"
+      }
+    },
+    {
+      "id": "decision-01a1c000-775f-7483-93e5-c00a1858f003",
+      "statement": "make it possible to zoom and while its zooming also pan and visa versa",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c000-774d-7c83-a5be-9700a247d546",
+        "message_id": "01a1c000-775f-7483-93e5-c00a1858f003",
+        "turn_started_at": 1794222618,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531100+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Keeping camera coordinates separate from screen pixels makes zoom anchoring and panning composable. Easing the zoom target lets new pan and wheel input continue during animation."
+      },
+      "artifacts": [
+        "camera.h",
+        "main.cpp",
+        "application_events.cpp",
+        "application_view.cpp",
+        "tests/camera_test.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "public_file_change_patch_replay"
+      }
     }
   ]
 }
