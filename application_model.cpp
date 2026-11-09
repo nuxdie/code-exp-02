@@ -101,7 +101,13 @@ void Application::relayout()
     for (std::size_t i = 0; i < panels.size(); ++i)
         panels[i].bounds.origin = graph.files[i].origin;
     content_size = graph.size;
-    if (chat) {
+    for (const auto& card : chat_windows) {
+        if (!card->visible)
+            continue;
+        content_size.x = std::max(content_size.x, card->bounds.origin.x + card->bounds.size.x);
+        content_size.y = std::max(content_size.y, card->bounds.origin.y + card->bounds.size.y);
+    }
+    if (chat && chat->visible) {
         content_size.x = std::max(content_size.x, chat->bounds.origin.x + chat->bounds.size.x);
         content_size.y = std::max(content_size.y, chat->bounds.origin.y + chat->bounds.size.y);
     }
@@ -141,9 +147,7 @@ void Application::apply_styles(SourcePanel& panel)
 SourceHit Application::hit_test(Vec2 screen)
 {
     const auto world = camera.screen_to_world(screen, viewport());
-    if (chat && Viewport{chat->bounds.origin.x, chat->bounds.origin.y, chat->bounds.size.x,
-                         chat->bounds.size.y}
-                    .contains(world))
+    if (chat_at(screen))
         return {};
     for (std::size_t i = 0; i < panels.size(); ++i) {
         const auto& panel = panels[i];
@@ -173,9 +177,7 @@ SourceHit Application::hit_test(Vec2 screen)
 int Application::panel_at(Vec2 screen)
 {
     const auto world = camera.screen_to_world(screen, viewport());
-    if (chat && Viewport{chat->bounds.origin.x, chat->bounds.origin.y, chat->bounds.size.x,
-                         chat->bounds.size.y}
-                    .contains(world))
+    if (chat_at(screen))
         return -1;
     for (std::size_t i = 0; i < panels.size(); ++i)
         if (Viewport{panels[i].bounds.origin.x, panels[i].bounds.origin.y, panels[i].bounds.size.x,

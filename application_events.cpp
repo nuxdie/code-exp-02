@@ -56,6 +56,12 @@ void Application::handle_button(const XEvent& event)
     const auto view = viewport();
     mouse_position = pointer;
     redraw = true;
+    if (event.xbutton.button == Button3 && !drag_button) {
+        show_agent_menu(pointer);
+        return;
+    }
+    if (event.xbutton.button == Button1 && !drag_button)
+        activate_chat(pointer);
     const bool in_popup =
         !popup_text.empty() && Viewport{popup_bounds.origin.x, popup_bounds.origin.y,
                                         popup_bounds.size.x, popup_bounds.size.y}
@@ -116,8 +122,8 @@ void Application::handle_motion(const XEvent& event)
             intent->bounds.origin.x += delta.x / camera.zoom;
             intent->bounds.origin.y += delta.y / camera.zoom;
         } else if (chat && chat->dragging) {
-            chat->bounds.origin.x = std::max(0.0, chat->bounds.origin.x + delta.x / camera.zoom);
-            chat->bounds.origin.y = std::max(0.0, chat->bounds.origin.y + delta.y / camera.zoom);
+            chat->bounds.origin.x += delta.x / camera.zoom;
+            chat->bounds.origin.y += delta.y / camera.zoom;
         } else if (dragged_panel >= 0) {
             auto& position = panels[dragged_panel].bounds.origin;
             position.x = std::max(0.0, position.x + delta.x / camera.zoom);
@@ -141,9 +147,7 @@ void Application::handle_motion(const XEvent& event)
         const bool in_intent = intent && Viewport{intent->bounds.origin.x, intent->bounds.origin.y,
                                                   intent->bounds.size.x, intent->bounds.size.y}
                                              .contains(world);
-        const bool in_chat = chat && Viewport{chat->bounds.origin.x, chat->bounds.origin.y,
-                                              chat->bounds.size.x, chat->bounds.size.y}
-                                         .contains(world);
+        const bool in_chat = chat_at(pointer) != nullptr;
         hover_due = in_chat || in_intent ? Clock::time_point::max()
                                          : Clock::now() + std::chrono::milliseconds(400);
     } else {
@@ -193,8 +197,8 @@ bool Application::cancel_pointer_drag(const XEvent& event)
 
 void Application::handle_key(const XEvent& event)
 {
-    if (cancel_pointer_drag(event) || selection_key(event) || intent_key(event) ||
-        chat_key(event)) {
+    if (agent_window_key(event) || cancel_pointer_drag(event) || selection_key(event) ||
+        intent_key(event) || chat_key(event)) {
         redraw = true;
         return;
     }
@@ -289,7 +293,8 @@ void Application::handle_key(const XEvent& event)
         break;
     case XK_F1:
         show_popup(
-            "D — decisions · I / Alt+click source — intent and diff\nAlt+click a human message — "
+            "Right-click / Ctrl+Shift+A — new agent here\nD — decisions · I / Alt+click source — "
+            "intent and diff\nAlt+click a human message — "
             "select intent\nAlt+click agent response — record rationale for selected intent\nTab / "
             "Ctrl+L — "
             "conversation\nEnter — send, Shift+Enter — newline\n\nHover or K — "
@@ -333,6 +338,8 @@ void Application::handle_key(const XEvent& event)
 
 bool Application::popup_button(const XEvent& event, Vec2 pointer, bool in_popup)
 {
+    if (agent_window_menu(event, pointer, in_popup))
+        return true;
     if (in_popup && (event.xbutton.button == Button4 || event.xbutton.button == Button5)) {
         if (!jump_rows.empty()) {
             list_offset += event.xbutton.button == Button4 ? -3 : 3;

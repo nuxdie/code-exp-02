@@ -3,6 +3,7 @@
 
 import argparse
 import concurrent.futures
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -119,8 +120,11 @@ def main():
     check_architecture(files)
     command([sys.executable, str(ROOT / "tools/cmake_style.py")])
     if arguments.build:
-        command(["cmake", "-S", str(ROOT), "-B", str(build), "-DBUILD_TESTING=ON"])
-        command(["cmake", "--build", str(build), "--parallel", str(max(1, arguments.jobs))])
+        build.mkdir(parents=True, exist_ok=True)
+        with (build / ".viewer-build.lock").open("a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            command(["cmake", "-S", str(ROOT), "-B", str(build), "-DBUILD_TESTING=ON"])
+            command(["cmake", "--build", str(build), "--parallel", str(max(1, arguments.jobs))])
     analyze(build, max(1, arguments.jobs))
     command(["ctest", "--test-dir", str(build), "--output-on-failure"])
     print("Quality gate passed: format, module size, include cycles, static analysis and tests.")

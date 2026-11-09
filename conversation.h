@@ -22,7 +22,8 @@ class Conversation {
   public:
     using Json = nlohmann::json;
     std::string thread_id, active_turn, title = "Conversation", status = "Connecting…", error;
-    std::string accepted_text;
+    std::string accepted_text, canvas_context;
+    bool fresh = false;
     std::vector<ConversationEntry> entries;
     std::vector<Json> threads;
     std::vector<AgentQuestion> questions;

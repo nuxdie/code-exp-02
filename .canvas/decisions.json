@@ -1519,16 +1519,45 @@
       },
       "recorded_at": "2026-11-09T19:14:26.450264+00:00",
       "statement_hash": "88f7dfa338495d06b51a592e517ae2e21b4fd2e5571338869ac85de76f81676a",
-      "artifacts": [],
+      "artifacts": [
+        "CMakeLists.txt",
+        "application.cpp",
+        "application.h",
+        "application_agent_context.cpp",
+        "application_agent_menu.cpp",
+        "application_agent_session.cpp",
+        "application_agent_windows.cpp",
+        "application_chat.cpp",
+        "application_chat_input.cpp",
+        "application_chat_view.cpp",
+        "application_events.cpp",
+        "application_intent.cpp",
+        "application_live.cpp",
+        "application_model.cpp",
+        "application_popups.cpp",
+        "application_reload.cpp",
+        "application_session.cpp",
+        "application_text_selection.cpp",
+        "application_text_targets.cpp",
+        "canvas_selection.h",
+        "chat_canvas.h",
+        "conversation.cpp",
+        "conversation.h",
+        "live_build.cpp",
+        "tests/agent_windows_test.cpp",
+        "tests/conversation_test.cpp",
+        "tests/live_build_test.cpp",
+        "tools/quality.py"
+      ],
       "relations": [],
       "rationale": {
-        "summary": "",
         "author_role": "agent",
-        "basis": "not_recorded"
+        "basis": "recorded_agent_summary",
+        "summary": "Agent cards belong at the point of work. Right-click or Ctrl+Shift+A creates a new independent conversation at the captured world position without moving the camera; existing cards retain their threads, drafts and positions. Capture the pointed file, line, nested LSP symbol, nearby source and selected text, or visible files on blank canvas. Display this attachment locally and send it separately through the local agent protocol as project context, preserving the exact human request and its provenance. Refresh source excerpts before each send. Persist every card and context through viewer reload, route input and approvals per conversation, and wait for requests in any card before reloading. Serialize live and validation builds with a shared workspace lock so simultaneous agent edits and quality checks cannot corrupt build artifacts. Verify native placement and restoration on a separate X display, protocol isolation with a fake peer, and lock contention with real build fixtures."
       },
       "association": {
-        "kind": "captured_statement",
-        "precision": "unbound"
+        "kind": "recorded_live",
+        "precision": "artifact_changes"
       }
     }
   ]

@@ -172,8 +172,11 @@ void Application::refresh_project_geometry()
     for (const auto& panel : panels)
         graph.files.push_back(panel.bounds);
     auto bounds = graph.files;
-    if (chat)
+    if (chat && chat->visible)
         bounds.push_back(chat->bounds);
+    for (const auto& card : chat_windows)
+        if (card->visible)
+            bounds.push_back(card->bounds);
     if (intent && intent->placed)
         bounds.push_back(intent->bounds);
     content_size = canvas_size(bounds);

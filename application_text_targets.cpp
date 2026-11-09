@@ -10,27 +10,28 @@ bool contains(const CanvasRect& bounds, Vec2 point)
 TextTarget Application::chat_text_target(Vec2 pointer)
 {
     const auto world = camera.screen_to_world(pointer, viewport());
-    if (!chat || !contains(chat->bounds, world))
+    const auto* card = chat_at(pointer);
+    if (!card)
         return {};
-    if (contains(chat->editor, world) && chat->composer.layout)
+    if (contains(card->editor, world) && card->composer.layout)
         return {TextSurface::Composer,
                 "",
-                &chat->input.text,
-                chat->composer.layout.get(),
+                &card->input.text,
+                card->composer.layout.get(),
                 nullptr,
                 camera.world_to_screen(
-                    {chat->editor.origin.x + 12, chat->editor.origin.y + 10 - chat->editor_scroll},
+                    {card->editor.origin.x + 12, card->editor.origin.y + 10 - card->editor_scroll},
                     viewport()),
                 camera.zoom};
-    if (!contains(chat->body, world))
+    if (!contains(card->body, world))
         return {};
-    for (const auto& hit : chat->hits) {
+    for (const auto& hit : card->hits) {
         if (hit.kind != ChatHit::Kind::Message || !contains(hit.bounds, world) ||
-            hit.index >= chat->conversation.entries.size())
+            hit.index >= card->conversation.entries.size())
             continue;
-        const auto& id = chat->conversation.entries[hit.index].id;
-        const auto found = chat->messages.find(id);
-        if (found != chat->messages.end()) {
+        const auto& id = card->conversation.entries[hit.index].id;
+        const auto found = card->messages.find(id);
+        if (found != card->messages.end()) {
             const auto& view = found->second;
             return {TextSurface::Chat,   id,
                     &view.document.text, view.layout.get(),
@@ -66,6 +67,8 @@ TextTarget Application::source_text_target(Vec2 pointer)
 }
 TextTarget Application::text_at(Vec2 pointer)
 {
+    if (!popup_text.empty() && contains(popup_bounds, pointer) && agent_menu)
+        return {};
     if (!popup_text.empty() && contains(popup_bounds, pointer))
         return {TextSurface::Popup,
                 "",
@@ -77,7 +80,7 @@ TextTarget Application::text_at(Vec2 pointer)
     if (target.surface != TextSurface::Inactive)
         return target;
     const auto world = camera.screen_to_world(pointer, viewport());
-    if (chat && contains(chat->bounds, world))
+    if (chat_at(pointer))
         return {};
     if (intent && intent->placed && contains(intent->bounds, world)) {
         if (intent->editing && contains(intent->editor, world)) {

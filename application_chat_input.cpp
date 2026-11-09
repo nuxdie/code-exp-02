@@ -11,7 +11,7 @@ bool contains(const CanvasRect& bounds, Vec2 point)
 
 bool Application::chat_button(const XEvent& event, Vec2 pointer)
 {
-    if (!chat || drag_button || event.xbutton.button == Button2 ||
+    if (!chat || !chat->visible || drag_button || event.xbutton.button == Button2 ||
         event.xbutton.button == Button4 || event.xbutton.button == Button5)
         return false;
     const auto world = camera.screen_to_world(pointer, viewport());
@@ -68,7 +68,11 @@ void Application::chat_action(const ChatHit& hit, Vec2 world)
             static_cast<std::size_t>(g_utf8_offset_to_pointer(text + byte, trailing) - text));
         break;
     }
+    case ChatHit::Kind::Close:
+        close_agent_window();
+        break;
     case ChatHit::Kind::Send:
+        refresh_agent_context();
         if (!chat->conversation.questions.empty() &&
             chat->conversation.questions.front().method == "item/tool/requestUserInput")
             respond_chat_question(chat->input.text);

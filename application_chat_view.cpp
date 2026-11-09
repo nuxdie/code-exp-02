@@ -1,8 +1,8 @@
 #include "application.h"
 
-void Application::draw_conversation()
+void Application::draw_chat_card()
 {
-    if (!chat)
+    if (!chat || !chat->visible)
         return;
     const auto origin = camera.world_to_screen(chat->bounds.origin, viewport());
     const CanvasRect bounds{origin,
@@ -44,11 +44,17 @@ void Application::draw_chat_chrome()
         {chat->bounds.origin.x + 24, chat->bounds.origin.y + 16}, viewport());
     renderer->draw(chat->header.mesh, point, std::max(0.7, camera.zoom));
     const CanvasRect button{
-        {chat->bounds.origin.x + chat->bounds.size.x - 128, chat->bounds.origin.y + 18}, {104, 28}};
+        {chat->bounds.origin.x + chat->bounds.size.x - 154, chat->bounds.origin.y + 18}, {104, 28}};
     auto& document = chat->messages["__threads"];
     update_document(document, "Conversations", 110, false);
     renderer->draw(document.mesh, camera.world_to_screen(button.origin, viewport()), camera.zoom);
     chat->hits.push_back({ChatHit::Kind::Threads, button});
+    const CanvasRect close{{chat->bounds.origin.x + chat->bounds.size.x - 40, button.origin.y},
+                           {24, 28}};
+    auto& close_text = chat->messages["__close"];
+    update_document(close_text, "×", 24, false);
+    renderer->draw(close_text.mesh, camera.world_to_screen(close.origin, viewport()), camera.zoom);
+    chat->hits.push_back({ChatHit::Kind::Close, close});
     if (!model.error.empty()) {
         auto& error = chat->messages["__error"];
         update_document(error, model.error, static_cast<int>(chat->body.size.x), false);
@@ -88,7 +94,8 @@ void Application::draw_chat_messages()
             const auto found = chat->messages.find(entry.id);
             if (bounds.intersects(chat->body) && found != chat->messages.end() &&
                 found->second.layout) {
-                if (text_selection.surface == TextSurface::Chat && text_selection.key == entry.id &&
+                if (text_selection.surface == TextSurface::Chat &&
+                    text_selection.chat == chat.get() && text_selection.key == entry.id &&
                     text_selection.range.text == found->second.document.text)
                     draw_selection_layout(found->second.layout.get(),
                                           camera.world_to_screen(bounds.origin, viewport()),

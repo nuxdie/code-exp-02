@@ -1,13 +1,17 @@
 #include "live_build.h"
 
+#include <algorithm>
 #include <chrono>
+#include <fcntl.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <poll.h>
 #include <spawn.h>
 #include <stdexcept>
+#include <sys/file.h>
 #include <sys/wait.h>
+#include <thread>
 #include <unistd.h>
 
 extern char** environ;
@@ -65,6 +69,20 @@ int main()
             expect(wait_build(builder, 3).success &&
                        std::filesystem::last_write_time(binary) != previous,
                    "Correcting an error must resume successful live builds");
+            const int lock = open((root / "build/.viewer-build.lock").c_str(),
+                                  O_CREAT | O_RDWR | O_CLOEXEC, 0600);
+            expect(lock >= 0 && flock(lock, LOCK_EX) == 0,
+                   "The validation build must acquire its workspace lock");
+            builder.request(4);
+            std::this_thread::sleep_for(std::chrono::milliseconds(150));
+            const auto waiting = builder.take_results();
+            expect(std::none_of(waiting.begin(), waiting.end(),
+                                [](const auto& event) { return !event.started; }),
+                   "Live builds must wait while another build owns the same artifact directory");
+            flock(lock, LOCK_UN);
+            close(lock);
+            expect(wait_build(builder, 4).success,
+                   "Live builds must resume after validation releases its lock");
         }
         std::filesystem::remove_all(root);
         std::cout << "Successful builds, failed-edit recovery and executable replacement passed.\n";

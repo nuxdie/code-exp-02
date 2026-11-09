@@ -21,7 +21,8 @@ struct ChatHit {
         Message,
         Accept,
         Decline,
-        Option
+        Option,
+        Close
     };
     Kind kind;
     CanvasRect bounds;
@@ -30,6 +31,8 @@ struct ChatHit {
 struct ChatCanvas {
     explicit ChatCanvas(const std::string& root) : conversation(root) {}
     Conversation conversation;
+    nlohmann::json context = nlohmann::json::object();
+    bool visible = true;
     std::unique_ptr<AgentClient> client;
     CanvasRect bounds{{0, 0}, {760, 900}};
     CanvasRect body{}, editor{};

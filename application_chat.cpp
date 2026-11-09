@@ -42,12 +42,9 @@ void Application::initialize_chat()
         }
         chat->placed = true;
     }
-    if (!chat->disabled) {
-        chat->client = std::make_unique<AgentClient>(
-            python_executable, (executable.parent_path() / "agent_bridge.py").string());
-        if (initial_view)
-            focus_chat();
-    }
+    start_agent_windows();
+    if (!chat->disabled && initial_view)
+        focus_chat();
     std::setlocale(LC_CTYPE, "");
     XSetLocaleModifiers("");
     input_method = XOpenIM(display, nullptr, nullptr, nullptr);
@@ -60,7 +57,11 @@ void Application::initialize_chat()
     std::vector<CanvasRect> bounds;
     for (const auto& panel : panels)
         bounds.push_back(panel.bounds);
-    bounds.push_back(chat->bounds);
+    if (chat->visible)
+        bounds.push_back(chat->bounds);
+    for (const auto& card : chat_windows)
+        if (card->visible)
+            bounds.push_back(card->bounds);
     content_size = canvas_size(bounds);
 }
 void Application::focus_chat()
@@ -74,6 +75,7 @@ void Application::focus_chat()
                      chat->bounds.origin.y + chat->bounds.size.y / 2};
     zoom_animation.cancel(camera);
     initial_view = false;
+    chat->visible = true;
     chat->focused = true;
     chat->follow = true;
     hide_popup();
@@ -85,7 +87,7 @@ void Application::flush_agent()
         for (auto& message : chat->conversation.outgoing())
             chat->client->send(std::move(message));
 }
-void Application::poll_agent()
+void Application::poll_agent_window()
 {
     if (!chat || chat->disabled)
         return;
@@ -109,6 +111,9 @@ void Application::poll_agent()
             python_executable, (executable.parent_path() / "agent_bridge.py").string());
         chat->reconnect = Clock::time_point::max();
     }
+    render_agent_context();
+    if (!chat->visible && !chat->conversation.questions.empty())
+        chat->visible = true;
     flush_agent();
 }
 

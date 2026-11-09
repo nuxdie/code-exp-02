@@ -217,6 +217,8 @@ Application::~Application()
         intent->client.reset();
     if (chat)
         chat->client.reset();
+    for (auto& card : chat_windows)
+        card->client.reset();
     if (input_context)
         XDestroyIC(input_context);
     if (input_method)
@@ -309,26 +311,28 @@ void Application::wait_for_work(Clock::time_point next_frame)
                           .count())));
         timeout = timeout < 0 ? dismiss_wait : std::min(timeout, dismiss_wait);
     }
-    const auto pending =
-        std::min({save_due, chat ? chat->reconnect : Clock::time_point::max(),
-                  build_running ? Clock::time_point::max() : rebuild_due, binary_check_due,
-                  intent ? intent->refresh : Clock::time_point::max()});
+    const auto pending = std::min(
+        {save_due, agent_reconnect_due(), build_running ? Clock::time_point::max() : rebuild_due,
+         binary_check_due, intent ? intent->refresh : Clock::time_point::max()});
     if (pending != Clock::time_point::max()) {
         const int delay = static_cast<int>(std::max(
             0.0,
             std::ceil(std::chrono::duration<double, std::milli>(pending - Clock::now()).count())));
         timeout = timeout < 0 ? delay : std::min(timeout, delay);
     }
-    pollfd connections[] = {{ConnectionNumber(display), POLLIN, 0},
-                            {wake_fd(language_server), POLLIN, 0},
-                            {wake_fd(math_typesetter), POLLIN, 0},
-                            {wake_fd(project_watcher), POLLIN, 0},
-                            {chat && chat->client ? chat->client->event_fd() : -1, POLLIN, 0},
-                            {wake_fd(live_build), POLLIN, 0},
-                            {intent && intent->client ? intent->client->event_fd() : -1, POLLIN, 0},
-                            {wake_fd(system_theme), POLLIN, 0},
-                            {wake_fd(cmake_server), POLLIN, 0}};
-    if (poll(connections, 9, timeout) < 0 && errno != EINTR) {
+    std::vector<pollfd> connections = {
+        {ConnectionNumber(display), POLLIN, 0},
+        {wake_fd(language_server), POLLIN, 0},
+        {wake_fd(math_typesetter), POLLIN, 0},
+        {wake_fd(project_watcher), POLLIN, 0},
+        {chat && chat->client ? chat->client->event_fd() : -1, POLLIN, 0},
+        {wake_fd(live_build), POLLIN, 0},
+        {intent && intent->client ? intent->client->event_fd() : -1, POLLIN, 0},
+        {wake_fd(system_theme), POLLIN, 0},
+        {wake_fd(cmake_server), POLLIN, 0}};
+    for (const auto& card : chat_windows)
+        connections.push_back({card->client ? card->client->event_fd() : -1, POLLIN, 0});
+    if (poll(connections.data(), connections.size(), timeout) < 0 && errno != EINTR) {
         std::cerr << "Could not wait for window input.\n";
         running = false;
     }

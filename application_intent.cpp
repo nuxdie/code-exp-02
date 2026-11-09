@@ -90,7 +90,7 @@ void Application::receive_intent(const lsp::Json& message)
         intent->scroll = 0;
     }
 }
-void Application::capture_intents()
+void Application::capture_window_intents()
 {
     if (!intent->ready || !chat || chat->conversation.history_loading)
         return;

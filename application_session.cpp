@@ -26,22 +26,17 @@ void Application::load_session()
     try {
         intent_session = state.value("intent", lsp::Json::object());
         const auto origin = state.value("originThread", "");
-        if (!environment_thread || origin == environment_thread)
-            chat->conversation.thread_id = state.value("threadId", chat->conversation.thread_id);
-        chat->input.set(state.value("draft", ""));
-        chat->drafts = state.value("drafts", std::map<std::string, std::string>{});
-        chat->input.place(state.value("cursor", chat->input.text.size()));
-        chat->input.anchor =
-            std::min(state.value("anchor", chat->input.cursor), chat->input.text.size());
-        chat->focused = state.value("chatFocused", false);
-        chat->scroll = state.value("chatScroll", 0.0);
-        chat->follow = state.value("chatFollow", true);
-        chat->restore_anchor = state.value("chatAnchor", "");
-        chat->restore_offset = state.value("chatOffset", 0.0);
-        const auto card = state.value("chat", lsp::Json::object());
-        if (card.contains("x")) {
-            chat->bounds.origin = {card.at("x"), card.at("y")};
-            chat->placed = true;
+        load_agent_window(*chat, state);
+        if (environment_thread && origin != environment_thread) {
+            chat->conversation.thread_id = environment_thread;
+            chat->conversation.fresh = false;
+            chat->context = lsp::Json::object();
+        }
+        chat_windows.clear();
+        for (const auto& saved : state.value("additionalAgents", lsp::Json::array())) {
+            auto card = std::make_unique<ChatCanvas>(workspace_root);
+            load_agent_window(*card, saved);
+            chat_windows.push_back(std::move(card));
         }
         for (auto& panel : panels) {
             const auto saved =
@@ -100,41 +95,26 @@ void Application::save_session()
     Window child;
     XTranslateCoordinates(display, window, RootWindow(display, screen), 0, 0, &x, &y, &child);
     const auto* origin = std::getenv("CODEX_THREAD_ID");
-    chat->drafts[chat->conversation.thread_id] = chat->input.text;
-    std::string anchor;
-    double anchor_offset = 0, offset = 0;
-    for (std::size_t i = 0; i < chat->conversation.entries.size(); ++i) {
-        const auto size = chat_entry_height(i);
-        if (offset + size > chat->scroll) {
-            anchor = chat->conversation.entries[i].id;
-            anchor_offset = chat->scroll - offset;
-            break;
-        }
-        offset += size;
+    auto state = save_agent_window();
+    lsp::Json additional = lsp::Json::array();
+    for (auto& card : chat_windows) {
+        std::swap(chat, card);
+        additional.push_back(save_agent_window());
+        std::swap(chat, card);
     }
-    const lsp::Json state{
-        {"root", workspace_root},
-        {"originThread", origin ? origin : ""},
-        {"threadId", chat->conversation.thread_id},
-        {"drafts", chat->drafts},
-        {"draft", chat->input.text},
-        {"cursor", chat->input.cursor},
-        {"anchor", chat->input.anchor},
-        {"chatFocused", chat->focused},
-        {"chatScroll", chat->scroll},
-        {"chatFollow", chat->follow},
-        {"chatAnchor", anchor},
-        {"chatOffset", anchor_offset},
-        {"chat", {{"x", chat->bounds.origin.x}, {"y", chat->bounds.origin.y}}},
-        {"camera", {{"x", camera.center.x}, {"y", camera.center.y}, {"zoom", camera.zoom}}},
-        {"window", {{"x", x}, {"y", y}, {"width", width}, {"height", height}}},
-        {"files", files},
-        {"intent", intent ? lsp::Json{{"x", intent->bounds.origin.x},
-                                      {"y", intent->bounds.origin.y},
-                                      {"selected", intent->selected},
-                                      {"overview", intent->overview},
-                                      {"scroll", intent->scroll}}
-                          : lsp::Json::object()}};
+    state.update(
+        {{"root", workspace_root},
+         {"originThread", origin ? origin : ""},
+         {"additionalAgents", additional},
+         {"camera", {{"x", camera.center.x}, {"y", camera.center.y}, {"zoom", camera.zoom}}},
+         {"window", {{"x", x}, {"y", y}, {"width", width}, {"height", height}}},
+         {"files", files},
+         {"intent", intent ? lsp::Json{{"x", intent->bounds.origin.x},
+                                       {"y", intent->bounds.origin.y},
+                                       {"selected", intent->selected},
+                                       {"overview", intent->overview},
+                                       {"scroll", intent->scroll}}
+                           : lsp::Json::object()}});
     const auto path = session_path(workspace_root);
     std::error_code error;
     std::filesystem::create_directories(path.parent_path(), error);

@@ -55,15 +55,22 @@ struct LiveBuild::Impl {
         posix_spawnattr_init(&attributes);
         posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETPGROUP);
         posix_spawnattr_setpgroup(&attributes, 0);
-        std::vector<std::string> args{"cmake",        "--build",    directory, "--target",
-                                      "white_window", "--parallel", "2"};
+        std::vector<std::string> args{"flock",
+                                      directory + "/.viewer-build.lock",
+                                      "cmake",
+                                      "--build",
+                                      directory,
+                                      "--target",
+                                      "white_window",
+                                      "--parallel",
+                                      "2"};
         std::vector<char*> argv;
         for (auto& arg : args)
             argv.push_back(arg.data());
         argv.push_back(nullptr);
         pid_t child = -1;
         const int error =
-            posix_spawnp(&child, "cmake", &actions, &attributes, argv.data(), environ);
+            posix_spawnp(&child, "flock", &actions, &attributes, argv.data(), environ);
         posix_spawn_file_actions_destroy(&actions);
         posix_spawnattr_destroy(&attributes);
         return error ? -1 : child;

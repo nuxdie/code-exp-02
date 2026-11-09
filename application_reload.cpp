@@ -25,8 +25,7 @@ void Application::poll_reload(Clock::time_point now)
 {
     if (!auto_build)
         return;
-    if (deferred_reload &&
-        (!chat || (chat->conversation.questions.empty() && !chat->conversation.sending)))
+    if (deferred_reload && !agents_pending())
         request_reload();
     for (const auto& result : live_build->take_results())
         handle_build_result(result);
@@ -90,7 +89,7 @@ void Application::handle_build_result(const BuildResult& result)
 }
 void Application::request_reload()
 {
-    if (chat && (!chat->conversation.questions.empty() || chat->conversation.sending)) {
+    if (agents_pending()) {
         deferred_reload = true;
         build_status = "Viewer update ready";
         return;

@@ -84,6 +84,47 @@ void test_conversation()
     expect(!model.ready && model.outgoing().empty(),
            "Reconnect must not replay an unacknowledged message");
 }
+void test_contextual_conversation()
+{
+    Conversation model("/project");
+    model.fresh = true;
+    model.canvas_context = "File: camera.h:42\nSelected: camera.zoom";
+    model.receive({{"method", "canvas/connected"}, {"params", Json::object()}});
+    auto request = take_request(model, "initialize");
+    model.receive({{"id", request["id"]}, {"result", Json::object()}});
+    const auto handshake = model.outgoing();
+    expect(model.ready && handshake.size() == 1 && handshake.front()["method"] == "initialized",
+           "A new card must remain a fresh conversation rather than attach to recent history");
+    model.list_threads();
+    request = take_request(model, "thread/list");
+    model.receive(
+        {{"id", request["id"]}, {"result", {{"data", Json::array({{{"id", "recent-thread"}}})}}}});
+    expect(model.thread_id.empty(),
+           "Listing old conversations must not attach a fresh card without a selection");
+    expect(model.submit("Make this smoother"), "A connected fresh card must accept a prompt");
+    request = take_request(model, "thread/start");
+    expect(request["params"]["cwd"] == "/project", "New cards must retain the project workspace");
+    model.receive({{"id", request["id"]}, {"result", {{"thread", {{"id", "new-thread"}}}}}});
+    request = take_request(model, "turn/start");
+    const auto& params = request["params"];
+    expect(params["threadId"] == "new-thread" && params["input"][0]["text"] == "Make this smoother",
+           "The human's message must remain exact and go to the card's own thread");
+    expect(params["additionalContext"]["source-canvas"]["kind"] == "untrusted" &&
+               params["additionalContext"]["source-canvas"]["value"] == model.canvas_context,
+           "Source and selection context must be attached separately as project data");
+    model.receive({{"id", request["id"]}, {"result", {{"turn", {{"id", "new-turn"}}}}}});
+    expect(model.accepted_text == "Make this smoother",
+           "Context must not prevent clearing an acknowledged draft");
+    model.canvas_context = "Updated source snapshot";
+    expect(model.submit("Continue"), "The context card must support steering");
+    request = take_request(model, "turn/steer");
+    expect(request["params"]["additionalContext"]["source-canvas"]["value"] == model.canvas_context,
+           "Steering must send the updated location context too");
+    model.receive({{"id", "other-approval"},
+                   {"method", "item/commandExecution/requestApproval"},
+                   {"params", {{"threadId", "another-thread"}}}});
+    expect(model.questions.empty(), "Other cards' approvals must not enter this conversation");
+}
 void test_input()
 {
     TextInput input;
@@ -107,6 +148,7 @@ int main()
     try {
         test_conversation();
         test_input();
+        test_contextual_conversation();
         std::cout
             << "Conversation streaming, history, steering, approvals and Unicode input passed.\n";
     } catch (const std::exception& error) {

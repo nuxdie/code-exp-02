@@ -25,12 +25,15 @@ bool Application::begin_text_selection(const XEvent& event, Vec2 pointer)
                      ButtonPressMask | ButtonReleaseMask | PointerMotionMask, GrabModeAsync,
                      GrabModeAsync, None, text_cursor, CurrentTime) != GrabSuccess)
         return false;
+    if (target.surface != TextSurface::Popup && !popup_text.empty())
+        hide_popup();
     const bool extend =
         (event.xbutton.state & ShiftMask) && text_selection.surface == target.surface &&
         text_selection.key == target.key && text_selection.range.text == *target.text;
     if (!extend)
         text_selection.range.set(*target.text);
     text_selection.surface = target.surface;
+    text_selection.chat = target.surface == TextSurface::Chat ? chat.get() : nullptr;
     text_selection.key = target.key;
     text_selection.math = target.math ? *target.math : std::vector<PopupMath>{};
     text_selection.press = pointer;

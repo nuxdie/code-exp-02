@@ -54,6 +54,8 @@ void Conversation::receive(const Json& message)
         const auto method = message.value("method", "");
         const auto params = message.value("params", Json::object());
         if (message.contains("id")) {
+            if (params.contains("threadId") && params["threadId"] != thread_id)
+                return;
             const auto reason = string_value(params, "reason");
             questions.push_back({message["id"], method,
                                  reason.empty() ? "Agent needs your response" : reason, params});
@@ -94,7 +96,10 @@ void Conversation::response(const Json& message)
         queued.push_back({{"method", "initialized"}, {"params", Json::object()}});
         if (!thread_id.empty())
             request("thread/resume", {{"threadId", thread_id}, {"excludeTurns", true}});
-        else
+        else if (fresh) {
+            ready = true;
+            status = "Ready";
+        } else
             list_threads();
     } else if (method == "thread/resume" || method == "thread/start") {
         hydrate_thread(result.at("thread"));
@@ -109,7 +114,7 @@ void Conversation::response(const Json& message)
         history_page(result);
     } else if (method == "thread/list") {
         threads = result.value("data", std::vector<Json>{});
-        if (thread_id.empty() && !threads.empty())
+        if (!fresh && thread_id.empty() && !threads.empty())
             select_thread(threads.front().value("id", ""));
         else if (thread_id.empty()) {
             ready = true;
@@ -250,6 +255,10 @@ void Conversation::send_prompt()
 {
     Json params{{"threadId", thread_id},
                 {"input", Json::array({{{"type", "text"}, {"text", submitted}}})}};
+    if (!canvas_context.empty())
+        params["additionalContext"] = {
+            {"source-canvas",
+             {{"kind", "untrusted"}, {"name", "Canvas context"}, {"value", canvas_context}}}};
     const bool active = !active_turn.empty();
     if (active)
         params["expectedTurnId"] = active_turn;

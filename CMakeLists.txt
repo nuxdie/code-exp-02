@@ -198,6 +198,10 @@ add_library(
     application.cpp
     application_model.cpp
     application_popups.cpp
+    application_agent_windows.cpp
+    application_agent_context.cpp
+    application_agent_menu.cpp
+    application_agent_session.cpp
     application_cmake.cpp
     application_file_links.cpp
     application_text_targets.cpp
@@ -335,6 +339,18 @@ if(BUILD_TESTING)
         add_test(NAME selection COMMAND selection_tests)
     endif()
     set_tests_properties(selection PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30)
+    add_executable(agent_windows_tests tests/agent_windows_test.cpp)
+    target_link_libraries(agent_windows_tests PRIVATE application_core)
+    if(XVFB_RUN_EXECUTABLE)
+        add_test(NAME agent_windows COMMAND "${XVFB_RUN_EXECUTABLE}" -a
+                                            $<TARGET_FILE:agent_windows_tests>
+        )
+    else()
+        add_test(NAME agent_windows COMMAND agent_windows_tests)
+    endif()
+    set_tests_properties(
+        agent_windows PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30
+    )
     add_executable(cmake_canvas_tests tests/cmake_canvas_test.cpp)
     target_link_libraries(cmake_canvas_tests PRIVATE application_core)
     add_test(NAME cmake_canvas COMMAND cmake_canvas_tests)
@@ -392,6 +408,7 @@ if(BUILD_TESTING)
     add_dependencies(
         quality
         selection_tests
+        agent_windows_tests
         cmake_canvas_tests
         intent_canvas_tests
         system_theme_tests

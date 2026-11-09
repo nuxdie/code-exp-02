@@ -8,6 +8,7 @@
 
 // Byte ranges use the same UTF-8 text that Pango shapes and that copying returns.
 enum class TextSurface { Inactive, Source, Popup, Chat, Intent, Composer, Rationale };
+struct ChatCanvas;
 struct TextTarget {
     TextSurface surface = TextSurface::Inactive;
     std::string key;
@@ -19,6 +20,7 @@ struct TextTarget {
     std::size_t prefix = 0;
 };
 struct CanvasSelection {
+    const ChatCanvas* chat = nullptr;
     TextSurface surface = TextSurface::Inactive;
     std::string key;
     TextInput range;
