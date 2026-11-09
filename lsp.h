@@ -48,6 +48,7 @@ struct Message {
     int id = 0;
     Json result;
     std::string error;
+    int version = 0;
 };
 
 // All process IO runs on a worker. The UI polls event_fd alongside X11.
@@ -62,6 +63,8 @@ class LanguageServer {
     std::vector<Message> take_messages();
     int request(std::string method, std::string uri, Json params);
     void open(Document document);
+    void change(Document document);
+    void close(const std::string& uri);
 
   private:
     struct Impl;

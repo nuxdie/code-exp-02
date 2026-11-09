@@ -9,6 +9,7 @@ struct PopupSpan {
     std::size_t begin;
     std::size_t length;
     PopupStyle style;
+    std::string destination{};
 };
 struct PopupMath {
     std::size_t begin;

@@ -187,6 +187,7 @@ struct LanguageServer::Impl {
         std::string method;
         std::string uri;
         Json params;
+        int version = 0;
     };
     int results_fd = -1, commands_fd = -1, stream = -1;
     pid_t child = -1;
@@ -208,9 +209,9 @@ struct LanguageServer::Impl {
         commands_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
         if (results_fd < 0 || commands_fd < 0) {
             if (results_fd >= 0)
-                close(results_fd);
+                ::close(results_fd);
             if (commands_fd >= 0)
-                close(commands_fd);
+                ::close(commands_fd);
             throw std::runtime_error("Could not create LSP wakeup descriptors");
         }
         worker = std::thread([this] {
@@ -278,9 +279,9 @@ struct LanguageServer::Impl {
         const int error =
             posix_spawnp(&child, executable.c_str(), &actions, nullptr, argv.data(), environ);
         posix_spawn_file_actions_destroy(&actions);
-        close(sockets[1]);
+        ::close(sockets[1]);
         if (error) {
-            close(sockets[0]);
+            ::close(sockets[0]);
             child = -1;
             throw std::runtime_error("Could not start clangd: " + std::string(strerror(error)));
         }
@@ -292,6 +293,7 @@ struct LanguageServer::Impl {
     std::size_t written = 0;
     std::map<int, Request> pending;
     std::set<std::string> semantic_pending;
+    std::map<std::string, int> versions;
     bool ready = false;
     bool supports_semantics = false;
     Framer framer;
@@ -309,6 +311,7 @@ struct LanguageServer::Impl {
 
     void send_request(Request request)
     {
+        request.version = versions[request.uri];
         send_message({{"id", request.id}, {"method", request.method}, {"params", request.params}});
         pending.emplace(request.id, std::move(request));
     }
@@ -323,8 +326,16 @@ struct LanguageServer::Impl {
                       {{"textDocument", {{"uri", uri}}}}});
     }
 
+    void refresh_structure(const std::string& uri)
+    {
+        request_semantics(uri);
+        for (const char* method : {"textDocument/documentSymbol", "textDocument/foldingRange"})
+            send_request({next_id++, method, uri, {{"textDocument", {{"uri", uri}}}}});
+    }
+
     void open_document(const Document& document)
     {
+        versions[document.uri] = 1;
         send_message({{"method", "textDocument/didOpen"},
                       {"params",
                        {{"textDocument",
@@ -332,10 +343,31 @@ struct LanguageServer::Impl {
                           {"languageId", "cpp"},
                           {"version", 1},
                           {"text", document.text}}}}}});
-        request_semantics(document.uri);
-        for (const char* method : {"textDocument/documentSymbol", "textDocument/foldingRange"})
-            send_request(
-                {next_id++, method, document.uri, {{"textDocument", {{"uri", document.uri}}}}});
+        refresh_structure(document.uri);
+    }
+    void change_document(const Document& document)
+    {
+        const int version = ++versions[document.uri];
+        send_message({{"method", "textDocument/didChange"},
+                      {"params",
+                       {{"textDocument", {{"uri", document.uri}, {"version", version}}},
+                        {"contentChanges", Json::array({{{"text", document.text}}})}}}});
+        for (auto& existing : documents)
+            if (existing.uri == document.uri)
+                existing.text = document.text;
+        // An older semantic request may still be in flight. Its result is versioned below.
+        semantic_pending.erase(document.uri);
+        refresh_structure(document.uri);
+    }
+    void close_document(const std::string& uri)
+    {
+        send_message(
+            {{"method", "textDocument/didClose"}, {"params", {{"textDocument", {{"uri", uri}}}}}});
+        documents.erase(std::remove_if(documents.begin(), documents.end(),
+                                       [&](const auto& document) { return document.uri == uri; }),
+                        documents.end());
+        versions.erase(uri);
+        semantic_pending.erase(uri);
     }
 
     void notification(const Json& value)
@@ -351,7 +383,12 @@ struct LanguageServer::Impl {
                     request_semantics(document.uri);
         } else if (method == "textDocument/publishDiagnostics") {
             const auto uri = params.value("uri", "");
-            publish({method, uri, 0, params.value("diagnostics", Json::array()), {}});
+            publish({method,
+                     uri,
+                     0,
+                     params.value("diagnostics", Json::array()),
+                     {},
+                     params.value("version", 0)});
             request_semantics(uri);
         }
     }
@@ -379,7 +416,8 @@ struct LanguageServer::Impl {
             publish({request.method, request.uri, id, value.value("result", Json()),
                      value.contains("error")
                          ? value["error"].value("message", "Language request failed")
-                         : ""});
+                         : "",
+                     request.version});
             pending.erase(found);
         }
     }
@@ -441,7 +479,11 @@ struct LanguageServer::Impl {
         if (!ready || stopping)
             return;
         for (auto& command : deferred) {
-            if (command.method == "open") {
+            if (command.method == "change") {
+                change_document({command.uri, command.params.get<std::string>()});
+            } else if (command.method == "close") {
+                close_document(command.uri);
+            } else if (command.method == "open") {
                 Document document{command.uri, command.params.get<std::string>()};
                 documents.push_back(document);
                 open_document(document);
@@ -520,7 +562,7 @@ struct LanguageServer::Impl {
     void cleanup()
     {
         if (stream >= 0) {
-            close(stream);
+            ::close(stream);
             stream = -1;
         }
         if (child > 0) {
@@ -546,8 +588,8 @@ struct LanguageServer::Impl {
         stopping = true;
         wake(commands_fd);
         worker.join();
-        close(commands_fd);
-        close(results_fd);
+        ::close(commands_fd);
+        ::close(results_fd);
     }
 };
 
@@ -582,5 +624,16 @@ int LanguageServer::request(std::string method, std::string uri, Json params)
 void LanguageServer::open(Document document)
 {
     impl->enqueue({0, "open", std::move(document.uri), std::move(document.text)});
+}
+} // namespace lsp
+
+namespace lsp {
+void LanguageServer::change(Document document)
+{
+    impl->enqueue({0, "change", std::move(document.uri), std::move(document.text)});
+}
+void LanguageServer::close(const std::string& uri)
+{
+    impl->enqueue({0, "close", uri, nullptr});
 }
 } // namespace lsp

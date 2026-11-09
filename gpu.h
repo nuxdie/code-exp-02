@@ -47,6 +47,7 @@ class GpuRenderer {
     GpuImage image(cairo_surface_t* surface);
     void upload(GpuMesh& mesh, const std::vector<PlacedText>& text,
                 const std::vector<PlacedImage>& images = {});
+    void release(GpuMesh& mesh);
     void paths(GpuMesh& mesh, const std::vector<GpuPath>& paths);
     void begin(int width, int height);
     void draw(const GpuMesh& mesh, Vec2 screen_origin, double zoom);

@@ -1,9 +1,0 @@
-#pragma once
-
-struct EmbeddedSource {
-    const char* path;
-    const char* text;
-};
-
-inline constexpr EmbeddedSource source_files[] = {
-@SOURCE_ENTRIES@};

@@ -5,7 +5,7 @@ SourcePanel Application::make_panel(const std::string& path, const std::string& 
     SourcePanel panel;
     panel.path = path;
     panel.source = text;
-    panel.uri = lsp::file_uri((std::filesystem::path(project_root) / path).string());
+    panel.uri = lsp::file_uri((std::filesystem::path(workspace_root) / path).string());
     const auto extension = std::filesystem::path(path).extension().string();
     panel.cpp = extension == ".cpp" || extension == ".cc" || extension == ".cxx" ||
                 extension == ".c" || extension == ".h" || extension == ".hpp";
@@ -101,6 +101,10 @@ void Application::relayout()
     for (std::size_t i = 0; i < panels.size(); ++i)
         panels[i].bounds.origin = graph.files[i].origin;
     content_size = graph.size;
+    if (chat) {
+        content_size.x = std::max(content_size.x, chat->bounds.origin.x + chat->bounds.size.x);
+        content_size.y = std::max(content_size.y, chat->bounds.origin.y + chat->bounds.size.y);
+    }
     connections_dirty = true;
 }
 
@@ -133,6 +137,10 @@ void Application::apply_styles(SourcePanel& panel)
 SourceHit Application::hit_test(Vec2 screen)
 {
     const auto world = camera.screen_to_world(screen, viewport());
+    if (chat && Viewport{chat->bounds.origin.x, chat->bounds.origin.y, chat->bounds.size.x,
+                         chat->bounds.size.y}
+                    .contains(world))
+        return {};
     for (std::size_t i = 0; i < panels.size(); ++i) {
         const auto& panel = panels[i];
         const double x = world.x - panel.bounds.origin.x - 24;
@@ -161,6 +169,10 @@ SourceHit Application::hit_test(Vec2 screen)
 int Application::panel_at(Vec2 screen)
 {
     const auto world = camera.screen_to_world(screen, viewport());
+    if (chat && Viewport{chat->bounds.origin.x, chat->bounds.origin.y, chat->bounds.size.x,
+                         chat->bounds.size.y}
+                    .contains(world))
+        return -1;
     for (std::size_t i = 0; i < panels.size(); ++i)
         if (Viewport{panels[i].bounds.origin.x, panels[i].bounds.origin.y, panels[i].bounds.size.x,
                      panels[i].bounds.size.y}

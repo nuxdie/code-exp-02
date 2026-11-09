@@ -211,7 +211,8 @@ class InlineDocumentation {
         if (end == std::string::npos)
             return false;
         const auto length = middle - position - 1;
-        document.styles.push_back({offset + result.size(), length, PopupStyle::Link});
+        document.styles.push_back({offset + result.size(), length, PopupStyle::Link,
+                                   line.substr(middle + 2, end - middle - 2)});
         result += line.substr(position + 1, length);
         position = end + 1;
         return true;

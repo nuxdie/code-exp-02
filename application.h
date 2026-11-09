@@ -1,9 +1,16 @@
 #pragma once
+#include "agent_client.h"
+#include "chat_canvas.h"
+#include "conversation.h"
+#include "document_view.h"
+#include "live_build.h"
 #include "math_typesetter.h"
 #include "popup_markup.h"
+#include "project_watch.h"
 #include "source_graph.h"
 #include "source_panel.h"
 #include "syntax.h"
+#include "text_input.h"
 #include "viewer_config.h"
 #include <X11/cursorfont.h>
 #include <X11/keysym.h>
@@ -32,6 +39,7 @@ class Application {
     friend struct ApplicationTestAccess;
 
   public:
+    static constexpr int reload_exit_code = 75;
     int run();
     ~Application();
 
@@ -47,7 +55,14 @@ class Application {
     bool benchmark = false;
     Display* display = nullptr;
     std::filesystem::path executable;
+    std::string workspace_root = project_root;
+    std::unique_ptr<ProjectWatcher> project_watcher;
     int screen = 0;
+    std::unique_ptr<ChatCanvas> chat;
+    XIM input_method = nullptr;
+    XIC input_context = nullptr;
+    std::string clipboard_text;
+    Clock::time_point save_due = Clock::time_point::max();
     std::unique_ptr<GpuRenderer> renderer;
     Window window = 0;
     Cursor normal_cursor = 0;
@@ -126,6 +141,7 @@ class Application {
     };
     std::unique_ptr<MathTypesetter> math_typesetter;
     std::map<std::string, MathArtwork> math_artwork;
+    unsigned document_generation = 0;
     PangoLayout* popup_layout = nullptr;
     GpuMesh popup_mesh;
     std::string cached_popup;
@@ -140,13 +156,59 @@ class Application {
     Atom protocols = 0;
     bool running = true;
     bool window_destroyed = false;
+    bool auto_build = false, build_running = false, reload_requested = false,
+         deferred_reload = false;
+    std::unique_ptr<LiveBuild> live_build;
+    uint64_t source_generation = 0;
+    std::string build_status;
+    std::filesystem::file_time_type loaded_binary, observed_binary;
+    Clock::time_point rebuild_due = Clock::time_point::max();
+    Clock::time_point binary_check_due = Clock::time_point::max();
 
     bool initialize();
+    void initialize_workspace();
+    void initialize_reload();
+    void queue_rebuild();
+    void poll_reload(Clock::time_point now);
+    void handle_build_result(const BuildResult& result);
+    void request_reload();
+    void initialize_chat();
+    void poll_agent();
+    void flush_agent();
+    void focus_chat();
+    void draw_conversation();
+    double chat_entry_height(std::size_t index);
+    std::string chat_entry_source(std::size_t index);
+    void prepare_chat_messages();
+    void restore_chat_scroll(bool finish);
+    void draw_chat_messages();
+    void draw_chat_chrome();
+    void draw_chat_controls();
+    void draw_input_selection(Vec2 origin);
+    void move_chat_caret(int direction, bool extend);
+    void draw_chat_questions();
+    void respond_chat_question(const std::string& text);
+    bool chat_button(const XEvent& event, Vec2 pointer);
+    void chat_action(const ChatHit& hit, Vec2 world);
+    bool chat_key(const XEvent& event);
+    bool chat_shortcut(KeySym key, unsigned state, const XEvent& event);
+    void chat_selection(const XEvent& event);
+    bool chat_over_text(Vec2 pointer);
+    bool open_chat_link(const DocumentView& view, Vec2 point);
+    void load_session();
+    void save_session();
+    void schedule_save();
     int benchmark_run();
     PangoLayout* make_line(const std::string& line, const std::vector<Token>& tokens);
     SourcePanel make_panel(const std::string& path, const std::string& text);
     void update_mesh(SourcePanel& panel);
     void relayout();
+    void load_project();
+    void poll_project();
+    void release_panel(SourcePanel& panel);
+    void replace_source(int index, const std::string& source);
+    void apply_project_change(const ProjectChange& change);
+    void refresh_project_geometry();
     void apply_styles(SourcePanel& panel);
     Viewport viewport();
     void hide_popup();
@@ -187,10 +249,16 @@ class Application {
     void rebuild_connections();
     void update_popup_mesh(int layout_width);
     void poll_math();
-    void shape_popup_math(PangoAttrList* attributes);
-    void upload_popup_content();
+    void shape_document_math(PangoAttrList* attributes, const std::vector<PopupMath>& math,
+                             int layout_width);
+    void upload_document_mesh(GpuMesh& mesh, PangoLayout* layout,
+                              const std::vector<PopupMath>& math);
     MathArtwork load_math_artwork(const std::string& svg);
-    void style_popup_prose(PangoAttrList* attributes);
+    void style_document_spans(PangoAttrList* attributes, const std::vector<PopupSpan>& spans);
+    void configure_document(PangoLayout* layout, const PopupDocument& document, int width,
+                            bool prose);
+    void update_document(DocumentView& view, const std::string& source, int width,
+                         bool prose = true);
     void add_popup_syntax(PangoAttrList* attributes, const std::string& text, std::size_t offset,
                           HighlightState& state);
     void load_icon(const std::string& icon_name);

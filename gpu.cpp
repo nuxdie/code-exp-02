@@ -495,6 +495,15 @@ void GpuRenderer::upload(GpuMesh& mesh, const std::vector<PlacedText>& text,
     mesh.vertices = static_cast<int>(vertices.size());
 }
 
+void GpuRenderer::release(GpuMesh& mesh)
+{
+    if (mesh.buffer) {
+        glDeleteBuffers(1, &mesh.buffer);
+        impl->buffers.erase(mesh.buffer);
+        mesh = {};
+    }
+}
+
 void GpuRenderer::paths(GpuMesh& mesh, const std::vector<GpuPath>& paths)
 {
     std::vector<Vertex> vertices;

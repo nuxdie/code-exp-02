@@ -16,6 +16,10 @@ bool Application::over_text(Vec2 screen)
                 screen))
             return false;
     const auto world = camera.screen_to_world(screen, viewport());
+    if (chat && Viewport{chat->bounds.origin.x, chat->bounds.origin.y, chat->bounds.size.x,
+                         chat->bounds.size.y}
+                    .contains(world))
+        return chat_over_text(screen);
     for (const auto& panel : panels) {
         const double x = world.x - panel.bounds.origin.x - 24;
         const double y = world.y - panel.bounds.origin.y - header_height;
@@ -37,7 +41,7 @@ void Application::update_cursor()
 {
     Cursor cursor = normal_cursor;
     if (drag_button) {
-        if (dragged_panel < 0)
+        if (dragged_panel < 0 && (!chat || !chat->dragging))
             cursor = drag_cursor;
     } else if (viewport().contains(mouse_position) && over_text(mouse_position)) {
         cursor = text_cursor;

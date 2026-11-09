@@ -39,13 +39,15 @@ void Application::poll_math()
     for (const auto& result : math_typesetter->take_results()) {
         math_artwork[result.key] = load_math_artwork(result.svg);
         cached_popup.clear();
+        ++document_generation;
         redraw = true;
     }
 }
 
-void Application::shape_popup_math(PangoAttrList* attributes)
+void Application::shape_document_math(PangoAttrList* attributes,
+                                      const std::vector<PopupMath>& math_items, int layout_width)
 {
-    for (const auto& math : popup_math) {
+    for (const auto& math : math_items) {
         const auto key = MathTypesetter::key(math.expression, math.display);
         const auto found = math_artwork.find(key);
         Vec2 size{std::min(550.0, math.expression.size() * 9.0), 24};
@@ -53,7 +55,7 @@ void Application::shape_popup_math(PangoAttrList* attributes)
             size = found->second.size;
         else if (found == math_artwork.end() && math_typesetter)
             math_typesetter->request(math.expression, math.display);
-        const double scale = std::min(1.0, std::max(1, cached_popup_width) / std::max(1.0, size.x));
+        const double scale = std::min(1.0, std::max(1, layout_width) / std::max(1.0, size.x));
         size.x *= scale;
         size.y *= scale;
         PangoRectangle rectangle{0, static_cast<int>(-size.y * 0.8 * PANGO_SCALE),
@@ -66,14 +68,15 @@ void Application::shape_popup_math(PangoAttrList* attributes)
     }
 }
 
-void Application::upload_popup_content()
+void Application::upload_document_mesh(GpuMesh& mesh, PangoLayout* layout,
+                                       const std::vector<PopupMath>& math_items)
 {
-    std::vector<PlacedText> text{{popup_layout, {0, 0}}};
+    std::vector<PlacedText> text{{layout, {0, 0}}};
     std::vector<PlacedImage> images;
     std::vector<PangoLayout*> fallback;
-    for (const auto& math : popup_math) {
+    for (const auto& math : math_items) {
         PangoRectangle rectangle{};
-        pango_layout_index_to_pos(popup_layout, static_cast<int>(math.begin), &rectangle);
+        pango_layout_index_to_pos(layout, static_cast<int>(math.begin), &rectangle);
         const CanvasRect bounds{{static_cast<double>(rectangle.x) / PANGO_SCALE,
                                  static_cast<double>(rectangle.y) / PANGO_SCALE},
                                 {static_cast<double>(rectangle.width) / PANGO_SCALE,
@@ -87,14 +90,14 @@ void Application::upload_popup_content()
                  {{bounds.origin.x, bounds.origin.y + (bounds.size.y - size.y * scale) / 2},
                   {size.x * scale, size.y * scale}}});
         } else {
-            auto* layout = make_line(math.expression, {});
-            pango_layout_set_width(layout, static_cast<int>(bounds.size.x * PANGO_SCALE));
-            pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
-            fallback.push_back(layout);
-            text.push_back({layout, bounds.origin});
+            auto* fallback_layout = make_line(math.expression, {});
+            pango_layout_set_width(fallback_layout, static_cast<int>(bounds.size.x * PANGO_SCALE));
+            pango_layout_set_ellipsize(fallback_layout, PANGO_ELLIPSIZE_END);
+            fallback.push_back(fallback_layout);
+            text.push_back({fallback_layout, bounds.origin});
         }
     }
-    renderer->upload(popup_mesh, text, images);
+    renderer->upload(mesh, text, images);
     for (auto* layout : fallback)
         g_object_unref(layout);
 }

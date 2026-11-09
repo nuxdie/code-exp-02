@@ -12,6 +12,10 @@ void Application::handle_event(const XEvent& event)
         height = event.xconfigure.height;
         redraw = true;
         break;
+    case SelectionNotify:
+    case SelectionRequest:
+        chat_selection(event);
+        break;
     case ButtonPress:
         handle_button(event);
         break;
@@ -58,6 +62,9 @@ void Application::handle_button(const XEvent& event)
                                    .contains(pointer);
     if (popup_button(event, pointer, in_popup))
         return;
+    if (chat_button(event, pointer))
+        return;
+    schedule_save();
     hide_popup();
     if (event.xbutton.button == Button4 || event.xbutton.button == Button5) {
         if (drag_button) {
@@ -88,7 +95,10 @@ void Application::handle_motion(const XEvent& event)
         hide_popup();
         const Vec2 delta{pointer.x - last_pointer.x, pointer.y - last_pointer.y};
         drag_moved = drag_moved || std::hypot(delta.x, delta.y) > 1;
-        if (dragged_panel >= 0) {
+        if (chat && chat->dragging) {
+            chat->bounds.origin.x = std::max(0.0, chat->bounds.origin.x + delta.x / camera.zoom);
+            chat->bounds.origin.y = std::max(0.0, chat->bounds.origin.y + delta.y / camera.zoom);
+        } else if (dragged_panel >= 0) {
             auto& position = panels[dragged_panel].bounds.origin;
             position.x = std::max(0.0, position.x + delta.x / camera.zoom);
             position.y = std::max(0.0, position.y + delta.y / camera.zoom);
@@ -107,7 +117,12 @@ void Application::handle_motion(const XEvent& event)
                                           .contains(pointer)) {
         if (!popup_text.empty() && popup_dismiss_due == Clock::time_point::max())
             popup_dismiss_due = Clock::now() + std::chrono::milliseconds(300);
-        hover_due = Clock::now() + std::chrono::milliseconds(400);
+        const auto world = camera.screen_to_world(pointer, viewport());
+        const bool in_chat = chat && Viewport{chat->bounds.origin.x, chat->bounds.origin.y,
+                                              chat->bounds.size.x, chat->bounds.size.y}
+                                         .contains(world);
+        hover_due =
+            in_chat ? Clock::time_point::max() : Clock::now() + std::chrono::milliseconds(400);
     } else {
         popup_dismiss_due = Clock::time_point::max();
         hover_due = Clock::time_point::max();
@@ -123,11 +138,19 @@ void Application::handle_release(const XEvent& event)
         show_outline(dragged_panel);
     }
     dragged_panel = -1;
+    if (chat)
+        chat->dragging = false;
+    schedule_save();
     update_cursor();
 }
 
 void Application::handle_key(const XEvent& event)
 {
+    if (chat_key(event)) {
+        redraw = true;
+        return;
+    }
+    schedule_save();
     const auto view = viewport();
     hide_popup();
     auto key_event = event.xkey;
@@ -210,7 +233,8 @@ void Application::handle_key(const XEvent& event)
         break;
     case XK_F1:
         show_popup(
-            "Hover or K — inspect symbol\nCtrl+click or F12 — go to "
+            "Tab / Ctrl+L — conversation\nEnter — send, Shift+Enter — newline\n\nHover or K — "
+            "inspect symbol\nCtrl+click or F12 — go to "
             "definition\nShift+F12 — references (click to jump)\nCtrl+Space — "
             "completion suggestions\nAlt+Left — go back\n\nWheel — smooth "
             "zoom\nBlank/middle drag — pan\nDrag file title — move file\nClick "

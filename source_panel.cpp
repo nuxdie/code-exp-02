@@ -1,4 +1,6 @@
 #include "source_panel.h"
+#include <algorithm>
+#include <cctype>
 #include <filesystem>
 
 const char* file_icon(const std::string& filename)
@@ -20,4 +22,15 @@ const char* file_icon(const std::string& filename)
     if (ext == ".cpp" || ext == ".cc" || ext == ".cxx" || ext == ".c")
         return "file_type_cpp.svg";
     return "default_file.svg";
+}
+
+std::string fold_identity(const SourcePanel& panel, int line)
+{
+    auto text = panel.text[line];
+    if (line > 0 && text.find_first_not_of(" \t{") == std::string::npos)
+        text = panel.text[line - 1];
+    text.erase(std::remove_if(text.begin(), text.end(),
+                              [](unsigned char c) { return std::isspace(c) || c == '{'; }),
+               text.end());
+    return text;
 }

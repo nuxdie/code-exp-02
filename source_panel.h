@@ -11,6 +11,7 @@ struct SourcePanel {
     std::string uri;
     std::string source;
     bool cpp = false;
+    int version = 1;
     RsvgHandle* icon = nullptr;
     GpuImage gpu_icon;
     GpuMesh mesh;
@@ -36,3 +37,5 @@ struct SourceHit {
 };
 
 const char* file_icon(const std::string& filename);
+
+std::string fold_identity(const SourcePanel& panel, int line);

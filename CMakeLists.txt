@@ -20,6 +20,11 @@ if(NOT CLANGD_EXECUTABLE)
     set(CLANGD_EXECUTABLE clangd)
 endif()
 configure_file(viewer_config.h.in viewer_config.h @ONLY)
+configure_file(tools/agent_bridge.py agent_bridge.py COPYONLY)
+execute_process(COMMAND "${Python3_EXECUTABLE}" -c "import websockets" RESULT_VARIABLE WEBSOCKETS_RESULT)
+if(NOT WEBSOCKETS_RESULT EQUAL 0)
+    message(FATAL_ERROR "Python websockets is required (install python3-websockets)")
+endif()
 file(COPY fonts/noto-serif DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/fonts")
 file(COPY assets DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
@@ -27,7 +32,7 @@ foreach(FONT_FILE JetBrainsMono-Regular.ttf JetBrainsMono-Bold.ttf JetBrainsMono
     configure_file("fonts/${FONT_FILE}" "fonts/${FONT_FILE}" COPYONLY)
 endforeach()
 
-# Embed each project source separately, including tests and build definitions.
+# Discover project sources for formatting and build dependencies.
 file(GLOB_RECURSE VIEWER_SOURCES CONFIGURE_DEPENDS
     RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
     "*.cpp" "*.h" "*.hpp" "*.cc" "*.cxx" "*.c" "*.in" "*.cmake" "*.py" "*.yml" "CMakeLists.txt" ".clang-format" ".clang-tidy")
@@ -35,7 +40,7 @@ list(FILTER VIEWER_SOURCES EXCLUDE REGEX "(^|/)(build[^/]*|\\.git|\\.cache|fonts
 list(REMOVE_ITEM VIEWER_SOURCES main.cpp camera.h canvas.h)
 list(PREPEND VIEWER_SOURCES main.cpp camera.h canvas.h)
 
-# Format before embedding the files, so the canvas displays the exact built code.
+# Formatting is a required part of build configuration.
 find_program(CLANG_FORMAT_EXECUTABLE NAMES clang-format-18 clang-format REQUIRED)
 set(FORMAT_SOURCES "")
 foreach(SOURCE_PATH IN LISTS VIEWER_SOURCES)
@@ -57,23 +62,22 @@ add_custom_target(format-check
     COMMAND "${CLANG_FORMAT_EXECUTABLE}" --style=file --dry-run --Werror ${FORMAT_SOURCES}
     COMMENT "Checking C++ formatting")
 
-set(SOURCE_ENTRIES "")
 foreach(SOURCE_PATH IN LISTS VIEWER_SOURCES)
-    set(SOURCE_ABSOLUTE "${CMAKE_CURRENT_SOURCE_DIR}/${SOURCE_PATH}")
-    string(FIND "${SOURCE_ABSOLUTE}" "${CMAKE_CURRENT_BINARY_DIR}/" IS_GENERATED)
-    if(IS_GENERATED EQUAL 0)
-        continue()
-    endif()
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${SOURCE_ABSOLUTE}")
-    file(READ "${SOURCE_ABSOLUTE}" SOURCE_TEXT)
-    # A delimiter per file also lets the viewer display its own header template.
-    string(SHA256 SOURCE_HASH "${SOURCE_TEXT}")
-    string(SUBSTRING "${SOURCE_HASH}" 0 15 SOURCE_HASH)
-    set(DELIMITER "S${SOURCE_HASH}")
-    string(APPEND SOURCE_ENTRIES
-        "    {\"${SOURCE_PATH}\", R\"${DELIMITER}(${SOURCE_TEXT})${DELIMITER}\"},\n")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${SOURCE_PATH}")
 endforeach()
-configure_file(source_text.h.in source_text.h @ONLY)
+
+add_library(agent_connection agent_client.cpp conversation.cpp text_input.cpp)
+target_compile_features(agent_connection PUBLIC cxx_std_17)
+target_include_directories(agent_connection PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(agent_connection PUBLIC nlohmann_json::nlohmann_json Threads::Threads)
+add_library(live_build live_build.cpp)
+target_compile_features(live_build PUBLIC cxx_std_17)
+target_include_directories(live_build PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(live_build PUBLIC Threads::Threads)
+add_library(project_watch project_watch.cpp)
+target_compile_features(project_watch PUBLIC cxx_std_17)
+target_include_directories(project_watch PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(project_watch PUBLIC Threads::Threads)
 
 add_library(language_server lsp.cpp)
 target_compile_features(language_server PUBLIC cxx_std_17)
@@ -97,10 +101,10 @@ target_include_directories(gpu_renderer PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(gpu_renderer PUBLIC X11::X11 PkgConfig::TYPOGRAPHY PkgConfig::GPU)
 
 add_library(application_core application.cpp application_model.cpp application_popups.cpp
-    application_view.cpp application_events.cpp application_language.cpp application_math.cpp application_pointer.cpp popup_markup.cpp syntax.cpp source_panel.cpp)
+    application_view.cpp application_events.cpp application_language.cpp application_live.cpp application_chat.cpp application_chat_view.cpp application_chat_input.cpp application_chat_questions.cpp application_composer.cpp application_session.cpp application_reload.cpp application_math.cpp application_pointer.cpp popup_markup.cpp syntax.cpp source_panel.cpp)
 target_compile_features(application_core PUBLIC cxx_std_17)
 target_include_directories(application_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}")
-target_link_libraries(application_core PUBLIC gpu_renderer language_server source_graph math_typesetter)
+target_link_libraries(application_core PUBLIC gpu_renderer language_server source_graph math_typesetter project_watch agent_connection live_build)
 
 add_executable(white_window main.cpp)
 target_compile_features(white_window PRIVATE cxx_std_17)
@@ -109,6 +113,21 @@ target_link_libraries(white_window PRIVATE application_core)
 
 include(CTest)
 if(BUILD_TESTING)
+    add_executable(project_watch_tests tests/project_watch_test.cpp)
+    target_link_libraries(project_watch_tests PRIVATE project_watch)
+    add_test(NAME project_watch COMMAND project_watch_tests)
+    add_executable(conversation_tests tests/conversation_test.cpp)
+    target_link_libraries(conversation_tests PRIVATE agent_connection)
+    add_test(NAME conversation COMMAND conversation_tests)
+    add_executable(live_build_tests tests/live_build_test.cpp)
+    target_link_libraries(live_build_tests PRIVATE live_build)
+    add_test(NAME live_build COMMAND live_build_tests)
+    set_tests_properties(live_build PROPERTIES TIMEOUT 30)
+    add_executable(agent_live_tests tests/agent_live_test.cpp)
+    target_link_libraries(agent_live_tests PRIVATE agent_connection)
+    target_compile_definitions(agent_live_tests PRIVATE TEST_PYTHON="${Python3_EXECUTABLE}" TEST_BRIDGE="${CMAKE_CURRENT_BINARY_DIR}/agent_bridge.py")
+    add_test(NAME agent_live COMMAND agent_live_tests)
+    set_tests_properties(agent_live PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 20)
     add_executable(camera_tests tests/camera_test.cpp)
     target_compile_features(camera_tests PRIVATE cxx_std_17)
     target_include_directories(camera_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -142,10 +161,16 @@ if(BUILD_TESTING)
     target_link_libraries(math_tests PRIVATE math_typesetter)
     add_test(NAME math COMMAND math_tests)
     set_tests_properties(math PROPERTIES TIMEOUT 20)
+    add_executable(live_canvas_tests tests/live_canvas_test.cpp)
+    target_link_libraries(live_canvas_tests PRIVATE application_core)
+    add_test(NAME live_canvas COMMAND live_canvas_tests)
+    set_tests_properties(live_canvas PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 35)
     add_executable(integration_tests tests/integration_test.cpp)
     target_link_libraries(integration_tests PRIVATE application_core)
     add_test(NAME integration COMMAND integration_tests)
-    set_tests_properties(integration PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 45)
+    set_tests_properties(integration PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 45 ENVIRONMENT "SOURCE_CANVAS_DISABLE_AGENT=1;SOURCE_CANVAS_AUTO_BUILD=0;SOURCE_CANVAS_DISABLE_SESSION=1")
+    add_test(NAME agent_bridge COMMAND "${Python3_EXECUTABLE}" -m unittest discover
+        -s "${CMAKE_CURRENT_SOURCE_DIR}/tests" -p test_agent_bridge.py)
     add_test(NAME quality_policy COMMAND "${Python3_EXECUTABLE}" -m unittest discover
         -s "${CMAKE_CURRENT_SOURCE_DIR}/tests" -p test_quality.py)
 endif()
@@ -157,5 +182,5 @@ add_custom_target(quality
     USES_TERMINAL
     COMMENT "Checking formatting, maintainability, static analysis and tests")
 if(BUILD_TESTING)
-    add_dependencies(quality camera_tests canvas_tests lsp_tests gpu_tests structure_tests syntax_tests popup_tests math_tests integration_tests)
+    add_dependencies(quality project_watch_tests conversation_tests live_build_tests agent_live_tests live_canvas_tests camera_tests canvas_tests lsp_tests gpu_tests structure_tests syntax_tests popup_tests math_tests integration_tests)
 endif()

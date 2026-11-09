@@ -37,7 +37,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -72,7 +72,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -106,7 +106,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -143,7 +143,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -180,7 +180,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -217,7 +217,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -254,7 +254,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -291,7 +291,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -328,7 +328,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -365,7 +365,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -396,7 +396,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -431,7 +431,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -467,7 +467,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -508,7 +508,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -542,7 +542,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -577,7 +577,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -612,7 +612,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -647,7 +647,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -683,7 +683,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -718,7 +718,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -753,7 +753,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -788,7 +788,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -825,7 +825,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -860,7 +860,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -895,7 +895,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -934,7 +934,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -973,7 +973,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -1012,7 +1012,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -1051,7 +1051,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -1085,7 +1085,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
       }
     },
     {
@@ -1124,7 +1124,95 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "captured_embedded_source_snapshot"
+        "evidence": "working_tree_after_completed_feature"
+      }
+    },
+    {
+      "id": "decision-01a1c0af-1a1e-73c2-8cdd-4eae1359926c",
+      "statement": "ok. and finally i want these chats with ai agent to be part of the canvas too. the whole idea is to have what we have here right there. so i dont have to keep a separate terminal open. and also this is very important. i want the window to represent the latest state of code and hot reload while agent does stuff to it. think you can manage that?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c0af-1a0b-75e2-a51c-bdd0a8f81788",
+        "message_id": "01a1c0af-1a1e-73c2-8cdd-4eae1359926c",
+        "turn_started_at": 1794234063,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531211+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "The canvas attaches to the existing Codex conversation, reads current source from disk, and separates immediate source refresh from background rebuilds. Reload state preserves the conversation and editing context; failed builds retain the working viewer."
+      },
+      "artifacts": [
+        "agent_client.*",
+        "conversation.*",
+        "chat_canvas.h",
+        "text_input.*",
+        "tools/agent_bridge.py",
+        "project_watch.*",
+        "live_build.*",
+        "application_chat*.cpp",
+        "application_live.cpp",
+        "application_reload.cpp",
+        "application_session.cpp",
+        "main.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "working_tree_after_completed_feature"
+      }
+    },
+    {
+      "id": "decision-01a1c0bc-e2b0-7931-84cf-f068aef9fb1e",
+      "statement": "Yes, reload the viewer too",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c0af-1a0b-75e2-a51c-bdd0a8f81788",
+        "message_id": "01a1c0bc-e2b0-7931-84cf-f068aef9fb1e",
+        "turn_started_at": 1794234063,
+        "context": "I’ll make source cards update immediately from disk. Should successful builds also reload the running viewer itself while preserving the conversation and view?"
+      },
+      "recorded_at": "2026-11-09T15:50:12.531227+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "The canvas attaches to the existing Codex conversation, reads current source from disk, and separates immediate source refresh from background rebuilds. Reload state preserves the conversation and editing context; failed builds retain the working viewer."
+      },
+      "artifacts": [
+        "agent_client.*",
+        "conversation.*",
+        "chat_canvas.h",
+        "text_input.*",
+        "tools/agent_bridge.py",
+        "project_watch.*",
+        "live_build.*",
+        "application_chat*.cpp",
+        "application_live.cpp",
+        "application_reload.cpp",
+        "application_session.cpp",
+        "main.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "working_tree_after_completed_feature"
       }
     }
   ]

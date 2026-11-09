@@ -54,6 +54,7 @@ void Application::draw()
 
     draw_headers(view);
     draw_fold_toggle();
+    draw_conversation();
     draw_popup();
     renderer->present();
     update_cursor();
@@ -322,9 +323,10 @@ void Application::add_popup_syntax(PangoAttrList* attributes, const std::string&
     }
 }
 
-void Application::style_popup_prose(PangoAttrList* attributes)
+void Application::style_document_spans(PangoAttrList* attributes,
+                                       const std::vector<PopupSpan>& spans)
 {
-    for (const auto& span : popup_styles) {
+    for (const auto& span : spans) {
         auto add = [&](PangoAttribute* attr) {
             attr->start_index = static_cast<guint>(span.begin);
             attr->end_index = static_cast<guint>(span.begin + span.length);
@@ -348,40 +350,73 @@ void Application::style_popup_prose(PangoAttrList* attributes)
     }
 }
 
-void Application::update_popup_mesh(int layout_width)
+void Application::configure_document(PangoLayout* layout, const PopupDocument& document,
+                                     int layout_width, bool prose)
 {
-    auto* font = pango_font_description_from_string(popup_prose ? "Noto Serif" : "JetBrains Mono");
-    pango_font_description_set_absolute_size(font, (popup_prose ? 17 : 14) * PANGO_SCALE);
-    pango_layout_set_font_description(popup_layout, font);
+    auto* font = pango_font_description_from_string(prose ? "Noto Serif" : "JetBrains Mono");
+    pango_font_description_set_absolute_size(font, (prose ? 17 : 14) * PANGO_SCALE);
+    pango_layout_set_font_description(layout, font);
     pango_font_description_free(font);
-    pango_layout_set_spacing(popup_layout, (popup_prose ? 5 : 2) * PANGO_SCALE);
-    pango_layout_set_width(popup_layout, layout_width * PANGO_SCALE);
-    pango_layout_set_text(popup_layout, popup_text.c_str(), -1);
+    pango_layout_set_single_paragraph_mode(layout, FALSE);
+    pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
+    pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_NONE);
+    pango_layout_set_spacing(layout, (prose ? 5 : 2) * PANGO_SCALE);
+    pango_layout_set_width(layout, layout_width * PANGO_SCALE);
+    pango_layout_set_text(layout, document.text.c_str(), -1);
     auto* attributes = pango_attr_list_new();
     pango_attr_list_insert(attributes, pango_attr_font_features_new("liga=1,clig=1,calt=1"));
-    style_popup_prose(attributes);
-    cached_popup_width = layout_width;
-    shape_popup_math(attributes);
+    style_document_spans(attributes, document.styles);
+    shape_document_math(attributes, document.math, layout_width);
     HighlightState state;
-    std::istringstream input(popup_text);
+    std::istringstream input(document.text);
     std::string line;
     std::size_t offset = 0, index = 0;
     while (std::getline(input, line)) {
-        if (index < popup_code_lines.size() && popup_code_lines[index])
+        if (index < document.code_lines.size() && document.code_lines[index])
             add_popup_syntax(attributes, line, offset, state);
         else
             state = {};
         offset += line.size() + 1;
         ++index;
     }
-    for (const auto& [begin, length] : popup_inline_code) {
+    for (const auto& [begin, length] : document.inline_code) {
         HighlightState inline_state;
-        add_popup_syntax(attributes, popup_text.substr(begin, length), begin, inline_state);
+        add_popup_syntax(attributes, document.text.substr(begin, length), begin, inline_state);
     }
-    pango_layout_set_attributes(popup_layout, attributes);
+    pango_layout_set_attributes(layout, attributes);
     pango_attr_list_unref(attributes);
-    upload_popup_content();
+}
+
+void Application::update_popup_mesh(int layout_width)
+{
+    PopupDocument document;
+    document.text = popup_text;
+    document.code_lines = popup_code_lines;
+    document.styles = popup_styles;
+    document.math = popup_math;
+    document.inline_code = popup_inline_code;
+    configure_document(popup_layout, document, layout_width, popup_prose);
+    upload_document_mesh(popup_mesh, popup_layout, popup_math);
     cached_popup = popup_text;
     cached_popup_width = layout_width;
     cached_popup_code_lines = popup_code_lines;
+}
+
+void Application::update_document(DocumentView& view, const std::string& source, int width,
+                                  bool prose)
+{
+    if (view.source == source && view.width == width && view.layout &&
+        view.generation == document_generation)
+        return;
+    view.source = source;
+    view.width = width;
+    view.generation = document_generation;
+    view.document = popup_document(source, prose);
+    if (!view.layout)
+        view.layout.reset(pango_layout_copy(base_layout));
+    configure_document(view.layout.get(), view.document, width, prose);
+    upload_document_mesh(view.mesh, view.layout.get(), view.document.math);
+    int text_width = 0, height = 0;
+    pango_layout_get_pixel_size(view.layout.get(), &text_width, &height);
+    view.size = {static_cast<double>(text_width), static_cast<double>(height)};
 }

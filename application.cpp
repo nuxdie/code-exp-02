@@ -1,5 +1,6 @@
 #include "application.h"
-#include "source_text.h"
+#include <X11/Xatom.h>
+#include <unistd.h>
 
 bool Application::initialize()
 {
@@ -45,6 +46,9 @@ bool Application::initialize()
     window = renderer->window();
 
     XStoreName(display, window, "Source Code - White Window");
+    const unsigned long process = static_cast<unsigned long>(getpid());
+    XChangeProperty(display, window, XInternAtom(display, "_NET_WM_PID", False), XA_CARDINAL, 32,
+                    PropModeReplace, reinterpret_cast<const unsigned char*>(&process), 1);
     XSelectInput(display, window,
                  ExposureMask | StructureNotifyMask | KeyPressMask | ButtonPressMask |
                      ButtonReleaseMask | PointerMotionMask | LeaveWindowMask);
@@ -86,28 +90,8 @@ bool Application::initialize()
         g_object_unref(layout);
     }
 
-    for (const auto& file : source_files) {
-        auto panel = make_panel(file.path, file.text);
-        update_mesh(panel);
-        if (panel.cpp && documents.size() < 3) {
-            documents.push_back({panel.uri, file.text});
-            opened_documents.insert(panel.uri);
-        }
-        file_sizes.push_back(panel.bounds.size);
-        panels.push_back(std::move(panel));
-    }
-
-    relayout();
-
-    try {
-        if (!benchmark)
-            language_server = std::make_unique<lsp::LanguageServer>(
-                clangd_executable, project_root, project_build, std::move(documents));
-    } catch (const std::exception& error) {
-        std::cerr << "Language features unavailable: " << error.what() << '\n';
-    }
-
-    camera.reset(viewport());
+    initialize_workspace();
+    initialize_reload();
 
     popup_layout = pango_layout_copy(base_layout);
     pango_layout_set_single_paragraph_mode(popup_layout, FALSE);
@@ -180,7 +164,8 @@ int Application::run()
         while (running && XPending(display) > 0) {
             XEvent event{};
             XNextEvent(display, &event);
-            handle_event(event);
+            if (!XFilterEvent(&event, None))
+                handle_event(event);
         }
         if (!running)
             break;
@@ -205,13 +190,21 @@ int Application::run()
         wait_for_work(next_frame);
     }
 
-    return 0;
+    return reload_requested ? reload_exit_code : 0;
 }
 
 Application::~Application()
 {
     if (!display)
         return;
+    save_session();
+    live_build.reset();
+    if (chat)
+        chat->client.reset();
+    if (input_context)
+        XDestroyIC(input_context);
+    if (input_method)
+        XCloseIM(input_method);
     if (drag_button)
         XUngrabPointer(display, CurrentTime);
     if (normal_cursor)
@@ -225,15 +218,10 @@ Application::~Application()
         g_object_unref(popup_layout);
     if (base_layout)
         g_object_unref(base_layout);
-    for (const auto& panel : panels) {
-        g_object_unref(panel.title);
-        for (auto* layout : panel.lines)
-            g_object_unref(layout);
-        for (auto* attributes : panel.lexical)
-            pango_attr_list_unref(attributes);
-        for (auto* label : panel.fold_labels)
-            g_object_unref(label);
-    }
+    project_watcher.reset();
+    for (auto& panel : panels)
+        release_panel(panel);
+
     for (const auto& icon : icons)
         if (icon.second)
             g_object_unref(icon.second);
@@ -249,6 +237,11 @@ Application::~Application()
 
 void Application::update_timers(Clock::time_point now)
 {
+    poll_project();
+    poll_agent();
+    poll_reload(now);
+    if (save_due <= now)
+        save_session();
     poll_math();
     if (popup_dismiss_due <= now) {
         popup_dismiss_due = Clock::time_point::max();
@@ -291,10 +284,22 @@ void Application::wait_for_work(Clock::time_point next_frame)
                           .count())));
         timeout = timeout < 0 ? dismiss_wait : std::min(timeout, dismiss_wait);
     }
+    const auto pending =
+        std::min({save_due, chat ? chat->reconnect : Clock::time_point::max(),
+                  build_running ? Clock::time_point::max() : rebuild_due, binary_check_due});
+    if (pending != Clock::time_point::max()) {
+        const int delay = static_cast<int>(std::max(
+            0.0,
+            std::ceil(std::chrono::duration<double, std::milli>(pending - Clock::now()).count())));
+        timeout = timeout < 0 ? delay : std::min(timeout, delay);
+    }
     pollfd connections[] = {{ConnectionNumber(display), POLLIN, 0},
                             {language_server ? language_server->event_fd() : -1, POLLIN, 0},
-                            {math_typesetter ? math_typesetter->event_fd() : -1, POLLIN, 0}};
-    if (poll(connections, 3, timeout) < 0 && errno != EINTR) {
+                            {math_typesetter ? math_typesetter->event_fd() : -1, POLLIN, 0},
+                            {project_watcher ? project_watcher->event_fd() : -1, POLLIN, 0},
+                            {chat && chat->client ? chat->client->event_fd() : -1, POLLIN, 0},
+                            {live_build ? live_build->event_fd() : -1, POLLIN, 0}};
+    if (poll(connections, 6, timeout) < 0 && errno != EINTR) {
         std::cerr << "Could not wait for window input.\n";
         running = false;
     }

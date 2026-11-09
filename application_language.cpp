@@ -4,6 +4,10 @@ void Application::handle_message(const lsp::Message& message)
 {
     if (std::getenv("SOURCE_CANVAS_TRACE_LSP"))
         std::cerr << "LSP response " << message.method << " id=" << message.id << '\n';
+    const auto panel = std::find_if(panels.begin(), panels.end(),
+                                    [&](const auto& entry) { return entry.uri == message.uri; });
+    if (message.version > 0 && (panel == panels.end() || panel->version != message.version))
+        return;
     if (!message.error.empty()) {
         std::cerr << "Language feature: " << message.error << '\n';
         if (message.method == "error") {
