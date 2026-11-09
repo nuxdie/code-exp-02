@@ -74,6 +74,40 @@
         "original_git_history": false,
         "evidence": "public_file_change_patch_replay"
       }
+    },
+    {
+      "id": "decision-01a1bff4-3a56-7693-8ce1-5e32c337495c",
+      "statement": "good. i want syntax highlited",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1bff4-3a44-7350-a7bf-a83025bb3fca",
+        "message_id": "01a1bff4-3a56-7693-8ce1-5e32c337495c",
+        "turn_started_at": 1794221816,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531075+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "A lexical fallback distinguishes code tokens so the source is easier to read before language-server metadata is available."
+      },
+      "artifacts": [
+        "main.cpp",
+        "syntax.*"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "public_file_change_patch_replay"
+      }
     }
   ]
 }

@@ -3,12 +3,146 @@
 #include <X11/keysym.h>
 
 #include <algorithm>
+#include <array>
+#include <cctype>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "source_text.h"
+
+enum class Syntax { Plain, Keyword, Type, String, Comment, Number, Directive, Function };
+
+struct Token {
+    std::size_t begin;
+    std::size_t length;
+    Syntax syntax;
+};
+
+struct HighlightState {
+    bool block_comment = false;
+    std::string raw_string_end;
+};
+
+// Keep comment and raw string state between lines, even when they are offscreen.
+std::vector<Token> highlight(const std::string& line, HighlightState& state)
+{
+    static const std::unordered_set<std::string> keywords = {
+        "alignas", "alignof", "and", "and_eq", "asm", "auto", "bitand", "bitor",
+        "break", "case", "catch", "class", "compl", "concept", "const", "consteval",
+        "constexpr", "constinit", "const_cast", "continue", "co_await", "co_return",
+        "co_yield", "decltype", "default", "delete", "do", "dynamic_cast", "else",
+        "enum", "explicit", "export", "extern", "false", "for", "friend", "goto",
+        "if", "inline", "mutable", "namespace", "new", "noexcept", "not", "not_eq",
+        "nullptr", "operator", "or", "or_eq", "private", "protected", "public",
+        "register", "reinterpret_cast", "requires", "return", "sizeof", "static",
+        "static_assert", "static_cast", "struct", "switch", "template", "this",
+        "thread_local", "throw", "true", "try", "typedef", "typeid", "typename",
+        "union", "using", "virtual", "volatile", "while", "xor", "xor_eq"
+    };
+    static const std::unordered_set<std::string> types = {
+        "bool", "char", "char8_t", "char16_t", "char32_t", "double", "float", "int",
+        "long", "short", "signed", "unsigned", "void", "wchar_t", "size_t",
+        "string", "vector", "array", "unordered_set", "istringstream",
+        "Display", "Window", "Atom", "GC", "XEvent", "XFontStruct", "XColor",
+        "Syntax", "Token", "HighlightState"
+    };
+    auto identifier = [](char c) {
+        return std::isalnum(static_cast<unsigned char>(c)) || c == '_';
+    };
+
+    std::vector<Token> tokens;
+    const auto first = line.find_first_not_of(" \t");
+    bool include_header = false;
+    std::size_t i = 0;
+    while (i < line.size()) {
+        const auto begin = i;
+        Syntax syntax = Syntax::Plain;
+        if (state.block_comment) {
+            const auto end = line.find("*/", i);
+            i = end == std::string::npos ? line.size() : end + 2;
+            state.block_comment = end == std::string::npos;
+            syntax = Syntax::Comment;
+        } else if (!state.raw_string_end.empty()) {
+            const auto end = line.find(state.raw_string_end, i);
+            i = end == std::string::npos ? line.size() : end + state.raw_string_end.size();
+            if (end != std::string::npos) state.raw_string_end.clear();
+            syntax = Syntax::String;
+        } else if (line.compare(i, 2, "//") == 0) {
+            i = line.size();
+            syntax = Syntax::Comment;
+        } else if (line.compare(i, 2, "/*") == 0) {
+            state.block_comment = true;
+            i += 2;
+            const auto end = line.find("*/", i);
+            i = end == std::string::npos ? line.size() : end + 2;
+            state.block_comment = end == std::string::npos;
+            syntax = Syntax::Comment;
+        } else if (line.compare(i, 2, "R\"") == 0 &&
+                   line.find('(', i + 2) != std::string::npos &&
+                   line.find('(', i + 2) - (i + 2) <= 16) {
+            const auto opening = line.find('(', i + 2);
+            state.raw_string_end = ")" + line.substr(i + 2, opening - i - 2) + "\"";
+            const auto end = line.find(state.raw_string_end, opening + 1);
+            i = end == std::string::npos ? line.size() : end + state.raw_string_end.size();
+            if (end != std::string::npos) state.raw_string_end.clear();
+            syntax = Syntax::String;
+        } else if (line[i] == '"' || line[i] == '\'') {
+            const char quote = line[i++];
+            while (i < line.size()) {
+                if (line[i] == '\\') {
+                    i += std::min<std::size_t>(2, line.size() - i);
+                } else if (line[i++] == quote) {
+                    break;
+                }
+            }
+            syntax = Syntax::String;
+        } else if (i == first && line[i] == '#') {
+            ++i;
+            while (i < line.size() && (line[i] == ' ' || line[i] == '\t')) ++i;
+            const auto directive = i;
+            while (i < line.size() && identifier(line[i])) ++i;
+            include_header = line.substr(directive, i - directive) == "include";
+            syntax = Syntax::Directive;
+        } else if (include_header && line[i] == '<') {
+            const auto end = line.find('>', i + 1);
+            i = end == std::string::npos ? line.size() : end + 1;
+            syntax = Syntax::String;
+        } else if (std::isdigit(static_cast<unsigned char>(line[i])) ||
+                   (line[i] == '.' && i + 1 < line.size() &&
+                    std::isdigit(static_cast<unsigned char>(line[i + 1])))) {
+            ++i;
+            while (i < line.size()) {
+                if (identifier(line[i]) || line[i] == '.' || line[i] == '\'') {
+                    ++i;
+                } else if ((line[i] == '+' || line[i] == '-') &&
+                           std::string("eEpP").find(line[i - 1]) != std::string::npos) {
+                    ++i;
+                } else {
+                    break;
+                }
+            }
+            syntax = Syntax::Number;
+        } else if (identifier(line[i])) {
+            while (i < line.size() && identifier(line[i])) ++i;
+            const auto word = line.substr(begin, i - begin);
+            const auto next = line.find_first_not_of(" \t", i);
+            if (keywords.count(word)) syntax = Syntax::Keyword;
+            else if (types.count(word)) syntax = Syntax::Type;
+            else if (next != std::string::npos && line[next] == '(') syntax = Syntax::Function;
+        } else {
+            ++i;
+        }
+        if (!tokens.empty() && tokens.back().syntax == syntax) {
+            tokens.back().length += i - begin;
+        } else {
+            tokens.push_back({begin, i - begin, syntax});
+        }
+    }
+    return tokens;
+}
 
 int main()
 {
@@ -43,13 +177,28 @@ int main()
     XSetFont(display, gc, font->fid);
     XSetForeground(display, gc, BlackPixel(display, screen));
 
+    // Colors follow the order of the Syntax enum and stay readable on white.
+    const std::array<const char*, 8> color_names = {
+        "#24292f", "#0033b3", "#6f42c1", "#a31515",
+        "#39703a", "#006b6b", "#8546a3", "#795e26"
+    };
+    std::array<unsigned long, 8> colors{};
+    for (std::size_t i = 0; i < colors.size(); ++i) {
+        XColor color{}, exact{};
+        colors[i] = XAllocNamedColor(display, DefaultColormap(display, screen),
+            color_names[i], &color, &exact) ? color.pixel : BlackPixel(display, screen);
+    }
+
     std::vector<std::string> lines;
+    std::vector<std::vector<Token>> highlighted_lines;
+    HighlightState highlight_state;
     std::istringstream source(source_text);
     std::string line;
     int text_width = 0;
     while (std::getline(source, line)) {
         text_width = std::max(text_width, XTextWidth(
             font, line.c_str(), static_cast<int>(line.size())));
+        highlighted_lines.push_back(highlight(line, highlight_state));
         lines.push_back(line);
     }
 
@@ -76,10 +225,15 @@ int main()
                 break;
             }
             const auto& text = lines[index];
-            XDrawString(display, window, gc,
-                margin - horizontal_offset,
-                margin + font->ascent + row * line_height,
-                text.c_str(), static_cast<int>(text.size()));
+            int x = margin - horizontal_offset;
+            const int y = margin + font->ascent + row * line_height;
+            for (const auto& token : highlighted_lines[index]) {
+                const char* start = text.c_str() + token.begin;
+                const int length = static_cast<int>(token.length);
+                XSetForeground(display, gc, colors[static_cast<std::size_t>(token.syntax)]);
+                XDrawString(display, window, gc, x, y, start, length);
+                x += XTextWidth(font, start, length);
+            }
         }
     };
 
