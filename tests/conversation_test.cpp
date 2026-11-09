@@ -105,6 +105,9 @@ void test_contextual_conversation()
     expect(model.submit("Make this smoother"), "A connected fresh card must accept a prompt");
     request = take_request(model, "thread/start");
     expect(request["params"]["cwd"] == "/project", "New cards must retain the project workspace");
+    expect(request["params"]["approvalPolicy"] == "never" &&
+               request["params"]["sandbox"] == "danger-full-access",
+           "New canvas agents must start with no approval prompts and full access");
     model.receive({{"id", request["id"]}, {"result", {{"thread", {{"id", "new-thread"}}}}}});
     const auto first_turn = model.outgoing();
     expect(first_turn.size() == 1 && first_turn.front()["method"] == "turn/start" &&
@@ -211,6 +214,31 @@ void test_input()
     input.insert("new");
     expect(input.text == "new", "Select all and replacement must behave like a normal composer");
 }
+void test_thread_titles()
+{
+    Conversation model("/project");
+    model.select_thread("thread");
+    const auto request = take_request(model, "thread/resume");
+    model.receive({{"id", request["id"]},
+                   {"result", {{"thread", {{"id", "thread"}, {"name", "Saved title λ"}}}}}});
+    expect(model.title == "Saved title λ", "Resuming must use Codex's saved thread title");
+    model.receive({{"method", "thread/name/updated"},
+                   {"params", {{"threadId", "other-thread"}, {"threadName", "Other title"}}}});
+    expect(model.title == "Saved title λ", "Another agent's title must not rename this chat");
+    const auto revision = model.revision;
+    model.receive({{"method", "thread/name/updated"},
+                   {"params", {{"threadId", "thread"}, {"threadName", "New Codex title 🌍"}}}});
+    expect(model.title == "New Codex title 🌍" && model.revision > revision,
+           "A Codex name update must refresh the chat title without waiting for a resume");
+    model.receive({{"method", "thread/name/updated"},
+                   {"params", {{"threadId", "thread"}, {"threadName", nullptr}}}});
+    expect(model.title == "Conversation", "Clearing a Codex title must restore the default label");
+    model.select_thread("untitled");
+    const auto untitled = take_request(model, "thread/resume");
+    model.receive({{"id", untitled["id"]},
+                   {"result", {{"thread", {{"id", "untitled"}, {"name", nullptr}}}}}});
+    expect(model.title == "Conversation", "Untitled threads must have a safe header label");
+}
 int main()
 {
     try {
@@ -219,6 +247,7 @@ int main()
         test_contextual_conversation();
         test_unsent_thread_recovery();
         test_history_failure_during_send();
+        test_thread_titles();
         std::cout
             << "Conversation streaming, history, steering, approvals and Unicode input passed.\n";
     } catch (const std::exception& error) {

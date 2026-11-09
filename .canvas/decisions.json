@@ -1672,6 +1672,844 @@
       }
     },
     {
+      "id": "decision-01a1c22d-c5e0-7791-acca-00a1874aaac5",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c22d-c5e0-7791-acca-00a1874aaac5",
+        "thread_id": "01a1c22d-bed7-7e53-9b4e-93ed8e92d857",
+        "turn_id": "01a1c22d-bee3-7eb2-b31c-b71b133882a8"
+      },
+      "statement": "is this the line that draws that \"Conversations\" in top right?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T21:19:02.115007+00:00",
+      "statement_hash": "b77256f6d34992162da17bd9421b189cb483613e5606f829d84a96562423e48d",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c22e-af9a-7191-968e-c849b59125ca",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c22e-af9a-7191-968e-c849b59125ca",
+        "thread_id": "01a1c22d-bed7-7e53-9b4e-93ed8e92d857",
+        "turn_id": "01a1c22e-af89-78c0-845d-8e578a7975f4"
+      },
+      "statement": "what does that \"Conversations\" btn actually do?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T21:20:01.958003+00:00",
+      "statement_hash": "c0814918c980bf78c5438b392ce2e72df50730b3b79808ac3086fe4e14ca6952",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c22f-5e57-71e0-ad0a-dbc569433690",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c22f-5e57-71e0-ad0a-dbc569433690",
+        "thread_id": "01a1c22d-bed7-7e53-9b4e-93ed8e92d857",
+        "turn_id": "01a1c22f-5e47-7510-abd7-dd38e2ac24f5"
+      },
+      "statement": "why is it empty now that i click it?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T21:20:46.693137+00:00",
+      "statement_hash": "80e735c2dc07816f2cd0f9a1d1ece26f633cdaaa5685735ac39bf5cb9af52589",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c231-b36c-7021-a3fe-b85315383465",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c231-b36c-7021-a3fe-b85315383465",
+        "thread_id": "01a1c231-af28-7991-9743-2ad5429a6c9d",
+        "turn_id": "01a1c231-af34-7362-993a-da962ad1bf74"
+      },
+      "statement": "we dont need to display each command in our conversation view. and we dont need to preface the \"agetn\" \"you\" thing. in fact, just style the conversation as a IM chat. also remove the top left Conversation line from chrome and bittom stop steer btns",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T21:23:19.534517+00:00",
+      "statement_hash": "806c246163b52e6461da310dac0ad67044a2459436c410405d2f849bf62ed33a",
+      "artifacts": [
+        "application_chat.cpp",
+        "application_chat_input.cpp",
+        "application_chat_questions.cpp",
+        "application_chat_view.cpp",
+        "application_reload.cpp",
+        "application_text_targets.cpp",
+        "chat_canvas.h",
+        "tests/agent_windows_test.cpp",
+        "tests/selection_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Render human and agent messages as chat bubbles, omit command activity and role prefixes from the transcript, and simplify conversation chrome while keeping text selection aligned with the rendered bubbles.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c235-da75-7ab3-822a-00195cae933d",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c235-da75-7ab3-822a-00195cae933d",
+        "thread_id": "01a1c231-af28-7991-9743-2ad5429a6c9d",
+        "turn_id": "01a1c231-af34-7362-993a-da962ad1bf74"
+      },
+      "statement": "we dont need the evidence window on startup. and instead of \"new agent here\" just open a input box right there so user can start typing immediately. if they type something and send then that becomes the conversation",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T21:27:51.678438+00:00",
+      "statement_hash": "9f837a93bd3ba042987b100193c0f969b1d24d40b039d5a2ba03896d611eb962",
+      "artifacts": [
+        "application.h",
+        "application_agent_context.cpp",
+        "application_agent_menu.cpp",
+        "application_agent_session.cpp",
+        "application_agent_windows.cpp",
+        "application_chat_input.cpp",
+        "application_events.cpp",
+        "application_intent.cpp",
+        "application_intent_input.cpp",
+        "application_intent_view.cpp",
+        "application_live.cpp",
+        "application_model.cpp",
+        "application_popups.cpp",
+        "application_session.cpp",
+        "application_shortcuts.cpp",
+        "application_text_targets.cpp",
+        "chat_canvas.h",
+        "intent_canvas.h",
+        "tests/agent_windows_test.cpp",
+        "tests/intent_canvas_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Keep evidence hidden until requested and open a contextual message composer directly at the pointer. Persist composing state, convert a sent prompt into a full conversation, and include only visible intent cards in canvas geometry and hit testing.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c23d-646b-7ff2-8e9c-c3cbda2fc10c",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c23d-646b-7ff2-8e9c-c3cbda2fc10c",
+        "thread_id": "01a1c231-af28-7991-9743-2ad5429a6c9d",
+        "turn_id": "01a1c231-af34-7362-993a-da962ad1bf74"
+      },
+      "statement": "btw it needs to open agent in yolo mode like bypass all permissions",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T21:36:05.745778+00:00",
+      "statement_hash": "e98f4035c6c141dc26320d0bc355de9ef75da2f3a9725feb7965af76702b88ed",
+      "artifacts": [
+        "conversation.cpp",
+        "tests/conversation_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Start new canvas threads with approvalPolicy never and sandbox danger-full-access, as explicitly requested, and verify the outgoing thread/start parameters.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c242-74ea-79c2-b37a-9079d5fd35cc",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c242-74ea-79c2-b37a-9079d5fd35cc",
+        "thread_id": "01a1c242-7107-7433-bcd8-fd2a6f36717c",
+        "turn_id": "01a1c242-7115-7e83-85c9-c12f241f60ef"
+      },
+      "statement": "i dont need send btn in conversations with agent",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T21:41:37.646414+00:00",
+      "statement_hash": "b642ddd33c405af8c81c7da359af1a12a37fa2afb86dda04663b888bdae776c1",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c244-69db-7f81-8459-f9014f6bf246",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c244-69db-7f81-8459-f9014f6bf246",
+        "thread_id": "01a1c242-7107-7433-bcd8-fd2a6f36717c",
+        "turn_id": "01a1c244-69ca-7290-a119-67a8a52efb10"
+      },
+      "statement": "clicking outside of rightclick new agent prompt if its empty dismisses it",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T21:43:45.898942+00:00",
+      "statement_hash": "710f6fea11f6e7bed5dc465e3fdc1bc3b31c49b7f273f8a0c2544860ed95d9e2",
+      "artifacts": [
+        "application.h",
+        "application_agent_windows.cpp",
+        "application_events.cpp",
+        "tests/agent_windows_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Dismiss an unsent empty or whitespace-only contextual composer on an outside canvas click while retaining typed drafts.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c246-b7b8-7350-87f7-949effb5fe6f",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c246-b7b8-7350-87f7-949effb5fe6f",
+        "thread_id": "01a1c246-b3bb-7883-af46-1d208f105170",
+        "turn_id": "01a1c246-b3c8-7282-9865-1c909afc82e0"
+      },
+      "statement": "i want the actions that agent is doing still show a working indicator in the conversation log. not the commands themselves, but just something to make it clear the work is happening still. something nonverbal",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T21:46:16.899435+00:00",
+      "statement_hash": "5ddeb43528fcfe145b0f0bbe323caa83cad0a5524b5a74748856c6e7411b4326",
+      "artifacts": [
+        "application.cpp",
+        "application.h",
+        "application_agent_windows.cpp",
+        "application_chat.cpp",
+        "application_chat_view.cpp",
+        "chat_canvas.h",
+        "tests/agent_windows_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Display animated working dots during active connected agent turns without exposing individual command entries; schedule redraws and stop the animation when the agent finishes, disconnects, or waits for user input.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c24e-6c5a-75e0-b60e-3463e364225a",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c24e-6c5a-75e0-b60e-3463e364225a",
+        "thread_id": "01a1c24e-67a9-7142-b1e9-e1c5109ca61a",
+        "turn_id": "01a1c24e-67b9-7132-8cd0-27571c0dc760"
+      },
+      "statement": "i want middle click on windows to close things like chats and intent evicdense and such. like we dont need little close btns. simply middle clicking would close the thing",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T21:54:41.885115+00:00",
+      "statement_hash": "5a09b7aab76ee56989cee931fafb70af4a06fdd2e454c22a6f386d5b9d589259",
+      "artifacts": [
+        "application.h",
+        "application_agent_windows.cpp",
+        "application_events.cpp",
+        "application_intent_input.cpp",
+        "application_shortcuts.cpp",
+        "chat_canvas.h",
+        "tests/agent_windows_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Use middle-click to dismiss the topmost conversation, intent card, search, or popup while keeping middle-drag panning on source and blank canvas. Clear selections belonging to closed windows and retain conversation drafts.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c24f-21c9-7120-897a-de6db557343e",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c24f-21c9-7120-897a-de6db557343e",
+        "thread_id": "01a1c24f-1e05-7bb0-a6a3-992b67da4a77",
+        "turn_id": "01a1c24f-1e12-7892-b6d8-31d050bd5821"
+      },
+      "statement": "when new agent window opens from a prompt. i want camera to pan so it fits",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T21:55:28.331790+00:00",
+      "statement_hash": "dcea5f4bec1885da1a11ed6465a9dc0d9f6e56f4fab6897e2d3242806f120f7b",
+      "artifacts": [
+        "application_chat_input.cpp",
+        "tests/agent_windows_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "When an accepted contextual prompt becomes a full conversation, expand its card and focus the camera on it.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c250-3572-7ff1-bf25-d3119636fef7",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c250-3572-7ff1-bf25-d3119636fef7",
+        "thread_id": "01a1c250-315f-7903-b9c8-62d6ae3b1f44",
+        "turn_id": "01a1c250-318a-70e2-a698-9cd1f581b0be"
+      },
+      "statement": "why do we say \"This part of the canvas\"? its not needed. if there's context. just mention exact lines/pieces, if none then dont mention any in the chat log",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T21:56:38.918656+00:00",
+      "statement_hash": "c46d6be97e2f9c5061350d3d2689a0a33deed3659a06761031164336dbd057ed",
+      "artifacts": [
+        "application_agent_context.cpp",
+        "tests/agent_windows_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Show concrete source locations, symbols, and selected text in conversation context while omitting generic canvas-context messages when no concrete source context exists.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c254-668e-7af2-abb9-b2c7f7f754e8",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c254-668e-7af2-abb9-b2c7f7f754e8",
+        "thread_id": "01a1c254-625b-73f3-acb7-ee7777aeb8ff",
+        "turn_id": "01a1c254-6268-74d0-a396-96804911a7ca"
+      },
+      "statement": "in usages list, if there's only one usage, just jump to it, no need to show the list. also no need to show usages title or help tip either in the usages window",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T22:01:13.616541+00:00",
+      "statement_hash": "d3a9ef1afb325331a6c6065bcbb9c8db9a10252c9e1b78ac5bdf3e911e271b1e",
+      "artifacts": [
+        "application_events.cpp",
+        "application_language.cpp",
+        "application_popups.cpp",
+        "tests/agent_windows_test.cpp",
+        "tests/integration_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Jump directly to a single reference and render multiple references as clickable rows without a redundant usages title or tip; adjust row hit testing for untitled lists.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c255-b773-7ca2-9fde-a67b364f8d2f",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c255-b773-7ca2-9fde-a67b364f8d2f",
+        "thread_id": "01a1c255-b372-7e93-85cc-4ef84f351bb8",
+        "turn_id": "01a1c255-b383-7330-9238-c4e41d23a7c7"
+      },
+      "statement": "when i rightclick anywhere to start new agent, and there's some context thats gonna be included, show that context on top of the message prompt box, so its clear that we're about to start asking about a contextified piece",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T22:02:39.865295+00:00",
+      "statement_hash": "e6a023742d3af2083e64194a1b60ad2301fa25f5d7d3833cfb11165f017a86fd",
+      "artifacts": [
+        "application.h",
+        "application_agent_context.cpp",
+        "application_agent_menu.cpp",
+        "application_chat_input.cpp",
+        "application_chat_view.cpp",
+        "chat_canvas.h",
+        "tests/agent_windows_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Preview the included source path and symbol above a new contextual composer and place the prompt below its source selection. Bound long preview content so the input remains usable.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c257-a1f5-7002-bf3c-532cc1b61de3",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c257-a1f5-7002-bf3c-532cc1b61de3",
+        "thread_id": "01a1c257-9da6-77d1-a81d-8c7bf58b368e",
+        "turn_id": "01a1c257-9dbb-79c0-a0d2-09d64c45e737"
+      },
+      "statement": "is our build broken atm? fix",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T22:04:45.432538+00:00",
+      "statement_hash": "432f927bb51bcbbbaeea295f04ecde19adc0412b26c3bc09561207e7f72df70f",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c258-bf66-7431-9a58-04948eb87ea2",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c258-bf66-7431-9a58-04948eb87ea2",
+        "thread_id": "01a1c258-bb39-7642-89e5-cd7c2792e5e3",
+        "turn_id": "01a1c258-bb50-7981-a461-5b4c1b71f48f"
+      },
+      "statement": "allow draggin chat windows not only by chrome but also by any part thats not text or input field",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T22:05:58.516080+00:00",
+      "statement_hash": "2f199ae1586c0b2588c7860e19cbac3c4c907c5d75a1f75a9971b41e0396c532",
+      "artifacts": [
+        "application_chat_input.cpp",
+        "application_chat_questions.cpp",
+        "chat_canvas.h",
+        "tests/agent_windows_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Allow dragging conversation cards from blank regions while preserving text selection, inputs, question controls, and scrollbar interactions through explicit text hit targets.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c25a-1f52-7530-819b-9888f3d79a5d",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c25a-1f52-7530-819b-9888f3d79a5d",
+        "thread_id": "01a1c25a-1b92-7cd1-8c6e-b577841ac1f4",
+        "turn_id": "01a1c25a-1ba6-7362-8308-a35e3a0b3a5f"
+      },
+      "statement": "lets get rid of \"conversations\" line in top right of the chat",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T22:07:28.599916+00:00",
+      "statement_hash": "68f38a0a717a7c340afd1cca3300d38c393f76efa858aa21433ad4b90ece949e",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c25c-a5c4-7c20-9af9-9cbfd75192cc",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c25c-a5c4-7c20-9af9-9cbfd75192cc",
+        "thread_id": "01a1c25c-a1a4-7ea1-9af7-4f46ff67cf38",
+        "turn_id": "01a1c25c-a1c4-7152-96d1-61ba62fa21e3"
+      },
+      "statement": "does codex offer an autotitle for each spawned agent? if yes, use it as header for each chat",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T22:10:14.101234+00:00",
+      "statement_hash": "fa43b9eafba15530e10cdccac0bfe5fa1654acc83c0457d8c7906aed375560e2",
+      "artifacts": [
+        "application_chat.cpp",
+        "application_chat_view.cpp",
+        "conversation.cpp",
+        "tests/agent_windows_test.cpp",
+        "tests/conversation_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Use Codex thread names as conversation headers and refresh persisted titles when a matching thread/name/updated notification arrives, with a fallback for untitled threads.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c25f-98b6-7952-9944-8642fd3bf10b",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c25f-98b6-7952-9944-8642fd3bf10b",
+        "thread_id": "01a1c255-b372-7e93-85cc-4ef84f351bb8",
+        "turn_id": "01a1c25f-98a5-7383-9606-8b2dab0ef4ba"
+      },
+      "statement": "good. now instead of doing it like we do now, i want the selection to sorta stay active or highlighed at least when that prompt opens. not highlighed for real, but clear, that we're asking a prompt agains this particular context piece",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T22:13:27.368429+00:00",
+      "statement_hash": "4419e9d60eb9ccd7ce5fde2f5c757659dcf2673e1ad8c4368084ef4e9ce0217d",
+      "artifacts": [
+        "application.h",
+        "application_agent_context.cpp",
+        "application_agent_menu.cpp",
+        "application_text_selection_view.cpp",
+        "tests/agent_windows_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Keep contextual source ranges visibly marked independently of the active text selection. Validate saved ranges against source fingerprints or versions so unrelated source changes do not highlight stale context.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c260-e530-7812-ac11-60c0272ee937",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c260-e530-7812-ac11-60c0272ee937",
+        "thread_id": "01a1c25c-a1a4-7ea1-9af7-4f46ff67cf38",
+        "turn_id": "01a1c260-e51f-7d60-b492-4d1349f0c637"
+      },
+      "statement": "are they scaled like file names? when i zoom out i want to see them as chats clearly, with their own icon btw",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T22:14:52.468340+00:00",
+      "statement_hash": "2441df676240b9ba1823aa8513e963696e967235ad67fda186eb033344000691",
+      "artifacts": [
+        "application.h",
+        "application_agent_windows.cpp",
+        "application_chat_input.cpp",
+        "application_chat_view.cpp",
+        "application_text_targets.cpp",
+        "chat_canvas.h",
+        "tests/agent_windows_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Draw conversation titles with a chat icon and a minimum readable scale, account for their screen-space hit bounds, and paint each title with its card so foreground cards cover background labels.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c265-d044-79c2-a6ae-f752f0988ec1",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c265-d044-79c2-a6ae-f752f0988ec1",
+        "thread_id": "01a1c265-cc9d-7000-8af2-a65f4e71a536",
+        "turn_id": "01a1c265-ccb8-71a2-a592-277bbb8698f0"
+      },
+      "statement": "what does this file do?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T22:20:14.796938+00:00",
+      "statement_hash": "456984cc0aa0d98094de132c8fd5b313bce1025ec76bdcbf3faf7b140d5e3fbb",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c275-5f91-76b3-a25c-64904db38e6d",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c275-5f91-76b3-a25c-64904db38e6d",
+        "thread_id": "01a1c275-5bea-7773-a534-404419973e14",
+        "turn_id": "01a1c275-5bf9-7803-b7eb-b9ee8d6678a7"
+      },
+      "statement": "is this project hosted on gh? make the repo public",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T22:37:14.515935+00:00",
+      "statement_hash": "4d5f91f4c2b9f088e82a2e4dab353ac2d09c8b12c4ce610f0d76ec85340418e1",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c277-763e-7380-b54d-084583cda3f3",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c277-763e-7380-b54d-084583cda3f3",
+        "thread_id": "01a1c277-7225-7000-aeea-b7430cf4dc49",
+        "turn_id": "01a1c277-7235-7d23-8722-c06bbd7c5c1a"
+      },
+      "statement": "make the links in chat and code clickable",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T22:39:31.394201+00:00",
+      "statement_hash": "7d92c6c11a4f85ce48254028a110ab84c65f3d9ad606cb6786d2b8e9cfe2074c",
+      "artifacts": [
+        "application.cpp",
+        "application.h",
+        "application_chat_input.cpp",
+        "application_cmake.cpp",
+        "application_file_links.cpp",
+        "application_language.cpp",
+        "application_pointer.cpp",
+        "application_view.cpp",
+        "popup_markup.cpp",
+        "popup_markup.h",
+        "tests/popup_test.cpp",
+        "tests/selection_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Recognize Markdown and bare HTTP links in source and conversation text, underline them, show a hand cursor, and open web destinations as one xdg-open argument. Preserve selection drags and support source links with line and column navigation.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c278-3819-7a62-890a-faf09ef0eeaf",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c278-3819-7a62-890a-faf09ef0eeaf",
+        "thread_id": "01a1c278-3407-7072-b358-32ebd3145f91",
+        "turn_id": "01a1c278-341d-7cb3-9be6-3d39ca933ea9"
+      },
+      "statement": "why is conversation title and icon are always on top, even showing through other chat windows and such",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T22:40:21.029095+00:00",
+      "statement_hash": "0bc39737802d61e2c072eae6fee68bc6cfa153090a9219173977e4cf96416818",
+      "artifacts": [
+        "application_agent_windows.cpp",
+        "tests/agent_windows_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Paint each conversation header immediately with its own card rather than in a separate topmost pass, and verify that foreground chat bodies cover background titles both visually and during hit testing.",
+        "author_role": "agent",
+        "basis": "reviewed_source",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c279-9764-79d1-a7ee-c4f311ed696a",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c279-9764-79d1-a7ee-c4f311ed696a",
+        "thread_id": "01a1c275-5bea-7773-a534-404419973e14",
+        "turn_id": "01a1c279-9733-7730-97ec-ba6ef867258c"
+      },
+      "statement": "create a proper readme with gifs and beatiful",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T22:41:50.977511+00:00",
+      "statement_hash": "2e393acce5db27882b418dae4c41d246c364140cbd178a44690aaf840702b764",
+      "artifacts": [
+        "README.md",
+        "docs/media/*"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Introduce Source Canvas with a custom SVG banner and two GIFs recorded from the real native application. Document build dependencies from CMake and CI, actual controls, agent behavior, session configuration, architecture, quality checks, and bundled asset credits.",
+        "author_role": "agent",
+        "basis": "recorded_live",
+        "recorded_at": "2026-11-09T22:51:02.074456+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c27c-ae0c-7a33-afd8-0c4fee7273d0",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c27c-ae0c-7a33-afd8-0c4fee7273d0",
+        "thread_id": "01a1c275-5bea-7773-a534-404419973e14",
+        "turn_id": "01a1c279-9733-7730-97ec-ba6ef867258c"
+      },
+      "statement": "whats uncommited? why? commit all proper",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T22:45:13.361295+00:00",
+      "statement_hash": "db22cca9fcff6c0f990d339f3a18bf2b9ccfc286b13876e28bf618260daacc4b",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
       "id": "decision-01a1c27d-ab60-7380-b29c-de66ef38c097",
       "origin": {
         "kind": "conversation",

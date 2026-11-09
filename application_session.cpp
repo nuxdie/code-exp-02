@@ -35,6 +35,8 @@ void Application::load_session()
         if (environment_thread && origin != environment_thread) {
             chat->conversation.thread_id = environment_thread;
             chat->conversation.fresh = false;
+            chat->composing = false;
+            chat->bounds.size = {760, 900};
             chat->context = lsp::Json::object();
         }
         chat_windows.clear();

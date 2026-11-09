@@ -18,7 +18,7 @@ void Application::update_cursor()
             (!intent || !intent->dragging))
             cursor = drag_cursor;
     } else if (viewport().contains(mouse_position) && over_text(mouse_position)) {
-        cursor = text_cursor;
+        cursor = text_link_at(mouse_position).empty() ? text_cursor : link_cursor;
     }
     if (cursor != active_cursor) {
         XDefineCursor(display, window, cursor);

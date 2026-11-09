@@ -54,6 +54,7 @@ void Application::draw_chat_questions()
         {screen, {chat->body.size.x * camera.zoom, (document.size.y + controls) * camera.zoom}},
         {0.98f, 0.97f, 0.93f, 1});
     renderer->draw(document.mesh, screen, camera.zoom);
+    chat->hits.push_back({ChatHit::Kind::Text, {point, document.size}, 0, document.layout.get()});
     if (user_input) {
         for (std::size_t i = 0; i < options.size(); ++i) {
             auto& label = chat->messages["__option_" + std::to_string(i)];

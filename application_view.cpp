@@ -21,6 +21,7 @@ PangoLayout* Application::make_line(const std::string& line, const std::vector<T
             add(pango_attr_style_new(PANGO_STYLE_ITALIC));
         }
     }
+    style_document_spans(attributes, web_links(line));
     pango_layout_set_attributes(layout, attributes);
     pango_attr_list_unref(attributes);
     return layout;
@@ -359,6 +360,7 @@ void Application::style_document_spans(PangoAttrList* attributes,
             break;
         case PopupStyle::Link:
             add(pango_attr_foreground_new(0x2400, 0x4d00, 0x8600));
+            add(pango_attr_underline_new(PANGO_UNDERLINE_SINGLE));
             break;
         }
     }

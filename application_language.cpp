@@ -139,8 +139,7 @@ void Application::language_definition(const lsp::Message& message)
 {
 
     if (message.method == "documentLink/resolve" && message.result.is_object()) {
-        jump_to({{"uri", message.result.value("target", "")},
-                 {"range", {{"start", {{"line", 0}, {"character", 0}}}}}});
+        open_link(message.result.value("target", ""));
         return;
     }
     const auto location = message.result.is_array()
@@ -153,9 +152,11 @@ void Application::language_definition(const lsp::Message& message)
 void Application::language_references(const lsp::Message& message)
 {
 
+    if (message.result.is_array() && message.result.size() == 1 && jump_to(message.result.front()))
+        return;
     popup_locations.clear();
     jump_rows.clear();
-    list_title = "Usages · click to jump";
+    list_title.clear();
     popup_origin = mouse_position;
     list_offset = 0;
     if (message.result.is_array())

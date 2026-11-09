@@ -71,6 +71,38 @@ void test_math()
            "Dollar signs inside code must not become equations");
 }
 
+void test_links()
+{
+    const auto doc =
+        popup_document("λ [Docs](https://example.com/a_(b)?x=1&y=2) and "
+                       "[File](</tmp/space file.cpp:2:3>)\n"
+                       "Visit https://example.com/under_score_path. <http://example.com/angle>\n"
+                       "`https://example.com/inline`\n```cpp\n"
+                       "const char* url = \"https://example.com/code?a=1&b=2\";\n```",
+                       true);
+    expect(doc.styles.size() == 6, "Markdown, bare, inline and fenced code links must coexist");
+    expect(doc.styles[0].destination == "https://example.com/a_(b)?x=1&y=2" &&
+               doc.styles[1].destination == "/tmp/space file.cpp:2:3",
+           "Markdown destinations must preserve balanced parentheses and angle-wrapped paths");
+    expect(doc.text.find("under_score_path.") != std::string::npos &&
+               doc.text.find("<http") == std::string::npos,
+           "Bare URLs must retain underscores and autolinks must hide angle brackets");
+    for (std::size_t i = 2; i < doc.styles.size(); ++i) {
+        const auto& span = doc.styles[i];
+        expect(doc.text.substr(span.begin, span.length) == span.destination &&
+                   span.destination.back() != '.',
+               "URL hit ranges must cover visible bytes and exclude surrounding punctuation");
+    }
+    const auto plain = popup_document("// https://example.com/code_(a).", false);
+    expect(plain.text == "// https://example.com/code_(a)." && plain.styles.size() == 1 &&
+               plain.styles[0].destination == "https://example.com/code_(a)",
+           "Plain source text must remain exact while exposing URL destinations");
+    expect(web_links("http:// https://").empty(), "An empty URL must not become a link");
+    const auto label = popup_document("[https://example.com/label](main.cpp:2)", true);
+    expect(label.styles.size() == 1 && label.styles[0].destination == "main.cpp:2",
+           "URL-shaped Markdown labels must retain their explicit destination");
+}
+
 void test_clangd_escaped_documentation()
 {
     const std::string returned = R"CLANGD(### struct `Camera`  
@@ -114,6 +146,7 @@ int main()
         test_html();
         test_typography();
         test_math();
+        test_links();
         test_clangd_escaped_documentation();
         std::cout << "Documentation markup, typography and LaTeX parsing checks passed.\n";
     } catch (const std::exception& error) {

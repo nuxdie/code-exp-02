@@ -93,7 +93,10 @@ void Application::poll_agent_window()
         return;
     if (chat->client) {
         for (const auto& message : chat->client->take_messages()) {
+            const auto title = chat->conversation.title;
             chat->conversation.receive(message);
+            if (chat->conversation.title != title)
+                schedule_save();
             if (message.value("method", "") == "canvas/disconnected")
                 chat->reconnect = Clock::now() + std::chrono::seconds(3);
             redraw = true;
@@ -120,22 +123,16 @@ void Application::poll_agent_window()
 std::string Application::chat_entry_source(std::size_t index)
 {
     const auto& entry = chat->conversation.entries[index];
-    if (entry.activity) {
-        std::string summary = entry.text.substr(0, entry.text.find('\n')).substr(0, 140);
-        if (!entry.expanded)
-            return "▸ " + summary;
-        return "▾ " + summary + "\n```text\n" + entry.detail.substr(0, 64000) + "\n```";
-    }
-    return "**" + entry.role + "**\n" + entry.text;
+    return entry.activity ? "" : entry.text;
 }
 double Application::chat_entry_height(std::size_t index)
 {
     const auto& entry = chat->conversation.entries[index];
+    if (entry.activity)
+        return 0;
     const auto found = chat->messages.find(entry.id);
     if (found != chat->messages.end() && found->second.layout)
-        return found->second.size.y + (entry.activity ? 10 : 28);
-    if (entry.activity && !entry.expanded)
-        return 32;
+        return found->second.size.y + 32;
     const auto lines = std::count(entry.text.begin(), entry.text.end(), '\n') + 1;
     const auto wrapped = entry.text.size() / 75;
     return static_cast<double>(lines + wrapped + 1) * 24 + 28;
@@ -159,18 +156,20 @@ void Application::restore_chat_scroll(bool finish)
 
 void Application::prepare_chat_messages()
 {
-    chat->content_height = 0;
+    chat->content_height = chat->working_height();
     for (std::size_t i = 0; i < chat->conversation.entries.size(); ++i)
         chat->content_height += chat_entry_height(i);
     if (chat->follow) {
         double remaining = chat->body.size.y + 200;
         for (std::size_t i = chat->conversation.entries.size(); i > 0 && remaining > 0; --i) {
             const auto& entry = chat->conversation.entries[i - 1];
+            if (entry.activity)
+                continue;
             update_document(chat->messages[entry.id], chat_entry_source(i - 1),
-                            static_cast<int>(chat->body.size.x), !entry.activity || entry.expanded);
+                            chat->message_width());
             remaining -= chat_entry_height(i - 1);
         }
-        chat->content_height = 0;
+        chat->content_height = chat->working_height();
         for (std::size_t i = 0; i < chat->conversation.entries.size(); ++i)
             chat->content_height += chat_entry_height(i);
     }
@@ -180,16 +179,17 @@ void Application::prepare_chat_messages()
     double y = 0;
     for (std::size_t i = 0; i < chat->conversation.entries.size(); ++i) {
         const auto& entry = chat->conversation.entries[i];
+        if (entry.activity)
+            continue;
         const auto height = chat_entry_height(i);
         if (y + height >= chat->scroll - 200 && y <= chat->scroll + chat->body.size.y + 200) {
             const auto source = chat_entry_source(i);
-            update_document(chat->messages[entry.id], source, static_cast<int>(chat->body.size.x),
-                            !entry.activity || entry.expanded);
+            update_document(chat->messages[entry.id], source, chat->message_width());
         }
         y += chat_entry_height(i);
     }
-    chat->content_height = y;
+    chat->content_height = y + chat->working_height();
     restore_chat_scroll(true);
-    const double maximum = std::max(0.0, y - chat->body.size.y);
+    const double maximum = std::max(0.0, chat->content_height - chat->body.size.y);
     chat->scroll = chat->follow ? maximum : std::clamp(chat->scroll, 0.0, maximum);
 }

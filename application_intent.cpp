@@ -23,8 +23,6 @@ void Application::initialize_intent()
         intent->scroll = intent_session.value("scroll", 0.0);
     }
     intent->placed = true;
-    content_size.x = std::max(content_size.x, intent->bounds.origin.x + intent->bounds.size.x);
-    content_size.y = std::max(content_size.y, intent->bounds.origin.y + intent->bounds.size.y);
     intent->client = std::make_unique<AgentClient>(
         python_executable, (executable.parent_path() / "provenance.py").string());
     intent_request("initialize", {{"root", workspace_root}});
@@ -115,6 +113,9 @@ void Application::focus_intent()
 {
     if (!intent || !intent->placed)
         return;
+    intent->visible = true;
+    content_size.x = std::max(content_size.x, intent->bounds.origin.x + intent->bounds.size.x);
+    content_size.y = std::max(content_size.y, intent->bounds.origin.y + intent->bounds.size.y);
     camera.zoom = std::clamp(
         std::min((width - 80.0) / intent->bounds.size.x, (height - 48.0) / intent->bounds.size.y),
         0.4, 1.0);

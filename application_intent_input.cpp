@@ -23,7 +23,8 @@ std::string link_at(const DocumentView& document, Vec2 point)
 } // namespace
 bool Application::intent_button(const XEvent& event, Vec2 pointer)
 {
-    if (!intent || !intent->placed || drag_button || event.xbutton.button == Button2)
+    if (!intent || !intent->placed || !intent->visible || drag_button ||
+        event.xbutton.button == Button2)
         return false;
     const auto world = camera.screen_to_world(pointer, viewport());
     if (!inside(intent->bounds, world))
@@ -107,6 +108,8 @@ void Application::open_intent_conversation(const std::string& id)
         const auto thread = origin.value("thread_id", "");
         if (thread != chat->conversation.thread_id && !thread.empty())
             chat->conversation.select_thread(thread);
+        chat->composing = false;
+        chat->bounds.size = {760, 900};
         chat->restore_anchor = origin.value("message_id", "");
         chat->restore_offset = 0;
         focus_chat();

@@ -103,7 +103,7 @@ struct ApplicationTestAccess {
     static void test_chat(Application& app)
     {
         app.chat->conversation.entries.push_back(
-            {"selection-message", "turn", "Agent", "Select ligatures != and Unicode λ 🌍.", ""});
+            {"selection-message", "turn", "You", "Select ligatures != and Unicode λ 🌍.", ""});
         app.focus_chat();
         app.draw();
         const auto& view = app.chat->messages.at("selection-message");
@@ -129,6 +129,86 @@ struct ApplicationTestAccess {
         expect(app.chat->input.selected() == "draft" && app.chat->input.text == "A draft with λ",
                "Dragging in the composer must select text without modifying the draft");
     }
+    static void expect_opened(const std::filesystem::path& log, const std::string& url)
+    {
+        const auto deadline = Application::Clock::now() + std::chrono::seconds(2);
+        while (Application::Clock::now() < deadline) {
+            std::ifstream input(log);
+            const std::string output{std::istreambuf_iterator<char>(input), {}};
+            if (output == "1\n" + url + "\n") {
+                std::filesystem::remove(log);
+                return;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        }
+        expect(false, "Clicking a URL must pass the exact destination as one browser argument");
+    }
+    static void click_link(Application& app, Vec2 point, const std::string& url,
+                           const std::filesystem::path& log)
+    {
+        app.mouse_position = point;
+        app.update_cursor();
+        expect(app.active_cursor == app.link_cursor, "Links must show a hand cursor on hover");
+        app.handle_button(mouse(Button1, point));
+        expect(!std::filesystem::exists(log),
+               "Pressing a link must wait for release before opening");
+        app.handle_release(mouse(Button1, point));
+        expect_opened(log, url);
+    }
+    static void test_links(Application& app)
+    {
+        const auto log = std::filesystem::path(app.workspace_root) / "opened-url";
+        const std::string url = "https://example.com/code?a=1&b=two";
+        auto& panel = app.panels.front();
+        app.chat->visible = false;
+        app.camera.zoom = 0.8;
+        app.camera.center = {panel.bounds.origin.x + 200, panel.bounds.origin.y + 100};
+        app.zoom_animation.cancel(app.camera);
+        app.draw();
+        const auto origin = app.camera.world_to_screen(
+            {panel.bounds.origin.x + 24,
+             panel.bounds.origin.y + app.header_height + 2 * app.line_height},
+            app.viewport());
+        const auto first = glyph(panel.lines[2], 3, origin, app.camera.zoom);
+        const auto last = glyph(panel.lines[2], panel.text[2].size(), origin, app.camera.zoom);
+        drag(app, first, last);
+        expect(app.selected_text() == url && !std::filesystem::exists(log),
+               "Dragging over a source URL must select it without opening the browser");
+        click_link(app, glyph(panel.lines[2], 10, origin, app.camera.zoom), url, log);
+
+        app.text_selection = {};
+        app.chat->conversation.entries.clear();
+        app.chat->conversation.entries.push_back(
+            {"links-message", "turn", "Assistant",
+             "λ [Browser](https://example.com/docs?a=1&b=2) and [Source](main.cpp:2:5)\n"
+             "Bare https://example.com/plain.\n```cpp\n"
+             "auto url = \"https://example.com/fenced\";\n```",
+             ""});
+        app.focus_chat();
+        app.draw();
+        const auto& view = app.chat->messages.at("links-message");
+        const auto hit =
+            std::find_if(app.chat->hits.begin(), app.chat->hits.end(),
+                         [](const auto& h) { return h.kind == ChatHit::Kind::Message; });
+        expect(hit != app.chat->hits.end(), "The link message must be visible");
+        const auto message_origin = app.camera.world_to_screen(hit->bounds.origin, app.viewport());
+        for (const auto& label : {std::string("Browser"), std::string("https://example.com/plain"),
+                                  std::string("https://example.com/fenced")}) {
+            const auto point = glyph(view.layout.get(), view.document.text.find(label) + 2,
+                                     message_origin, app.camera.zoom);
+            click_link(app, point, label == "Browser" ? "https://example.com/docs?a=1&b=2" : label,
+                       log);
+        }
+        const auto local = glyph(view.layout.get(), view.document.text.find("Source") + 2,
+                                 message_origin, app.camera.zoom);
+        app.handle_button(mouse(Button1, local));
+        app.handle_release(mouse(Button1, local));
+        expect(app.focused_line && app.focused_line->line == 1 && app.focused_line->byte == 4,
+               "Chat file links must navigate to the requested line and column");
+        expect(app.open_link(lsp::file_uri(
+                   (std::filesystem::path(app.workspace_root) / "main.cpp").string())),
+               "File URI links must continue to open source cards");
+    }
     static void run(Application& app)
     {
         expect(app.initialize(), "Selection canvas must initialize");
@@ -143,6 +223,7 @@ struct ApplicationTestAccess {
         test_source(app);
         test_popup(app);
         test_chat(app);
+        test_links(app);
         std::cout << "Source, popup, Unicode message and composer selection checks passed.\n";
     }
 };
@@ -155,7 +236,15 @@ int main()
     int result = 0;
     try {
         std::filesystem::create_directories(root);
-        std::ofstream(root / "main.cpp") << "int first = 1;\nint second = 2;\n";
+        std::ofstream(root / "main.cpp") << "int first = 1;\nint second = 2;\n"
+                                            "// https://example.com/code?a=1&b=two\n";
+        std::filesystem::create_directories(root / "bin");
+        const auto opener = root / "bin/xdg-open";
+        std::ofstream(opener) << "#!/bin/sh\nprintf '%s\\n' \"$#\" \"$1\" > \"$CANVAS_LINK_LOG\"\n";
+        std::filesystem::permissions(opener, std::filesystem::perms::owner_all);
+        const auto path = (root / "bin").string() + ":" + std::getenv("PATH");
+        setenv("PATH", path.c_str(), 1);
+        setenv("CANVAS_LINK_LOG", (root / "opened-url").c_str(), 1);
         setenv("SOURCE_CANVAS_PROJECT_ROOT", root.c_str(), 1);
         setenv("SOURCE_CANVAS_DISABLE_AGENT", "1", 1);
         setenv("SOURCE_CANVAS_DISABLE_SESSION", "1", 1);

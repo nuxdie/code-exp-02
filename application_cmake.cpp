@@ -24,6 +24,9 @@ lsp::LanguageServer* Application::server_for(const SourcePanel& panel)
 }
 bool Application::open_document_link(Vec2 pointer)
 {
+    const auto literal = text_link_at(pointer);
+    if (!literal.empty())
+        return open_link(literal);
     const auto hit = hit_test(pointer);
     if (hit.panel < 0)
         return false;
@@ -42,8 +45,7 @@ bool Application::open_document_link(Vec2 pointer)
             continue;
         const auto target = link.value("target", "");
         if (!target.empty())
-            return jump_to(
-                {{"uri", target}, {"range", {{"start", {{"line", 0}, {"character", 0}}}}}});
+            return open_link(target);
         auto* server = server_for(panel);
         if (server) {
             navigation_request = server->request("documentLink/resolve", panel.uri, link);

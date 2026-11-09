@@ -5,9 +5,13 @@ ChatCanvas* Application::chat_at(Vec2 pointer)
     const auto world = camera.screen_to_world(pointer, viewport());
     auto contains = [&](const auto& card) {
         return card && card->visible &&
-               Viewport{card->bounds.origin.x, card->bounds.origin.y, card->bounds.size.x,
-                        card->bounds.size.y}
-                   .contains(world);
+               ((!card->composing &&
+                 Viewport{card->header_bounds.origin.x, card->header_bounds.origin.y,
+                          card->header_bounds.size.x, card->header_bounds.size.y}
+                     .contains(pointer)) ||
+                Viewport{card->bounds.origin.x, card->bounds.origin.y, card->bounds.size.x,
+                         card->bounds.size.y}
+                    .contains(world));
     };
     if (contains(chat))
         return chat.get();
@@ -51,12 +55,16 @@ void Application::start_agent_windows()
 }
 void Application::draw_conversation()
 {
+    chat_animation_due = Clock::time_point::max();
+    auto occupied = header_hits;
     for (auto& card : chat_windows) {
         std::swap(chat, card);
         draw_chat_card();
+        draw_chat_header(occupied);
         std::swap(chat, card);
     }
     draw_chat_card();
+    draw_chat_header(occupied);
 }
 void Application::poll_agent()
 {
@@ -93,7 +101,8 @@ bool Application::agents_pending()
 void Application::spawn_agent_window(Vec2 world, lsp::Json context)
 {
     auto next = std::make_unique<ChatCanvas>(workspace_root);
-    next->bounds.origin = world;
+    next->bounds = {world, {520, 90}};
+    next->composing = true;
     next->placed = true;
     next->context = std::move(context);
     next->conversation.fresh = true;
@@ -118,6 +127,14 @@ void Application::spawn_agent_window(Vec2 world, lsp::Json context)
     content_size.y = std::max(content_size.y, world.y + chat->bounds.size.y);
     schedule_save();
 }
+void Application::dismiss_empty_chat(const XEvent& event, Vec2 pointer)
+{
+    const bool canvas_click = event.xbutton.button >= Button1 && event.xbutton.button <= Button3;
+    if (!drag_button && canvas_click && chat && chat->visible && chat->composing &&
+        chat->input.text.find_first_not_of(" \t\r\n") == std::string::npos &&
+        chat_at(pointer) != chat.get())
+        close_agent_window();
+}
 void Application::close_agent_window()
 {
     if (!chat->conversation.questions.empty() || chat->conversation.sending) {
@@ -126,6 +143,9 @@ void Application::close_agent_window()
     }
     chat->visible = false;
     chat->focused = false;
+    if (text_selection.surface == TextSurface::Chat ||
+        text_selection.surface == TextSurface::Composer)
+        text_selection = {};
     for (auto& card : chat_windows)
         if (card->visible) {
             std::swap(chat, card);

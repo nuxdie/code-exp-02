@@ -74,10 +74,8 @@ void Application::handle_build_result(const BuildResult& result)
             entry.activity = true;
             entries.push_back(std::move(entry));
         }
-        chat->conversation.error = result.success
-                                       ? ""
-                                       : "Build failed. Expand the build activity for compiler "
-                                         "output; the running viewer is still available.";
+        chat->conversation.error =
+            result.success ? "" : "Build failed; the running viewer is still available.";
     }
     redraw = true;
     if (result.generation != source_generation) {

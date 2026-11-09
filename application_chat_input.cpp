@@ -15,20 +15,27 @@ bool Application::chat_button(const XEvent& event, Vec2 pointer)
         event.xbutton.button == Button4 || event.xbutton.button == Button5)
         return false;
     const auto world = camera.screen_to_world(pointer, viewport());
-    if (!contains(chat->bounds, world)) {
+    if (chat_at(pointer) != chat.get()) {
         if (event.xbutton.button == Button1)
             chat->focused = false;
         return false;
     }
     if (event.xbutton.button == Button1) {
-        for (auto hit = chat->hits.rbegin(); hit != chat->hits.rend(); ++hit)
-            if (contains(hit->bounds, world)) {
-                if (hit->kind == ChatHit::Kind::Message && (event.xbutton.state & Mod1Mask))
-                    attribute_chat_entry(hit->index);
-                else
-                    chat_action(*hit, world);
-                break;
-            }
+        ChatHit action{ChatHit::Kind::Title, {}};
+        if (!contains(chat->header_bounds, pointer))
+            for (auto hit = chat->hits.rbegin(); hit != chat->hits.rend(); ++hit)
+                if (contains(hit->bounds, world)) {
+                    action = *hit;
+                    break;
+                }
+        const bool text = chat_over_text(pointer);
+        if (action.kind == ChatHit::Kind::Message && (event.xbutton.state & Mod1Mask))
+            attribute_chat_entry(action.index);
+        else if ((action.kind == ChatHit::Kind::Message || action.kind == ChatHit::Kind::Text) &&
+                 !text)
+            chat_action({ChatHit::Kind::Title, {}}, world);
+        else if (action.kind != ChatHit::Kind::Title || !text)
+            chat_action(action, world);
     }
     hide_popup();
     schedule_save();
@@ -47,6 +54,8 @@ void Application::chat_action(const ChatHit& hit, Vec2 world)
             chat->dragging = true;
             last_pointer = mouse_position;
         }
+        break;
+    case ChatHit::Kind::Text:
         break;
     case ChatHit::Kind::Scrollbar:
         begin_chat_scroll(world);
@@ -68,16 +77,20 @@ void Application::chat_action(const ChatHit& hit, Vec2 world)
             static_cast<std::size_t>(g_utf8_offset_to_pointer(text + byte, trailing) - text));
         break;
     }
-    case ChatHit::Kind::Close:
-        close_agent_window();
-        break;
     case ChatHit::Kind::Send:
         refresh_agent_context();
         if (!chat->conversation.questions.empty() &&
             chat->conversation.questions.front().method == "item/tool/requestUserInput")
             respond_chat_question(chat->input.text);
-        else
-            chat->conversation.submit(chat->input.text);
+        else if (chat->conversation.submit(chat->input.text) && chat->composing) {
+            chat->composing = false;
+            chat->bounds.origin = {chat->editor.origin.x - 20, chat->editor.origin.y - 788};
+            chat->bounds.size = {760, 900};
+            chat->follow = true;
+            content_size.x = std::max(content_size.x, chat->bounds.origin.x + chat->bounds.size.x);
+            content_size.y = std::max(content_size.y, chat->bounds.origin.y + chat->bounds.size.y);
+            focus_chat();
+        }
         break;
     case ChatHit::Kind::Stop:
         chat->conversation.interrupt();
@@ -141,6 +154,8 @@ bool Application::chat_key(const XEvent& event)
     if (!chat || !chat->focused)
         return false;
     if (key == XK_Escape) {
+        if (chat->composing)
+            close_agent_window();
         chat->focused = false;
         return true;
     }
@@ -281,24 +296,29 @@ void Application::chat_selection(const XEvent& event)
 
 bool Application::chat_over_text(Vec2 pointer)
 {
-    if (!chat)
+    if (!chat || contains(chat->header_bounds, pointer))
         return false;
     const auto world = camera.screen_to_world(pointer, viewport());
     if (contains(chat->editor, world))
         return true;
-    for (const auto& hit : chat->hits) {
-        if (hit.kind != ChatHit::Kind::Message || !contains(hit.bounds, world) ||
-            !contains(chat->body, world))
+    for (auto hit = chat->hits.rbegin(); hit != chat->hits.rend(); ++hit) {
+        if (!contains(hit->bounds, world))
             continue;
-        const auto& entry = chat->conversation.entries[hit.index];
-        const auto found = chat->messages.find(entry.id);
-        if (found == chat->messages.end() || !found->second.layout)
+        PangoLayout* layout = hit->text_layout;
+        if (hit->kind == ChatHit::Kind::Message) {
+            if (!contains(chat->body, world) || hit->index >= chat->conversation.entries.size())
+                continue;
+            const auto& entry = chat->conversation.entries[hit->index];
+            const auto found = chat->messages.find(entry.id);
+            if (found != chat->messages.end())
+                layout = found->second.layout.get();
+        }
+        if (!layout)
             return false;
         int index = 0, trailing = 0;
         return pango_layout_xy_to_index(
-            found->second.layout.get(),
-            static_cast<int>((world.x - hit.bounds.origin.x) * PANGO_SCALE),
-            static_cast<int>((world.y - hit.bounds.origin.y) * PANGO_SCALE), &index, &trailing);
+            layout, static_cast<int>((world.x - hit->bounds.origin.x) * PANGO_SCALE),
+            static_cast<int>((world.y - hit->bounds.origin.y) * PANGO_SCALE), &index, &trailing);
     }
     return false;
 }
@@ -306,27 +326,14 @@ bool Application::chat_over_text(Vec2 pointer)
 bool Application::open_chat_link(const DocumentView& view, Vec2 point)
 {
     int index = 0, trailing = 0;
-    pango_layout_xy_to_index(view.layout.get(), static_cast<int>(point.x * PANGO_SCALE),
-                             static_cast<int>(point.y * PANGO_SCALE), &index, &trailing);
+    if (!pango_layout_xy_to_index(view.layout.get(), static_cast<int>(point.x * PANGO_SCALE),
+                                  static_cast<int>(point.y * PANGO_SCALE), &index, &trailing))
+        return false;
     for (const auto& span : view.document.styles) {
         if (span.style != PopupStyle::Link || index < static_cast<int>(span.begin) ||
             index >= static_cast<int>(span.begin + span.length))
             continue;
-        auto path = span.destination;
-        if (path.compare(0, 7, "http://") == 0 || path.compare(0, 8, "https://") == 0)
-            return false;
-        int line = 0;
-        const auto colon = path.find_last_of(':');
-        if (colon != std::string::npos && colon + 1 < path.size() &&
-            std::isdigit(static_cast<unsigned char>(path[colon + 1]))) {
-            line = std::max(0, std::atoi(path.c_str() + colon + 1) - 1);
-            path.resize(colon);
-        }
-        const auto file = std::filesystem::path(path).is_absolute()
-                              ? std::filesystem::path(path)
-                              : std::filesystem::path(workspace_root) / path;
-        return jump_to({{"uri", lsp::file_uri(file.string())},
-                        {"range", {{"start", {{"line", line}, {"character", 0}}}}}});
+        return open_link(span.destination);
     }
     return false;
 }

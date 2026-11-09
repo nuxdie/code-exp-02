@@ -1,23 +1,29 @@
 #include "application.h"
 
-void Application::show_agent_menu(Vec2 pointer)
+void Application::open_chat_input(Vec2 pointer)
 {
-    agent_spawn_world = camera.screen_to_world(pointer, viewport());
-    agent_spawn_context = agent_context(pointer);
-    show_popup("New agent here", pointer);
-    agent_menu = true;
-}
-bool Application::agent_window_menu(const XEvent& event, Vec2, bool in_popup)
-{
-    if (!agent_menu)
-        return false;
-    if (event.xbutton.button != Button1 || !in_popup)
-        return false;
-    const auto position = agent_spawn_world;
-    auto context = agent_spawn_context;
-    hide_popup();
+    auto context = agent_context(pointer);
+    auto position = camera.screen_to_world(pointer, viewport());
+    const auto panel = std::find_if(panels.begin(), panels.end(), [&](const auto& source) {
+        return source.path == context.value("path", "");
+    });
+    if (panel != panels.end() && !panel->folded.display_lines.empty() &&
+        Viewport{panel->bounds.origin.x, panel->bounds.origin.y, panel->bounds.size.x,
+                 panel->bounds.size.y}
+            .contains(position)) {
+        int line = context.value("line", 1) - 1;
+        if (context.contains("selection_range")) {
+            const auto end = context["selection_range"].value("end", std::size_t{0});
+            line = static_cast<int>(std::count(
+                panel->source.begin(),
+                panel->source.begin() + std::min(end ? end - 1 : 0, panel->source.size()), '\n'));
+        }
+        line = std::clamp(line, 0, static_cast<int>(panel->folded.display_lines.size()) - 1);
+        position.y =
+            std::max(position.y, panel->bounds.origin.y + header_height +
+                                     (panel->folded.display_lines[line] + 1) * line_height + 12);
+    }
     spawn_agent_window(position, std::move(context));
-    return true;
 }
 bool Application::agent_window_key(const XEvent& event)
 {
@@ -27,8 +33,6 @@ bool Application::agent_window_key(const XEvent& event)
         (key != XK_a && key != XK_A))
         return false;
     const auto pointer = viewport().contains(mouse_position) ? mouse_position : viewport().center();
-    auto context = agent_context(pointer);
-    const auto position = camera.screen_to_world(pointer, viewport());
-    spawn_agent_window(position, std::move(context));
+    open_chat_input(pointer);
     return true;
 }

@@ -279,6 +279,9 @@ void Conversation::notification(const std::string& method, const Json& params)
         status = turn.value("status", "") == "failed" ? "Agent failed" : "Ready";
         if (turn.contains("error") && turn["error"].is_object())
             error = turn["error"].value("message", "Agent turn failed");
+    } else if (method == "thread/name/updated" && string_value(params, "threadId") == thread_id) {
+        const auto name = string_value(params, "threadName");
+        title = name.empty() ? "Conversation" : name;
     } else if (method == "thread/status/changed") {
         const auto state = params.value("status", Json::object()).value("type", "");
         if (state == "idle") {
@@ -309,7 +312,8 @@ bool Conversation::submit(const std::string& text)
     error.clear();
     submitted = text;
     if (thread_id.empty())
-        request("thread/start", {{"cwd", root}});
+        request("thread/start",
+                {{"cwd", root}, {"approvalPolicy", "never"}, {"sandbox", "danger-full-access"}});
     else
         send_prompt();
     return true;

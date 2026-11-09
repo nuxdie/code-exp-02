@@ -25,5 +25,6 @@ struct PopupDocument {
 };
 
 PopupDocument popup_document(const std::string& text, bool markup);
+std::vector<PopupSpan> web_links(const std::string& text);
 
 std::string hover_documentation(const std::string& markdown);

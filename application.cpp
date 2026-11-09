@@ -61,6 +61,7 @@ bool Application::initialize()
                      ButtonReleaseMask | PointerMotionMask | LeaveWindowMask);
     normal_cursor = XCreateFontCursor(display, XC_left_ptr);
     text_cursor = XCreateFontCursor(display, XC_xterm);
+    link_cursor = XCreateFontCursor(display, XC_hand2);
     drag_cursor = XCreateFontCursor(display, XC_fleur);
     XDefineCursor(display, window, normal_cursor);
     active_cursor = normal_cursor;
@@ -229,6 +230,8 @@ Application::~Application()
         XFreeCursor(display, normal_cursor);
     if (text_cursor)
         XFreeCursor(display, text_cursor);
+    if (link_cursor)
+        XFreeCursor(display, link_cursor);
     if (drag_cursor)
         XFreeCursor(display, drag_cursor);
     language_server.reset();
@@ -256,6 +259,10 @@ Application::~Application()
 
 void Application::update_timers(Clock::time_point now)
 {
+    if (chat_animation_due <= now) {
+        chat_animation_due = Clock::time_point::max();
+        redraw = true;
+    }
     poll_project();
     poll_agent();
     poll_intent();
@@ -311,9 +318,10 @@ void Application::wait_for_work(Clock::time_point next_frame)
                           .count())));
         timeout = timeout < 0 ? dismiss_wait : std::min(timeout, dismiss_wait);
     }
-    const auto pending = std::min(
-        {save_due, agent_reconnect_due(), build_running ? Clock::time_point::max() : rebuild_due,
-         binary_check_due, intent ? intent->refresh : Clock::time_point::max()});
+    const auto pending =
+        std::min({save_due, agent_reconnect_due(), chat_animation_due,
+                  build_running ? Clock::time_point::max() : rebuild_due, binary_check_due,
+                  intent ? intent->refresh : Clock::time_point::max()});
     if (pending != Clock::time_point::max()) {
         const int delay = static_cast<int>(std::max(
             0.0,

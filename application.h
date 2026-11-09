@@ -64,9 +64,6 @@ class Application {
     int screen = 0;
     std::unique_ptr<ChatCanvas> chat;
     std::vector<std::unique_ptr<ChatCanvas>> chat_windows;
-    bool agent_menu = false;
-    Vec2 agent_spawn_world;
-    lsp::Json agent_spawn_context = lsp::Json::object();
     std::unique_ptr<IntentCanvas> intent;
     lsp::Json intent_session = lsp::Json::object();
     std::unique_ptr<SystemTheme> system_theme;
@@ -81,6 +78,7 @@ class Application {
     Window window = 0;
     Cursor normal_cursor = 0;
     Cursor text_cursor = 0;
+    Cursor link_cursor = 0;
     Cursor active_cursor = 0;
     Cursor drag_cursor = 0;
     cairo_surface_t* surface = nullptr;
@@ -122,11 +120,13 @@ class Application {
     bool connections_dirty = true;
     GpuMesh connection_mesh;
     std::array<GpuMesh, 2> fold_toggle_meshes;
+    GpuMesh chat_icon_mesh;
     std::vector<CanvasRect> header_hits;
     bool drag_moved = false;
     Vec2 last_pointer;
     Vec2 mouse_position;
     bool redraw = true;
+    Clock::time_point chat_animation_due = Clock::time_point::max();
     Clock::time_point hover_due = Clock::time_point::max();
     Clock::time_point popup_dismiss_due = Clock::time_point::max();
     int hover_request = 0;
@@ -188,6 +188,8 @@ class Application {
     void initialize_cmake();
     lsp::LanguageServer* server_for(const SourcePanel& panel);
     bool open_document_link(Vec2 pointer);
+    std::string text_link_at(Vec2 pointer);
+    bool open_link(const std::string& destination);
     bool open_literal_file(const SourceHit& hit);
     void language_links(const lsp::Message& message);
     void initialize_reload();
@@ -232,12 +234,16 @@ class Application {
     bool activate_chat(Vec2 pointer);
     void spawn_agent_window(Vec2 world, lsp::Json context);
     void close_agent_window();
+    void dismiss_empty_chat(const XEvent& event, Vec2 pointer);
+    bool close_window_button(const XEvent& event, Vec2 pointer);
     bool agent_window_key(const XEvent& event);
-    bool agent_window_menu(const XEvent& event, Vec2 pointer, bool in_popup);
-    void show_agent_menu(Vec2 pointer);
+    void open_chat_input(Vec2 pointer);
     lsp::Json agent_context(Vec2 pointer);
     void refresh_agent_context();
     void render_agent_context();
+    void prepare_chat_prompt();
+    std::optional<std::pair<std::size_t, std::size_t>>
+    prompt_source_range(const SourcePanel& panel) const;
     bool agents_pending();
     void capture_window_intents();
     Clock::time_point agent_reconnect_due();
@@ -253,7 +259,10 @@ class Application {
     void prepare_chat_messages();
     void restore_chat_scroll(bool finish);
     void draw_chat_messages();
+    void draw_chat_working(double y);
+    void draw_chat_threads();
     void draw_chat_chrome();
+    void draw_chat_header(std::vector<CanvasRect>& occupied);
     void draw_chat_controls();
     void draw_chat_scrollbar();
     void begin_chat_scroll(Vec2 world);
@@ -283,8 +292,11 @@ class Application {
     bool selection_key(const XEvent& event);
     std::string selected_text();
     void draw_selection_layout(PangoLayout* layout, Vec2 origin, double scale,
-                               std::pair<std::size_t, std::size_t> range);
+                               std::pair<std::size_t, std::size_t> range,
+                               std::array<float, 4> color = {0.70f, 0.81f, 0.98f, 0.85f});
     void draw_source_selection(const SourcePanel& panel, Vec2 origin);
+    void draw_source_range(const SourcePanel& panel, Vec2 origin,
+                           std::pair<std::size_t, std::size_t> range, bool context);
     void load_session();
     void save_session();
     void schedule_save();

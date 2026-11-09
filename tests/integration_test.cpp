@@ -147,8 +147,9 @@ struct ApplicationTestAccess {
         app.handle_button(click(point, ControlMask));
         expect(app.list_request > 0, "Ctrl+click on a definition must request a usages jump list");
         wait_for(app, [&]() { return !app.jump_rows.empty(); });
-        expect(app.list_title.find("Usages") != std::string::npos,
-               "The usages response must produce clickable destinations");
+        expect(!app.popup_locations.empty() && app.list_title.empty() &&
+                   app.popup_text.find(app.jump_rows.front().label) == 0,
+               "The usages response must show clickable destinations without a title or tip");
         int usage = -1;
         for (std::size_t i = 0; i < panel.text.size(); ++i)
             if (panel.text[i].find("const Camera&") != std::string::npos) {

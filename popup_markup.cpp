@@ -7,6 +7,27 @@
 #include <string_view>
 
 namespace {
+std::size_t web_url_length(const std::string& text, std::size_t begin)
+{
+    const auto prefix = text.compare(begin, 8, "https://") == 0 ? 8 : 7;
+    if (text.compare(begin, 7, "http://") != 0 && prefix != 8)
+        return 0;
+    auto end = begin + prefix;
+    int parentheses = 0;
+    while (end < text.size()) {
+        const auto c = static_cast<unsigned char>(text[end]);
+        if (std::isspace(c) || c < 32 || std::string("<>\"'`[]{}").find(c) != std::string::npos)
+            break;
+        if (c == ')' && parentheses == 0)
+            break;
+        parentheses += c == '(' ? 1 : c == ')' ? -1 : 0;
+        ++end;
+    }
+    while (end > begin + prefix && std::string(".,;:!?").find(text[end - 1]) != std::string::npos)
+        --end;
+    return end > begin + prefix ? end - begin : 0;
+}
+
 std::string decode_entities(std::string text)
 {
     const std::pair<std::string_view, std::string_view> entities[] = {
@@ -155,8 +176,8 @@ class InlineDocumentation {
     {
         std::size_t position = 0;
         while (position < line.size()) {
-            if (entity(line, position) || math(line, position) || code(line, position) ||
-                emphasis(line, position) || link(line, position))
+            if (web_url(line, position) || entity(line, position) || math(line, position) ||
+                code(line, position) || emphasis(line, position) || link(line, position))
                 continue;
             result += line[position++];
         }
@@ -167,6 +188,20 @@ class InlineDocumentation {
     PopupDocument& document;
     std::size_t offset;
     std::string result;
+
+    bool web_url(const std::string& line, std::size_t& position)
+    {
+        const bool angle = line[position] == '<';
+        const auto begin = position + (angle ? 1 : 0);
+        const auto length = web_url_length(line, begin);
+        if (!length)
+            return false;
+        result += line.substr(begin, length);
+        position = begin + length;
+        if (angle && position < line.size() && line[position] == '>')
+            ++position;
+        return true;
+    }
 
     bool entity(const std::string& line, std::size_t& position)
     {
@@ -250,13 +285,23 @@ class InlineDocumentation {
         if (line[position] != '[')
             return false;
         const auto middle = line.find("](", position + 1);
-        const auto end = middle == std::string::npos ? middle : line.find(')', middle + 2);
-        if (end == std::string::npos)
+        if (middle == std::string::npos)
+            return false;
+        auto end = middle + 2;
+        int depth = 1;
+        for (; end < line.size(); ++end) {
+            depth += line[end] == '(' ? 1 : line[end] == ')' ? -1 : 0;
+            if (depth == 0)
+                break;
+        }
+        if (end == line.size())
             return false;
         const auto label = inline_literals(line.substr(position + 1, middle - position - 1));
         const auto length = label.size();
-        document.styles.push_back({offset + result.size(), length, PopupStyle::Link,
-                                   line.substr(middle + 2, end - middle - 2)});
+        auto destination = line.substr(middle + 2, end - middle - 2);
+        if (destination.size() >= 2 && destination.front() == '<' && destination.back() == '>')
+            destination = destination.substr(1, destination.size() - 2);
+        document.styles.push_back({offset + result.size(), length, PopupStyle::Link, destination});
         result += label;
         position = end + 1;
         return true;
@@ -321,7 +366,33 @@ std::string unescape_documentation(const std::string& line)
     return result;
 }
 
+void add_web_links(PopupDocument& document)
+{
+    for (const auto& link : web_links(document.text)) {
+        const bool covered =
+            std::any_of(document.styles.begin(), document.styles.end(), [&](const auto& span) {
+                return span.style == PopupStyle::Link && link.begin < span.begin + span.length &&
+                       span.begin < link.begin + link.length;
+            });
+        if (!covered)
+            document.styles.push_back(link);
+    }
+}
+
 } // namespace
+
+std::vector<PopupSpan> web_links(const std::string& text)
+{
+    std::vector<PopupSpan> links;
+    auto begin = text.find("http");
+    while (begin != std::string::npos) {
+        const auto length = web_url_length(text, begin);
+        if (length)
+            links.push_back({begin, length, PopupStyle::Link, text.substr(begin, length)});
+        begin = text.find("http", begin + std::max(std::size_t{1}, length));
+    }
+    return links;
+}
 
 PopupDocument popup_document(const std::string& text, bool markup)
 {
@@ -355,6 +426,7 @@ PopupDocument popup_document(const std::string& text, bool markup)
         document.text += line;
         document.code_lines.push_back(code);
     }
+    add_web_links(document);
     return document;
 }
 

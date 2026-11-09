@@ -4,6 +4,8 @@ void Application::draw_chat_card()
 {
     if (!chat || !chat->visible)
         return;
+    if (chat->composing)
+        prepare_chat_prompt();
     const auto origin = camera.world_to_screen(chat->bounds.origin, viewport());
     const CanvasRect bounds{origin,
                             {chat->bounds.size.x * camera.zoom, chat->bounds.size.y * camera.zoom}};
@@ -12,10 +14,32 @@ void Application::draw_chat_card()
     renderer->rectangle({{origin.x + 3, origin.y + 4}, bounds.size}, {0.1f, 0.15f, 0.2f, 0.08f});
     renderer->rectangle(bounds, {0.995f, 0.993f, 0.985f, 1});
     chat->hits.clear();
+    if (chat->composing) {
+        const double preview_height = chat->editor.origin.y - chat->bounds.origin.y;
+        if (preview_height > 0) {
+            renderer->rectangle({origin, {bounds.size.x, preview_height * camera.zoom}},
+                                {0.92f, 0.95f, 0.98f, 1});
+            const auto point = camera.world_to_screen(
+                {chat->bounds.origin.x + 12, chat->bounds.origin.y + 12}, viewport());
+            renderer->clip(
+                {point,
+                 {(chat->bounds.size.x - 24) * camera.zoom, (preview_height - 24) * camera.zoom}},
+                height);
+            renderer->draw(chat->context_preview.mesh, point, camera.zoom);
+            renderer->clear_clip();
+            chat->hits.push_back({ChatHit::Kind::Text,
+                                  {{chat->bounds.origin.x + 12, chat->bounds.origin.y + 12},
+                                   {chat->bounds.size.x - 24, preview_height - 24}},
+                                  0,
+                                  chat->context_preview.layout.get()});
+        }
+        draw_chat_controls();
+        return;
+    }
     chat->hits.push_back({ChatHit::Kind::Title, {chat->bounds.origin, {chat->bounds.size.x, 48}}});
     chat->body = {{chat->bounds.origin.x + 24, chat->bounds.origin.y + 64},
-                  {chat->bounds.size.x - 48, chat->bounds.size.y - 232}};
-    chat->editor = {{chat->bounds.origin.x + 20, chat->bounds.origin.y + chat->bounds.size.y - 144},
+                  {chat->bounds.size.x - 48, chat->bounds.size.y - 196}};
+    chat->editor = {{chat->bounds.origin.x + 20, chat->bounds.origin.y + chat->bounds.size.y - 112},
                     {chat->bounds.size.x - 40, 90}};
     if (!chat->conversation.error.empty()) {
         auto& error = chat->messages["__error"];
@@ -38,23 +62,6 @@ void Application::draw_chat_card()
 void Application::draw_chat_chrome()
 {
     const auto& model = chat->conversation;
-    const auto& label = model.title;
-    update_document(chat->header, label, static_cast<int>(chat->bounds.size.x - 200), false);
-    const auto point = camera.world_to_screen(
-        {chat->bounds.origin.x + 24, chat->bounds.origin.y + 16}, viewport());
-    renderer->draw(chat->header.mesh, point, std::max(0.7, camera.zoom));
-    const CanvasRect button{
-        {chat->bounds.origin.x + chat->bounds.size.x - 154, chat->bounds.origin.y + 18}, {104, 28}};
-    auto& document = chat->messages["__threads"];
-    update_document(document, "Conversations", 110, false);
-    renderer->draw(document.mesh, camera.world_to_screen(button.origin, viewport()), camera.zoom);
-    chat->hits.push_back({ChatHit::Kind::Threads, button});
-    const CanvasRect close{{chat->bounds.origin.x + chat->bounds.size.x - 40, button.origin.y},
-                           {24, 28}};
-    auto& close_text = chat->messages["__close"];
-    update_document(close_text, "×", 24, false);
-    renderer->draw(close_text.mesh, camera.world_to_screen(close.origin, viewport()), camera.zoom);
-    chat->hits.push_back({ChatHit::Kind::Close, close});
     if (!model.error.empty()) {
         auto& error = chat->messages["__error"];
         update_document(error, model.error, static_cast<int>(chat->body.size.x), false);
@@ -63,6 +70,77 @@ void Application::draw_chat_chrome()
         renderer->clip({point, {chat->body.size.x * camera.zoom, 90 * camera.zoom}}, height);
         renderer->draw(error.mesh, point, camera.zoom);
         renderer->clear_clip();
+        chat->hits.push_back({ChatHit::Kind::Text,
+                              {{chat->bounds.origin.x + 24, chat->bounds.origin.y + 64},
+                               {chat->body.size.x, std::min(90.0, error.size.y)}},
+                              0,
+                              error.layout.get()});
+    }
+}
+
+void Application::draw_chat_header(std::vector<CanvasRect>& occupied)
+{
+    chat->header_bounds = {};
+    if (!chat->visible || chat->composing)
+        return;
+    auto& header = chat->header;
+    const auto& title = chat->conversation.title;
+    const int text_width = static_cast<int>(chat->bounds.size.x - 64);
+    if (!header.layout || header.source != title || header.width != text_width ||
+        header.generation != document_generation) {
+        header.source = title;
+        header.width = text_width;
+        header.generation = document_generation;
+        header.document = popup_document(title, false);
+        header.layout.reset(make_line(title, {{0, title.size(), Syntax::Directive}}));
+        pango_layout_set_width(header.layout.get(), text_width * PANGO_SCALE);
+        pango_layout_set_height(header.layout.get(), -1);
+        pango_layout_set_ellipsize(header.layout.get(), PANGO_ELLIPSIZE_END);
+        int width = 0;
+        pango_layout_get_pixel_size(header.layout.get(), &width, nullptr);
+        header.size = {static_cast<double>(width + 34), 27};
+        renderer->upload(header.mesh, {{header.layout.get(), {32, 0}}});
+    }
+    const double scale = std::max(0.7, camera.zoom);
+    CanvasRect bounds{camera.world_to_screen(chat->bounds.origin, viewport()),
+                      {header.size.x * scale, header.size.y * scale}};
+    if (!bounds.intersects({{0, 0}, {static_cast<double>(width), static_cast<double>(height)}}))
+        return;
+    bounds.origin.x = std::clamp(bounds.origin.x, 0.0, std::max(0.0, width - bounds.size.x));
+    for (const auto& other : occupied)
+        if (other.size.x > 0 && bounds.intersects(other))
+            bounds.origin.y = other.origin.y + other.size.y + 2;
+    occupied.push_back(bounds);
+    chat->header_bounds = bounds;
+    if (!chat_icon_mesh.buffer) {
+        const std::array<float, 4> blue{0.12f, 0.38f, 0.72f, 1};
+        renderer->paths(chat_icon_mesh,
+                        {{{{3, 3}, {21, 3}, {21, 17}, {11, 17}, {5, 22}, {5, 17}, {3, 17}, {3, 3}},
+                          blue,
+                          2,
+                          false},
+                         {{{7, 8}, {17, 8}}, blue, 2, false},
+                         {{{7, 12}, {14, 12}}, blue, 2, false}});
+    }
+    renderer->rectangle(bounds, {0.92f, 0.96f, 1, 0.97f});
+    renderer->draw(chat_icon_mesh, bounds.origin, scale);
+    renderer->draw(header.mesh, bounds.origin, scale);
+}
+
+void Application::draw_chat_threads()
+{
+    double y = 0;
+    for (std::size_t i = 0; i < chat->conversation.threads.size(); ++i) {
+        const auto& thread = chat->conversation.threads[i];
+        const auto name = thread.contains("name") && thread["name"].is_string()
+                              ? thread["name"].get<std::string>()
+                              : thread.value("preview", "Conversation");
+        auto& entry = chat->messages["__thread_" + std::to_string(i)];
+        update_document(entry, name.substr(0, 120), static_cast<int>(chat->body.size.x), false);
+        const Vec2 world{chat->body.origin.x, chat->body.origin.y + y};
+        renderer->draw(entry.mesh, camera.world_to_screen(world, viewport()), camera.zoom);
+        chat->hits.push_back({ChatHit::Kind::Thread, {world, {chat->body.size.x, 48}}, i});
+        y += 48;
     }
 }
 
@@ -71,29 +149,26 @@ void Application::draw_chat_messages()
     const auto screen = camera.world_to_screen(chat->body.origin, viewport());
     renderer->clip({screen, {chat->body.size.x * camera.zoom, chat->body.size.y * camera.zoom}},
                    height);
-    if (chat->choosing_thread) {
-        double y = 0;
-        for (std::size_t i = 0; i < chat->conversation.threads.size(); ++i) {
-            const auto& thread = chat->conversation.threads[i];
-            const auto name = thread.contains("name") && thread["name"].is_string()
-                                  ? thread["name"].get<std::string>()
-                                  : thread.value("preview", "Conversation");
-            auto& entry = chat->messages["__thread_" + std::to_string(i)];
-            update_document(entry, name.substr(0, 120), static_cast<int>(chat->body.size.x), false);
-            const Vec2 world{chat->body.origin.x, chat->body.origin.y + y};
-            renderer->draw(entry.mesh, camera.world_to_screen(world, viewport()), camera.zoom);
-            chat->hits.push_back({ChatHit::Kind::Thread, {world, {chat->body.size.x, 48}}, i});
-            y += 48;
-        }
-    } else {
+    if (chat->choosing_thread)
+        draw_chat_threads();
+    else {
         double y = chat->body.origin.y - chat->scroll;
         for (std::size_t i = 0; i < chat->conversation.entries.size(); ++i) {
             const auto& entry = chat->conversation.entries[i];
+            if (entry.activity)
+                continue;
             const double entry_height = chat_entry_height(i);
-            const CanvasRect bounds{{chat->body.origin.x, y}, {chat->body.size.x, entry_height}};
+            const auto bounds = chat->message_text_bounds(i, y);
             const auto found = chat->messages.find(entry.id);
             if (bounds.intersects(chat->body) && found != chat->messages.end() &&
                 found->second.layout) {
+                const auto bubble = camera.world_to_screen(
+                    {bounds.origin.x - 12, bounds.origin.y - 10}, viewport());
+                renderer->rectangle(
+                    {bubble,
+                     {(bounds.size.x + 24) * camera.zoom, (bounds.size.y + 20) * camera.zoom}},
+                    entry.role == "You" ? std::array<float, 4>{0.85f, 0.91f, 0.99f, 1}
+                                        : std::array<float, 4>{0.94f, 0.95f, 0.96f, 1});
                 if (text_selection.surface == TextSurface::Chat &&
                     text_selection.chat == chat.get() && text_selection.key == entry.id &&
                     text_selection.range.text == found->second.document.text)
@@ -106,9 +181,27 @@ void Application::draw_chat_messages()
             }
             y += entry_height;
         }
+        draw_chat_working(y);
     }
     renderer->clear_clip();
     draw_chat_scrollbar();
+}
+
+void Application::draw_chat_working(double y)
+{
+    const CanvasRect bounds{{chat->body.origin.x + 12, y}, {48, chat->working_height()}};
+    if (bounds.size.y == 0 || !bounds.intersects(chat->body))
+        return;
+    const auto now = Clock::now();
+    const double phase = std::chrono::duration<double>(now.time_since_epoch()).count() * 5;
+    auto& dot = chat->messages["__working_dot"];
+    update_document(dot, "•", 16, false);
+    for (int i = 0; i < 3; ++i) {
+        const double lift = 3 * std::max(0.0, std::sin(phase - i * 0.8));
+        const Vec2 point{bounds.origin.x + i * 12, y + 6 - lift};
+        renderer->draw(dot.mesh, camera.world_to_screen(point, viewport()), camera.zoom);
+    }
+    chat_animation_due = std::min(chat_animation_due, now + std::chrono::milliseconds(33));
 }
 
 void Application::draw_chat_controls()
@@ -119,7 +212,7 @@ void Application::draw_chat_controls()
         chat->focused ? std::array<float, 4>{1, 1, 1, 1}
                       : std::array<float, 4>{0.97f, 0.97f, 0.96f, 1});
     const bool placeholder = chat->input.text.empty();
-    update_document(chat->composer, placeholder ? "Message the agent…" : chat->input.text,
+    update_document(chat->composer, placeholder ? "Message…" : chat->input.text,
                     static_cast<int>(chat->editor.size.x - 24), false);
     PangoRectangle cursor{};
     pango_layout_index_to_pos(chat->composer.layout.get(),
@@ -145,26 +238,5 @@ void Application::draw_chat_controls()
     }
     renderer->clear_clip();
     chat->hits.push_back({ChatHit::Kind::Input, chat->editor});
-    const auto y = chat->bounds.origin.y + chat->bounds.size.y - 36;
-    const CanvasRect send{{chat->bounds.origin.x + chat->bounds.size.x - 105, y}, {80, 28}};
-    const auto& model = chat->conversation;
-    const bool replying =
-        !model.questions.empty() && model.questions.front().method == "item/tool/requestUserInput";
-    const std::string label = model.sending                ? "Sending…"
-                              : replying                   ? "Reply"
-                              : !model.active_turn.empty() ? "Steer ↵"
-                                                           : "Send ↵";
-    auto& button = chat->messages["__send"];
-    update_document(button, label, 100, false);
-    renderer->draw(button.mesh, camera.world_to_screen(send.origin, viewport()), camera.zoom);
-    chat->hits.push_back({ChatHit::Kind::Send, send});
-    if (!model.active_turn.empty()) {
-        const CanvasRect stop{{send.origin.x - 70, y}, {60, 28}};
-        auto& stop_text = chat->messages["__stop"];
-        update_document(stop_text, "Stop", 60, false);
-        renderer->draw(stop_text.mesh, camera.world_to_screen(stop.origin, viewport()),
-                       camera.zoom);
-        chat->hits.push_back({ChatHit::Kind::Stop, stop});
-    }
     draw_chat_questions();
 }

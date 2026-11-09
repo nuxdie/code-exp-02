@@ -3,7 +3,7 @@
 
 void Application::draw_intent()
 {
-    if (!intent || !intent->placed)
+    if (!intent || !intent->placed || !intent->visible)
         return;
     const auto origin = camera.world_to_screen(intent->bounds.origin, viewport());
     const CanvasRect screen{

@@ -65,10 +65,16 @@ void Application::handle_button(const XEvent& event)
     const auto view = viewport();
     mouse_position = pointer;
     redraw = true;
+    if (close_window_button(event, pointer)) {
+        hover_due = Clock::time_point::max();
+        update_cursor();
+        return;
+    }
+    dismiss_empty_chat(event, pointer);
     if (search_button(event, pointer))
         return;
     if (event.xbutton.button == Button3 && !drag_button) {
-        show_agent_menu(pointer);
+        open_chat_input(pointer);
         return;
     }
     if (event.xbutton.button == Button1 && !drag_button)
@@ -99,6 +105,37 @@ void Application::handle_button(const XEvent& event)
         begin_drag(event, pointer, view);
     }
     redraw = true;
+}
+
+bool Application::close_window_button(const XEvent& event, Vec2 pointer)
+{
+    if (event.xbutton.button != Button2 || drag_button)
+        return false;
+    auto contains = [](const CanvasRect& bounds, Vec2 point) {
+        return Viewport{bounds.origin.x, bounds.origin.y, bounds.size.x, bounds.size.y}.contains(
+            point);
+    };
+    // Match the drawing order: search, popups, intent, then conversations.
+    if (search.active) {
+        if (!contains(search.bounds, pointer))
+            return false;
+        close_search();
+    } else if (!popup_text.empty() && contains(popup_bounds, pointer)) {
+        if (text_selection.surface == TextSurface::Popup)
+            text_selection = {};
+        hide_popup();
+    } else if (intent && intent->placed && intent->visible &&
+               contains(intent->bounds, camera.screen_to_world(pointer, viewport()))) {
+        intent->visible = intent->editing = false;
+        if (text_selection.surface == TextSurface::Intent ||
+            text_selection.surface == TextSurface::Rationale)
+            text_selection = {};
+        schedule_save();
+    } else if (activate_chat(pointer))
+        close_agent_window();
+    else
+        return false;
+    return true;
 }
 
 void Application::zoom_wheel(unsigned button, Vec2 pointer)
@@ -159,9 +196,10 @@ void Application::handle_motion(const XEvent& event)
         if (!popup_text.empty() && popup_dismiss_due == Clock::time_point::max())
             popup_dismiss_due = Clock::now() + std::chrono::milliseconds(300);
         const auto world = camera.screen_to_world(pointer, viewport());
-        const bool in_intent = intent && Viewport{intent->bounds.origin.x, intent->bounds.origin.y,
-                                                  intent->bounds.size.x, intent->bounds.size.y}
-                                             .contains(world);
+        const bool in_intent = intent && intent->visible &&
+                               Viewport{intent->bounds.origin.x, intent->bounds.origin.y,
+                                        intent->bounds.size.x, intent->bounds.size.y}
+                                   .contains(world);
         const bool in_chat = chat_at(pointer) != nullptr;
         hover_due = in_chat || in_intent ? Clock::time_point::max()
                                          : Clock::now() + std::chrono::milliseconds(400);
@@ -340,8 +378,6 @@ void Application::handle_key(const XEvent& event)
 
 bool Application::popup_button(const XEvent& event, Vec2 pointer, bool in_popup)
 {
-    if (agent_window_menu(event, pointer, in_popup))
-        return true;
     if (in_popup && (event.xbutton.button == Button4 || event.xbutton.button == Button5)) {
         if (!jump_rows.empty()) {
             list_offset += event.xbutton.button == Button4 ? -3 : 3;
@@ -365,7 +401,7 @@ bool Application::popup_button(const XEvent& event, Vec2 pointer, bool in_popup)
                 popup_text.begin(),
                 popup_text.begin() + std::clamp(index, 0, static_cast<int>(popup_text.size())),
                 '\n')) -
-            1;
+            (list_title.empty() ? 0 : 1);
         if (row >= 0 && row < static_cast<int>(popup_locations.size())) {
             if (row < static_cast<int>(popup_symbol_rows.size()) && popup_symbol_rows[row] &&
                 !popup_symbol_rows[row]->children.empty() &&

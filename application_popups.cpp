@@ -4,7 +4,6 @@
 void Application::hide_popup()
 {
     shortcuts_visible = false;
-    agent_menu = false;
     if (!popup_text.empty())
         redraw = true;
     popup_text.clear();
@@ -23,7 +22,6 @@ void Application::hide_popup()
 void Application::show_popup(std::string text, Vec2 origin, bool syntax)
 {
     shortcuts_visible = false;
-    agent_menu = false;
     auto document = popup_document(text, syntax);
     popup_text = std::move(document.text);
     popup_code_lines = std::move(document.code_lines);
@@ -48,13 +46,18 @@ void Application::refresh_list()
     for (int i = list_offset; i < std::min(static_cast<int>(jump_rows.size()), list_offset + 12);
          ++i) {
         const auto& row = jump_rows[i];
-        text += "\n" + row.label;
+        if (!text.empty())
+            text += "\n";
+        text += row.label;
         popup_locations.push_back(row.location);
         popup_symbol_rows.push_back(row.node);
         popup_row_depths.push_back(row.depth);
     }
-    if (jump_rows.empty())
-        text += "\nNo symbols or locations yet.";
+    if (jump_rows.empty()) {
+        if (!text.empty())
+            text += "\n";
+        text += "No symbols or locations yet.";
+    }
     show_popup(text, popup_origin);
 }
 

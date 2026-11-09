@@ -45,13 +45,14 @@ struct ApplicationTestAccess {
     {
         expect(app.initialize(), "Native canvas must initialize");
         wait_for(app, [&] { return app.intent->ready; });
+        expect(!app.intent->visible, "The evidence window must stay hidden on startup");
         app.chat->conversation.thread_id = "test-thread";
         app.chat->conversation.entries.push_back(
             {"human-id", "test-turn", "You", "Keep intent <code>literal</code> and λ.", ""});
         app.capture_intents();
         wait_for(app, [&] { return app.intent->records.size() == 1; });
         app.attribute_chat_entry(0);
-        expect(app.intent->selected == "decision-human-id",
+        expect(app.intent->visible && app.intent->selected == "decision-human-id",
                "A human message must select its exact durable decision");
         app.chat->conversation.entries.push_back(
             {"agent-id", "test-turn", "Agent",

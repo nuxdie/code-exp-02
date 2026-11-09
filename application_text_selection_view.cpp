@@ -1,7 +1,8 @@
 #include "application.h"
 
 void Application::draw_selection_layout(PangoLayout* layout, Vec2 origin, double scale,
-                                        std::pair<std::size_t, std::size_t> range)
+                                        std::pair<std::size_t, std::size_t> range,
+                                        std::array<float, 4> color)
 {
     const auto [begin, end] = range;
     if (!layout || begin == end)
@@ -25,17 +26,24 @@ void Application::draw_selection_layout(PangoLayout* layout, Vec2 origin, double
                   origin.y + static_cast<double>(logical.y) / PANGO_SCALE * scale},
                  {static_cast<double>(ranges[2 * i + 1] - ranges[2 * i]) / PANGO_SCALE * scale,
                   static_cast<double>(logical.height) / PANGO_SCALE * scale}},
-                {0.70f, 0.81f, 0.98f, 0.85f});
+                color);
         g_free(ranges);
     } while (pango_layout_iter_next_line(iterator));
     pango_layout_iter_free(iterator);
 }
 void Application::draw_source_selection(const SourcePanel& panel, Vec2 origin)
 {
+    if (const auto range = prompt_source_range(panel))
+        draw_source_range(panel, origin, *range, true);
     if (text_selection.surface != TextSurface::Source || text_selection.key != panel.path ||
         text_selection.range.text != panel.source)
         return;
-    const auto [begin, end] = text_selection.range.selection();
+    draw_source_range(panel, origin, text_selection.range.selection(), false);
+}
+void Application::draw_source_range(const SourcePanel& panel, Vec2 origin,
+                                    std::pair<std::size_t, std::size_t> range, bool context)
+{
+    const auto [begin, end] = range;
     std::size_t offset = 0;
     std::size_t row = 0;
     for (std::size_t i = 0; i < panel.text.size(); ++i) {
@@ -44,13 +52,20 @@ void Application::draw_source_selection(const SourcePanel& panel, Vec2 origin)
             panel.folded.source_lines[row] == static_cast<int>(i)) {
             const auto y = origin.y + (header_height + row * line_height) * camera.zoom;
             const bool visible = y + line_height * camera.zoom >= 0 && y <= height;
-            if (visible && begin < offset + length && end > offset)
+            if (visible && begin < offset + length + 1 && end > offset) {
+                if (context)
+                    renderer->rectangle({{origin.x + 10 * camera.zoom, y},
+                                         {3 * camera.zoom, line_height * camera.zoom}},
+                                        {0.75f, 0.48f, 0.10f, 0.9f});
                 draw_selection_layout(
                     panel.lines[i],
                     {origin.x + 24 * camera.zoom,
                      origin.y + (header_height + row * line_height) * camera.zoom},
                     camera.zoom,
-                    {begin > offset ? begin - offset : 0, std::min(length, end - offset)});
+                    {begin > offset ? begin - offset : 0, std::min(length, end - offset)},
+                    context ? std::array<float, 4>{1.0f, 0.84f, 0.46f, 0.38f}
+                            : std::array<float, 4>{0.70f, 0.81f, 0.98f, 0.85f});
+            }
             ++row;
         }
         offset += length + 1;

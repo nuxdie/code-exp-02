@@ -11,7 +11,7 @@ TextTarget Application::chat_text_target(Vec2 pointer)
 {
     const auto world = camera.screen_to_world(pointer, viewport());
     const auto* card = chat_at(pointer);
-    if (!card)
+    if (!card || contains(card->header_bounds, pointer))
         return {};
     if (contains(card->editor, world) && card->composer.layout)
         return {TextSurface::Composer,
@@ -78,8 +78,6 @@ TextTarget Application::text_at(Vec2 pointer)
                 {search.editor.origin.x + 12 - search.editor_scroll, search.editor.origin.y + 10}};
         return {};
     }
-    if (!popup_text.empty() && contains(popup_bounds, pointer) && agent_menu)
-        return {};
     if (!popup_text.empty() && contains(popup_bounds, pointer))
         return {TextSurface::Popup,
                 "",
@@ -93,7 +91,7 @@ TextTarget Application::text_at(Vec2 pointer)
     const auto world = camera.screen_to_world(pointer, viewport());
     if (chat_at(pointer))
         return {};
-    if (intent && intent->placed && contains(intent->bounds, world)) {
+    if (intent && intent->placed && intent->visible && contains(intent->bounds, world)) {
         if (intent->editing && contains(intent->editor, world)) {
             const std::string prefix = "Human rationale · Enter saves · Esc cancels\n";
             return {TextSurface::Rationale,
@@ -143,14 +141,15 @@ TextTarget Application::active_text_target()
         for (std::size_t i = 0; i < chat->conversation.entries.size(); ++i) {
             const auto& entry = chat->conversation.entries[i];
             const auto found = chat->messages.find(entry.id);
-            if (entry.id == text_selection.key && found != chat->messages.end()) {
+            if (!entry.activity && entry.id == text_selection.key &&
+                found != chat->messages.end()) {
                 const auto& view = found->second;
                 return {TextSurface::Chat,
                         entry.id,
                         &view.document.text,
                         view.layout.get(),
                         &view.document.math,
-                        camera.world_to_screen({chat->body.origin.x, y}, viewport()),
+                        camera.world_to_screen(chat->message_text_bounds(i, y).origin, viewport()),
                         camera.zoom};
             }
             y += chat_entry_height(i);

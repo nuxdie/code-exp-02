@@ -17,6 +17,7 @@ lsp::Json Application::save_agent_window()
     return {{"threadId", chat->conversation.thread_id},
             {"title", chat->conversation.title},
             {"fresh", chat->conversation.fresh},
+            {"composing", chat->composing},
             {"drafts", chat->drafts},
             {"draft", chat->input.text},
             {"cursor", chat->input.cursor},
@@ -35,6 +36,8 @@ void Application::load_agent_window(ChatCanvas& card, const lsp::Json& state)
     card.conversation.thread_id = state.value("threadId", card.conversation.thread_id);
     card.conversation.title = state.value("title", card.conversation.title);
     card.conversation.fresh = state.value("fresh", false);
+    card.composing = state.value("composing", false);
+    card.bounds.size = card.composing ? Vec2{520, 90} : Vec2{760, 900};
     card.input.set(state.value("draft", ""));
     card.drafts = state.value("drafts", std::map<std::string, std::string>{});
     card.input.place(state.value("cursor", card.input.text.size()));

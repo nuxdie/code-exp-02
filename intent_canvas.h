@@ -20,5 +20,6 @@ struct IntentCanvas {
     int next_id = 1;
     double scroll = 0;
     bool ready = false, overview = false, editing = false, dragging = false, placed = false;
+    bool visible = false;
     std::chrono::steady_clock::time_point refresh = std::chrono::steady_clock::time_point::max();
 };
