@@ -29,6 +29,8 @@ void Application::draw_conversation()
     if (camera.zoom < 0.25)
         return;
     prepare_chat_messages();
+    if (chat->scrolling)
+        drag_chat_scroll(camera.screen_to_world(mouse_position, viewport()));
     draw_chat_messages();
     draw_chat_controls();
 }
@@ -95,16 +97,7 @@ void Application::draw_chat_messages()
         }
     }
     renderer->clear_clip();
-    if (chat->content_height > chat->body.size.y && !chat->choosing_thread) {
-        const double thumb =
-            std::max(20.0, chat->body.size.y * chat->body.size.y / chat->content_height);
-        const double offset =
-            chat->scroll / (chat->content_height - chat->body.size.y) * (chat->body.size.y - thumb);
-        const auto point = camera.world_to_screen(
-            {chat->body.origin.x + chat->body.size.x + 8, chat->body.origin.y + offset},
-            viewport());
-        renderer->rectangle({point, {2, thumb * camera.zoom}}, {0.5f, 0.54f, 0.6f, 0.5f});
-    }
+    draw_chat_scrollbar();
 }
 
 void Application::draw_chat_controls()
@@ -163,7 +156,7 @@ void Application::draw_chat_controls()
         chat->hits.push_back({ChatHit::Kind::Stop, stop});
     }
     auto& hint = chat->messages["__hint"];
-    update_document(hint, "Enter sends · Shift+Enter newline · Tab focuses chat", 520, false);
+    update_document(hint, "Wheel zooms · Drag scrollbar to scroll · Enter sends", 520, false);
     renderer->draw(hint.mesh, camera.world_to_screen({chat->editor.origin.x, y}, viewport()),
                    camera.zoom);
     draw_chat_questions();

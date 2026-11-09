@@ -1308,6 +1308,43 @@
         "kind": "captured_statement",
         "precision": "unbound"
       }
+    },
+    {
+      "id": "decision-01a1c18a-ff97-70f2-8fcd-1215d25393fc",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c18a-ff97-70f2-8fcd-1215d25393fc",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c18a-ff87-78a3-80f8-c4b9da3cd402"
+      },
+      "statement": "in the agent window i want wheel to zoom as it normally does. for scrolling you can drag scrollbar",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T18:21:14.530194+00:00",
+      "statement_hash": "41942140091f85ea71437b0152ccce27e35831008fec3c0f768c3712d5c81d46",
+      "artifacts": [
+        "chat_canvas.h",
+        "application_chat_input.cpp",
+        "application_chat_scroll.cpp",
+        "application_chat_view.cpp",
+        "application_events.cpp",
+        "application_pointer.cpp",
+        "application.h",
+        "CMakeLists.txt",
+        "tests/live_canvas_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "author_role": "agent",
+        "basis": "recorded_agent_summary",
+        "summary": "Wheel events over the conversation must use the same anchored smooth camera zoom as the rest of the canvas. A draggable scrollbar supplies independent conversation scrolling: a shared thumb calculation keeps drawing and hit testing aligned, pointer capture permits dragging outside the card, and a proportional grab offset remains valid while zooming. Scrollbar dragging never pans the camera or moves the card. Reading older messages stops automatic following; reaching the bottom restores it."
+      },
+      "association": {
+        "kind": "recorded_live",
+        "precision": "artifact_changes"
+      }
     }
   ]
 }

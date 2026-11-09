@@ -203,6 +203,9 @@ class Application {
     void draw_chat_messages();
     void draw_chat_chrome();
     void draw_chat_controls();
+    void draw_chat_scrollbar();
+    void begin_chat_scroll(Vec2 world);
+    void drag_chat_scroll(Vec2 world);
     void draw_input_selection(Vec2 origin);
     void move_chat_caret(int direction, bool extend);
     void draw_chat_questions();
@@ -244,6 +247,7 @@ class Application {
     void draw();
 
     void handle_button(const XEvent& event);
+    void zoom_wheel(unsigned button, Vec2 pointer);
     void handle_motion(const XEvent& event);
     void update_cursor();
     bool over_text(Vec2 screen);

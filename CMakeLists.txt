@@ -104,7 +104,7 @@ target_include_directories(gpu_renderer PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(gpu_renderer PUBLIC X11::X11 PkgConfig::TYPOGRAPHY PkgConfig::GPU)
 
 add_library(application_core application.cpp application_model.cpp application_popups.cpp
-    system_theme.cpp intent_document.cpp application_intent.cpp application_intent_view.cpp application_intent_input.cpp application_view.cpp application_events.cpp application_language.cpp application_live.cpp application_chat.cpp application_chat_view.cpp application_chat_input.cpp application_chat_questions.cpp application_composer.cpp application_session.cpp application_reload.cpp application_math.cpp application_pointer.cpp popup_markup.cpp syntax.cpp source_panel.cpp)
+    system_theme.cpp intent_document.cpp application_intent.cpp application_intent_view.cpp application_intent_input.cpp application_view.cpp application_events.cpp application_language.cpp application_live.cpp application_chat.cpp application_chat_scroll.cpp application_chat_view.cpp application_chat_input.cpp application_chat_questions.cpp application_composer.cpp application_session.cpp application_reload.cpp application_math.cpp application_pointer.cpp popup_markup.cpp syntax.cpp source_panel.cpp)
 target_compile_features(application_core PUBLIC cxx_std_17)
 target_include_directories(application_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(application_core PUBLIC gpu_renderer language_server source_graph math_typesetter project_watch agent_connection live_build)

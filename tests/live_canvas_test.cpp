@@ -102,6 +102,113 @@ struct ApplicationTestAccess {
         expect(glGetError() == GL_NO_ERROR,
                "Reloaded source and arrows must render without GPU errors");
     }
+    static XEvent button(unsigned number, Vec2 point)
+    {
+        XEvent event{};
+        event.type = ButtonPress;
+        event.xbutton.button = number;
+        event.xbutton.x = static_cast<int>(point.x);
+        event.xbutton.y = static_cast<int>(point.y);
+        return event;
+    }
+    static void move_pointer(Application& app, Vec2 world)
+    {
+        const auto screen = app.camera.world_to_screen(world, app.viewport());
+        XEvent motion{};
+        motion.type = MotionNotify;
+        motion.xmotion.x = static_cast<int>(screen.x);
+        motion.xmotion.y = static_cast<int>(screen.y);
+        app.handle_motion(motion);
+    }
+    static void test_scrollbar_drag(Application& app, double zoom)
+    {
+        app.camera.zoom = zoom;
+        app.zoom_animation.cancel(app.camera);
+        app.chat->follow = false;
+        app.chat->scroll = 400;
+        app.draw();
+        const auto thumb = app.chat->scrollbar_thumb();
+        const auto track = app.chat->scrollbar_track();
+        const auto world =
+            Vec2{thumb.origin.x + thumb.size.x / 2, thumb.origin.y + thumb.size.y / 3};
+        const auto point = app.camera.world_to_screen(world, app.viewport());
+        const auto scroll = app.chat->scroll;
+        const auto camera = app.camera;
+        const auto card = app.chat->bounds.origin;
+        app.handle_button(button(Button1, point));
+        expect(app.chat->scrolling && app.drag_button == Button1 &&
+                   app.active_cursor == app.normal_cursor &&
+                   std::abs(app.chat->scroll - scroll) < 0.001,
+               "Grabbing the scrollbar must keep its offset and use a normal cursor");
+        move_pointer(app, {track.origin.x + 90, track.origin.y + track.size.y + 100});
+        expect(app.chat->scroll == app.chat->content_height - app.chat->body.size.y &&
+                   app.chat->follow,
+               "Scrollbar drags must stay captured outside the card and clamp to the bottom");
+        expect(app.camera.center.x == camera.center.x && app.camera.center.y == camera.center.y &&
+                   app.camera.zoom == camera.zoom && app.chat->bounds.origin.x == card.x &&
+                   app.chat->bounds.origin.y == card.y,
+               "Dragging the scrollbar must not move the camera or conversation card");
+        const auto bottom = app.chat->scroll;
+        const auto anchor = app.camera.screen_to_world(app.mouse_position, app.viewport());
+        app.handle_button(button(Button4, app.mouse_position));
+        app.zoom_animation.advance(app.camera, app.viewport(), 0.04);
+        const auto anchored = app.camera.screen_to_world(app.mouse_position, app.viewport());
+        expect(app.camera.zoom > camera.zoom && app.chat->scroll == bottom &&
+                   std::abs(anchor.x - anchored.x) < 0.001 &&
+                   std::abs(anchor.y - anchored.y) < 0.001,
+               "Wheel zoom must remain anchored and independent while dragging the scrollbar");
+        app.zoom_animation.cancel(app.camera);
+        move_pointer(app, {track.origin.x, track.origin.y - 100});
+        expect(app.chat->scroll == 0 && !app.chat->follow,
+               "Dragging to the top must clamp and stop following new output");
+        app.handle_release(button(Button1, app.mouse_position));
+        expect(!app.chat->scrolling && !app.drag_button,
+               "Releasing the scrollbar must finish the captured drag");
+    }
+    static void test_conversation_navigation(Application& app)
+    {
+        for (int i = 0; i < 40; ++i)
+            app.chat->conversation.entries.push_back(
+                {"scroll-entry-" + std::to_string(i), "fixture-turn", "Agent",
+                 "A conversation entry that keeps enough history to scroll.", ""});
+        app.focus_chat();
+        app.chat->follow = false;
+        app.chat->scroll = 200;
+        app.draw();
+        for (const auto world :
+             {app.chat->body.origin, app.chat->editor.origin, app.chat->scrollbar_track().origin}) {
+            const auto point =
+                app.camera.world_to_screen({world.x + 6, world.y + 6}, app.viewport());
+            const auto scroll = app.chat->scroll;
+            const auto zoom = app.camera.zoom;
+            const auto wheel = button(Button4, point);
+            const Vec2 pointer{static_cast<double>(wheel.xbutton.x),
+                               static_cast<double>(wheel.xbutton.y)};
+            const auto anchor = app.camera.screen_to_world(pointer, app.viewport());
+            app.handle_button(wheel);
+            app.zoom_animation.advance(app.camera, app.viewport(), 0.04);
+            const auto anchored = app.camera.screen_to_world(pointer, app.viewport());
+            expect(app.camera.zoom > zoom && app.chat->scroll == scroll &&
+                       std::abs(anchor.x - anchored.x) < 0.001 &&
+                       std::abs(anchor.y - anchored.y) < 0.001,
+                   "Wheel over messages, the composer and scrollbar must zoom without scrolling");
+            app.zoom_animation.cancel(app.camera);
+            app.handle_button(button(Button5, point));
+            app.zoom_animation.advance(app.camera, app.viewport(), 0.04);
+            expect(app.chat->scroll == scroll,
+                   "Zooming out must also preserve conversation scroll");
+            app.zoom_animation.cancel(app.camera);
+        }
+        test_scrollbar_drag(app, 0.65);
+        test_scrollbar_drag(app, 1.4);
+        app.chat->scroll = app.chat->content_height - app.chat->body.size.y;
+        app.chat->follow = true;
+        app.chat->conversation.entries.push_back(
+            {"new-output", "fixture-turn", "Agent", "New output", ""});
+        app.draw();
+        expect(app.chat->scroll == app.chat->content_height - app.chat->body.size.y,
+               "Returning the scrollbar to the bottom must follow new agent output");
+    }
     static void test_composer_and_state(Application& app, const std::filesystem::path& root)
     {
         app.chat->conversation.ready = true;
@@ -164,6 +271,7 @@ struct ApplicationTestAccess {
         } while (Application::Clock::now() < deadline);
         expect(attributes.map_state == IsViewable, "Live canvas test window must be mapped");
         test_live_source(app, root);
+        test_conversation_navigation(app);
         test_composer_and_state(app, root);
         std::cout << "Live source, language updates, native composer and reload-state preservation "
                      "passed.\n";

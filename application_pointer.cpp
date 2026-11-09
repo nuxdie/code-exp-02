@@ -61,7 +61,8 @@ void Application::update_cursor()
 {
     Cursor cursor = normal_cursor;
     if (drag_button) {
-        if (dragged_panel < 0 && (!chat || !chat->dragging) && (!intent || !intent->dragging))
+        if (dragged_panel < 0 && (!chat || (!chat->dragging && !chat->scrolling)) &&
+            (!intent || !intent->dragging))
             cursor = drag_cursor;
     } else if (viewport().contains(mouse_position) && over_text(mouse_position)) {
         cursor = text_cursor;

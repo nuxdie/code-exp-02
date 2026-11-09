@@ -69,12 +69,7 @@ void Application::handle_button(const XEvent& event)
     schedule_save();
     hide_popup();
     if (event.xbutton.button == Button4 || event.xbutton.button == Button5) {
-        if (drag_button) {
-            camera.pan({pointer.x - last_pointer.x, pointer.y - last_pointer.y});
-            last_pointer = pointer;
-        }
-        zoom_animation.request(camera, event.xbutton.button == Button4 ? 1.15 : 1 / 1.15,
-                               drag_button || view.contains(pointer) ? pointer : view.center());
+        zoom_wheel(event.xbutton.button, pointer);
     } else if (event.xbutton.button == Button1 && (event.xbutton.state & Mod1Mask)) {
         inspect_intent(pointer);
     } else if (event.xbutton.button == Button1 && (event.xbutton.state & ControlMask)) {
@@ -89,6 +84,18 @@ void Application::handle_button(const XEvent& event)
     redraw = true;
 }
 
+void Application::zoom_wheel(unsigned button, Vec2 pointer)
+{
+    const auto view = viewport();
+    if (drag_button) {
+        if (!chat || !chat->scrolling)
+            camera.pan({pointer.x - last_pointer.x, pointer.y - last_pointer.y});
+        last_pointer = pointer;
+    }
+    zoom_animation.request(camera, button == Button4 ? 1.15 : 1 / 1.15,
+                           drag_button || view.contains(pointer) ? pointer : view.center());
+}
+
 void Application::handle_motion(const XEvent& event)
 {
     const Vec2 pointer{static_cast<double>(event.xmotion.x), static_cast<double>(event.xmotion.y)};
@@ -99,7 +106,9 @@ void Application::handle_motion(const XEvent& event)
         hide_popup();
         const Vec2 delta{pointer.x - last_pointer.x, pointer.y - last_pointer.y};
         drag_moved = drag_moved || std::hypot(delta.x, delta.y) > 1;
-        if (intent && intent->dragging) {
+        if (chat && chat->scrolling) {
+            drag_chat_scroll(camera.screen_to_world(pointer, viewport()));
+        } else if (intent && intent->dragging) {
             intent->bounds.origin.x += delta.x / camera.zoom;
             intent->bounds.origin.y += delta.y / camera.zoom;
         } else if (chat && chat->dragging) {
@@ -141,6 +150,10 @@ void Application::handle_motion(const XEvent& event)
 
 void Application::handle_release(const XEvent& event)
 {
+    if (chat && chat->scrolling)
+        drag_chat_scroll(camera.screen_to_world(
+            {static_cast<double>(event.xbutton.x), static_cast<double>(event.xbutton.y)},
+            viewport()));
     drag_button = 0;
     XUngrabPointer(display, CurrentTime);
     if (dragged_panel >= 0 && !drag_moved) {
@@ -148,16 +161,25 @@ void Application::handle_release(const XEvent& event)
         show_outline(dragged_panel);
     }
     dragged_panel = -1;
-    if (chat)
+    if (chat) {
         chat->dragging = false;
+        chat->scrolling = false;
+    }
     if (intent)
         intent->dragging = false;
     schedule_save();
+    redraw = true;
     update_cursor();
 }
 
 void Application::handle_key(const XEvent& event)
 {
+    auto pointer_key = event.xkey;
+    if (chat && chat->scrolling && XLookupKeysym(&pointer_key, 0) == XK_Escape) {
+        handle_release(event);
+        redraw = true;
+        return;
+    }
     if (intent_key(event) || chat_key(event)) {
         redraw = true;
         return;

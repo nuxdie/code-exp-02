@@ -11,7 +11,8 @@ bool contains(const CanvasRect& bounds, Vec2 point)
 
 bool Application::chat_button(const XEvent& event, Vec2 pointer)
 {
-    if (!chat || drag_button || event.xbutton.button == Button2)
+    if (!chat || drag_button || event.xbutton.button == Button2 ||
+        event.xbutton.button == Button4 || event.xbutton.button == Button5)
         return false;
     const auto world = camera.screen_to_world(pointer, viewport());
     if (!contains(chat->bounds, world)) {
@@ -19,13 +20,7 @@ bool Application::chat_button(const XEvent& event, Vec2 pointer)
             chat->focused = false;
         return false;
     }
-    if (event.xbutton.button == Button4 || event.xbutton.button == Button5) {
-        chat->restore_anchor.clear();
-        chat->scroll += (event.xbutton.button == Button4 ? -60 : 60) / camera.zoom;
-        const double maximum = std::max(0.0, chat->content_height - chat->body.size.y);
-        chat->scroll = std::clamp(chat->scroll, 0.0, maximum);
-        chat->follow = chat->scroll >= maximum;
-    } else if (event.xbutton.button == Button1) {
+    if (event.xbutton.button == Button1) {
         for (auto hit = chat->hits.rbegin(); hit != chat->hits.rend(); ++hit)
             if (contains(hit->bounds, world)) {
                 if (hit->kind == ChatHit::Kind::Message && (event.xbutton.state & Mod1Mask))
@@ -52,6 +47,9 @@ void Application::chat_action(const ChatHit& hit, Vec2 world)
             chat->dragging = true;
             last_pointer = mouse_position;
         }
+        break;
+    case ChatHit::Kind::Scrollbar:
+        begin_chat_scroll(world);
         break;
     case ChatHit::Kind::Input: {
         chat->focused = true;
