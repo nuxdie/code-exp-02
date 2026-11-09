@@ -1670,6 +1670,35 @@
         "kind": "recorded_live",
         "precision": "artifact_changes"
       }
+    },
+    {
+      "id": "decision-01a1c27d-ab60-7380-b29c-de66ef38c097",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c27d-ab60-7380-b29c-de66ef38c097",
+        "thread_id": "01a1c277-7225-7000-aeea-b7430cf4dc49",
+        "turn_id": "01a1c27d-ab4f-7d02-bc60-458cb1ee1d5b"
+      },
+      "statement": "add AGENTS.md that says that each chunk of work needs to be commited and pushed",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T22:46:18.211978+00:00",
+      "statement_hash": "f1fa2a0f6d578f12e32bc726c74ea23c851b8e323cd31532af52fda723665f06",
+      "artifacts": [
+        "AGENTS.md"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Document the requested repository workflow so each completed chunk is committed and pushed before starting another chunk or handing work back.",
+        "author_role": "agent",
+        "basis": "human_statement"
+      },
+      "association": {
+        "kind": "explicit_artifact_binding",
+        "precision": "file"
+      }
     }
   ]
 }
