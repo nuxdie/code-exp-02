@@ -12,7 +12,7 @@ void Application::initialize_cmake()
         }
     try {
         cmake_server = std::make_unique<lsp::LanguageServer>(
-            cmake_lsp_executable, workspace_root, project_build, std::move(cmake_documents),
+            cmake_lsp_executable, workspace_root, workspace_build, std::move(cmake_documents),
             lsp::ServerOptions{"cmake", {"stdio"}});
     } catch (const std::exception& error) {
         cmake_failure = error.what();

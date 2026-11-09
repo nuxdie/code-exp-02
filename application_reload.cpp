@@ -5,7 +5,8 @@
 void Application::initialize_reload()
 {
     const auto* option = std::getenv("SOURCE_CANVAS_AUTO_BUILD");
-    auto_build = !benchmark && chat && !chat->disabled && (!option || std::string(option) != "0");
+    auto_build = workspace_root == std::filesystem::weakly_canonical(project_root).string() &&
+                 !benchmark && chat && !chat->disabled && (!option || std::string(option) != "0");
     std::error_code error;
     loaded_binary = std::filesystem::last_write_time(executable, error);
     observed_binary = loaded_binary;

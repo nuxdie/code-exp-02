@@ -183,7 +183,6 @@ void Application::refresh_project_geometry()
     if (intent && intent->placed && intent->visible)
         bounds.push_back(intent->bounds);
     content_size = canvas_size(bounds);
-    std::ofstream(std::string(project_build) + "/source-graph.dot")
-        << graph_dot(files, dependencies);
+    std::ofstream(workspace_build + "/source-graph.dot") << graph_dot(files, dependencies);
     connections_dirty = true;
 }

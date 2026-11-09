@@ -385,6 +385,10 @@ if(BUILD_TESTING)
         add_test(NAME live_canvas COMMAND live_canvas_tests)
     endif()
     set_tests_properties(live_canvas PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 35)
+    add_executable(workspace_tests tests/workspace_test.cpp)
+    target_link_libraries(workspace_tests PRIVATE application_core)
+    add_test(NAME workspace COMMAND workspace_tests)
+    set_tests_properties(workspace PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30)
     add_executable(integration_tests tests/integration_test.cpp)
     target_link_libraries(integration_tests PRIVATE application_core)
     add_test(NAME integration COMMAND integration_tests)
@@ -393,8 +397,15 @@ if(BUILD_TESTING)
         "SOURCE_CANVAS_DISABLE_SESSION=1"
     )
     set_tests_properties(
-        integration PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 45 ENVIRONMENT
-                               "${INTEGRATION_ENVIRONMENT}"
+        integration
+        PROPERTIES SKIP_RETURN_CODE
+                   77
+                   TIMEOUT
+                   45
+                   ENVIRONMENT
+                   "${INTEGRATION_ENVIRONMENT}"
+                   WORKING_DIRECTORY
+                   "${CMAKE_CURRENT_SOURCE_DIR}"
     )
     add_test(
         NAME agent_bridge
@@ -438,6 +449,7 @@ if(BUILD_TESTING)
         live_build_tests
         agent_live_tests
         live_canvas_tests
+        workspace_tests
         camera_tests
         canvas_tests
         lsp_tests

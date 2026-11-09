@@ -2537,6 +2537,45 @@
         "kind": "explicit_artifact_binding",
         "precision": "file"
       }
+    },
+    {
+      "id": "decision-01a1c2b5-a1eb-7b43-ab05-e34bb6f66948",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c2b5-a1eb-7b43-ab05-e34bb6f66948",
+        "thread_id": "01a1c2b5-9da5-7631-a20e-17b0bec0cace",
+        "turn_id": "01a1c2b5-9db4-7a32-8f33-d4bf15863b8d"
+      },
+      "statement": "if i launch the app from a dir that has code, i want to see that code and not the app code. a bit like a normal ide would",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T23:47:25.816626+00:00",
+      "statement_hash": "c47a3c6bb62b2fc353d9681298b825961a9c4a2bd351f5fe91cce3ecaf3257a9",
+      "artifacts": [
+        "CMakeLists.txt",
+        "README.md",
+        "application.h",
+        "application_chat.cpp",
+        "application_cmake.cpp",
+        "application_live.cpp",
+        "application_model.cpp",
+        "application_reload.cpp",
+        "tests/live_canvas_test.cpp",
+        "tests/workspace_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Open the launch directory by default, normalize explicit workspace overrides, keep language tools and graph output inside the selected project, and restrict viewer rebuilds to its own source tree. Exercise startup from external and empty directories, compilation database selection, override precedence, agent context, and live source updates; explicitly launch the repository integration test from its source directory.",
+        "author_role": "agent",
+        "basis": "human_statement",
+        "recorded_at": "2026-11-09T23:50:23.553170+00:00"
+      },
+      "association": {
+        "kind": "explicit_artifact_binding",
+        "precision": "file"
+      }
     }
   ]
 }

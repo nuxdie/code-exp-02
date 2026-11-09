@@ -59,7 +59,8 @@ class Application {
     bool benchmark = false;
     Display* display = nullptr;
     std::filesystem::path executable;
-    std::string workspace_root = project_root;
+    std::string workspace_root;
+    std::string workspace_build;
     std::unique_ptr<ProjectWatcher> project_watcher;
     int screen = 0;
     std::unique_ptr<ChatCanvas> chat;

@@ -97,7 +97,14 @@ cmake --build build --parallel 2
 ./build/white_window
 ```
 
-The viewer opens the source tree used to configure the build. Bundled fonts and icons are copied into `build/`; keep them beside the executable.
+The viewer opens your current working directory. To browse another project, launch the executable from that project's directory:
+
+```bash
+cd /path/to/your/project
+/path/to/code-exp-02/build/white_window
+```
+
+Bundled fonts and icons are copied into `build/`; keep them beside the executable. Each project keeps its own session and decisions. Automatic viewer rebuilds run only when browsing the viewer's own source tree.
 
 > CMake configuration automatically formats the project's C++ and CMake files. Formatting tools, Python `websockets`, Graphviz, and the LaTeX tools are configure-time requirements.
 
@@ -146,7 +153,7 @@ Session state normally lives in `.cache/canvas-session.json` and preserves the c
 
 | Environment variable | Effect |
 | --- | --- |
-| `SOURCE_CANVAS_PROJECT_ROOT=/absolute/path` | Browse a different source tree. The build directory and language-tool configuration still come from the configured viewer build. |
+| `SOURCE_CANVAS_PROJECT_ROOT=/absolute/path` | Override the launch directory (relative paths also work). Language tools use this project's compilation database in its root or `build/`, with `.cache/source-canvas/` as a fallback for generated files. |
 | `SOURCE_CANVAS_DISABLE_AGENT=1` | Disable agent connections, automatic viewer rebuilds, and session saving. |
 | `SOURCE_CANVAS_AUTO_BUILD=0` | Keep agent connections but disable automatic viewer rebuilds and reloads. |
 | `SOURCE_CANVAS_STATE_FILE=/absolute/path.json` | Use a separate canvas session file. |

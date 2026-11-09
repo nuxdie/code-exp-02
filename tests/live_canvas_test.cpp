@@ -284,19 +284,23 @@ int main()
         return 77;
     const auto root =
         std::filesystem::temp_directory_path() / ("live-canvas-" + std::to_string(getpid()));
+    const auto launch_directory = std::filesystem::current_path();
     try {
         std::filesystem::create_directories(root);
         std::ofstream(root / "main.cpp") << "#include \"widget.h\"\nint main() { return 0; }\n";
         std::ofstream(root / "widget.h") << "#pragma once\n";
-        setenv("SOURCE_CANVAS_PROJECT_ROOT", root.c_str(), 1);
+        std::filesystem::current_path(root);
+        unsetenv("SOURCE_CANVAS_PROJECT_ROOT");
         setenv("SOURCE_CANVAS_DISABLE_AGENT", "1", 1);
         setenv("SOURCE_CANVAS_AUTO_BUILD", "0", 1);
         {
             Application app;
             ApplicationTestAccess::run(app, root);
         }
+        std::filesystem::current_path(launch_directory);
         std::filesystem::remove_all(root);
     } catch (const std::exception& error) {
+        std::filesystem::current_path(launch_directory);
         std::filesystem::remove_all(root);
         std::cerr << error.what() << '\n';
         return 1;

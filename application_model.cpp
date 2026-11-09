@@ -91,7 +91,7 @@ void Application::relayout()
         files.push_back({panel.path, panel.source, panel.bounds.size});
     dependencies = file_dependencies(files);
     try {
-        graph = graph_layout(files, dependencies, project_build);
+        graph = graph_layout(files, dependencies, workspace_build);
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
         graph.files = arrange_files(file_sizes);
