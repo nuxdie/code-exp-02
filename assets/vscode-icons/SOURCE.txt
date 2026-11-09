@@ -1,0 +1,9 @@
+vscode-icons
+https://github.com/vscode-icons/vscode-icons
+Commit: ae6300021bcea1c1867f933ac8f33f8bd649ee5c
+
+Unmodified SVG icons from the upstream icons directory.
+Icons: Creative Commons Attribution-ShareAlike 4.0 International
+https://creativecommons.org/licenses/by-sa/4.0/
+Branded icons retain their respective copyright licenses.
+Upstream code license is included as LICENSE.

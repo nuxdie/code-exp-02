@@ -1,0 +1,5 @@
+#pragma once
+
+inline constexpr const char* project_root = R"CONFIG(@CMAKE_CURRENT_SOURCE_DIR@)CONFIG";
+inline constexpr const char* project_build = R"CONFIG(@CMAKE_CURRENT_BINARY_DIR@)CONFIG";
+inline constexpr const char* clangd_executable = R"CONFIG(@CLANGD_EXECUTABLE@)CONFIG";

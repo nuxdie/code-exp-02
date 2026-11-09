@@ -1,0 +1,16 @@
+name: Quality
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install C++ tooling and rendering dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ pkg-config python3 clang-format-18 clang-tidy-18 clangd-18 libx11-dev libpango1.0-dev libfontconfig1-dev librsvg2-dev libepoxy-dev nlohmann-json3-dev graphviz texlive-latex-base dvisvgm xvfb xauth libgl1-mesa-dri libglx-mesa0
+      - name: Run the quality gate, including GPU tests with Mesa
+        run: xvfb-run -a python3 tools/quality.py --build --jobs 2

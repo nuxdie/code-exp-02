@@ -1,0 +1,24 @@
+Checks: >-
+  -*,
+  clang-analyzer-core.*,
+  clang-analyzer-cplusplus.*,
+  clang-analyzer-deadcode.*,
+  clang-analyzer-unix.*,
+  bugprone-use-after-move,
+  bugprone-infinite-loop,
+  bugprone-suspicious-memory-comparison,
+  performance-unnecessary-copy-initialization,
+  readability-function-cognitive-complexity,
+  readability-function-size,
+  readability-redundant-control-flow,
+  modernize-use-nullptr
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*'
+CheckOptions:
+  readability-function-cognitive-complexity.Threshold: 25
+  readability-function-cognitive-complexity.DescribeBasicIncrements: false
+  readability-function-cognitive-complexity.IgnoreMacros: true
+  readability-function-size.LineThreshold: 150
+  readability-function-size.StatementThreshold: 100
+  readability-function-size.NestingThreshold: 5
+  readability-function-size.ParameterThreshold: 6

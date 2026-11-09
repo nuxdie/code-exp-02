@@ -37,7 +37,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "public_file_change_patch_replay"
+        "evidence": "captured_embedded_source_snapshot"
       }
     },
     {
@@ -72,7 +72,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "public_file_change_patch_replay"
+        "evidence": "captured_embedded_source_snapshot"
       }
     },
     {
@@ -106,7 +106,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "public_file_change_patch_replay"
+        "evidence": "captured_embedded_source_snapshot"
       }
     },
     {
@@ -143,7 +143,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "public_file_change_patch_replay"
+        "evidence": "captured_embedded_source_snapshot"
       }
     },
     {
@@ -180,7 +180,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "public_file_change_patch_replay"
+        "evidence": "captured_embedded_source_snapshot"
       }
     },
     {
@@ -217,7 +217,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "public_file_change_patch_replay"
+        "evidence": "captured_embedded_source_snapshot"
       }
     },
     {
@@ -254,7 +254,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "public_file_change_patch_replay"
+        "evidence": "captured_embedded_source_snapshot"
       }
     },
     {
@@ -291,7 +291,7 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "public_file_change_patch_replay"
+        "evidence": "captured_embedded_source_snapshot"
       }
     },
     {
@@ -328,7 +328,803 @@
         "kind": "reconstructed_milestone",
         "precision": "milestone",
         "original_git_history": false,
-        "evidence": "public_file_change_patch_replay"
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c002-670f-7f13-916d-4a19c6ebb950",
+      "statement": "i want smooth zoom",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c002-66fd-7de3-b3bc-05b5f721de3d",
+        "message_id": "01a1c002-670f-7f13-916d-4a19c6ebb950",
+        "turn_started_at": 1794222745,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531112+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Keeping camera coordinates separate from screen pixels makes zoom anchoring and panning composable. Easing the zoom target lets new pan and wheel input continue during animation."
+      },
+      "artifacts": [
+        "camera.h",
+        "main.cpp",
+        "application_events.cpp",
+        "application_view.cpp",
+        "tests/camera_test.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c004-f2eb-7892-baf3-bd28ca6cb165",
+      "statement": "show me",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c004-f2d9-70e1-a8cb-bb2b2e6fd049",
+        "message_id": "01a1c004-f2eb-7892-baf3-bd28ca6cb165",
+        "turn_started_at": 1794222912,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531116+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "This was a request to demonstrate the application; it does not independently establish a source change."
+      },
+      "artifacts": [],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c006-c560-7480-b5eb-16125605cbd2",
+      "statement": "i want all source files to be laid out, not in one column",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c006-c54e-7162-8d2e-c3a3bf95e935",
+        "message_id": "01a1c006-c560-7480-b5eb-16125605cbd2",
+        "turn_started_at": 1794223031,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531122+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Independent source cards keep the project spatially explorable instead of forcing every file into a single column."
+      },
+      "artifacts": [
+        "canvas.h",
+        "source_panel.*",
+        "application_model.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c009-8db0-7a23-9e4f-1eb63ccc2f1a",
+      "statement": "should we use lsp for the language instead of our own implementation for lang features?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c006-c54e-7162-8d2e-c3a3bf95e935",
+        "message_id": "01a1c009-8db0-7a23-9e4f-1eb63ccc2f1a",
+        "turn_started_at": 1794223031,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531126+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "clangd supplies language semantics, symbol hierarchy, definitions, references, and diagnostics instead of duplicating a C++ language implementation."
+      },
+      "artifacts": [
+        "lsp.*",
+        "application_language.cpp",
+        "viewer_config.h.in",
+        "tests/lsp_test.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c00a-e65b-7f13-a2d2-81b691744ff3",
+      "statement": "do it",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c00a-e64b-7190-be8c-2a2b9fd41935",
+        "message_id": "01a1c00a-e65b-7f13-a2d2-81b691744ff3",
+        "turn_started_at": 1794223302,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531129+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "clangd supplies language semantics, symbol hierarchy, definitions, references, and diagnostics instead of duplicating a C++ language implementation."
+      },
+      "artifacts": [
+        "lsp.*",
+        "application_language.cpp",
+        "viewer_config.h.in",
+        "tests/lsp_test.cpp"
+      ],
+      "relations": [
+        {
+          "kind": "confirms",
+          "decision_id": "decision-01a1c009-8db0-7a23-9e4f-1eb63ccc2f1a"
+        }
+      ],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c00d-95cf-7033-92ea-3a52b67df9e4",
+      "statement": "theres vscode-icons that has icons for all files. use them",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c00a-e64b-7190-be8c-2a2b9fd41935",
+        "message_id": "01a1c00d-95cf-7033-92ea-3a52b67df9e4",
+        "turn_started_at": 1794223302,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531132+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Upstream vscode-icons identify file types consistently while preserving their attribution and license metadata."
+      },
+      "artifacts": [
+        "assets/vscode-icons/*",
+        "source_panel.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c01f-59bc-7393-b735-22f667b7a37d",
+      "statement": "why is zooming in and out so choppy and slow? we do have gpu you know",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c00a-e64b-7190-be8c-2a2b9fd41935",
+        "message_id": "01a1c01f-59bc-7393-b735-22f667b7a37d",
+        "turn_started_at": 1794223302,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531139+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Cached GPU glyph meshes make camera movement a transform update; text shaping and rasterization are kept out of the navigation path."
+      },
+      "artifacts": [
+        "gpu.*",
+        "application_view.cpp",
+        "tests/gpu_test.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c021-2f21-7610-9f2c-b8d1b95704c9",
+      "statement": "enforce the code style with formatter automatically",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c00a-e64b-7190-be8c-2a2b9fd41935",
+        "message_id": "01a1c021-2f21-7610-9f2c-b8d1b95704c9",
+        "turn_started_at": 1794223302,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531143+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Formatting runs automatically as part of the build so source layout remains consistent without manual cleanup."
+      },
+      "artifacts": [
+        ".clang-format",
+        "CMakeLists.txt",
+        "tools/quality.py"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c045-9629-7ad0-a626-0d05e3ff2180",
+      "statement": "good. now i want arrows and like force directed layout? dot? graphvis? edward tufty? bret victor?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c045-9617-7562-835a-d254f534ce8f",
+        "message_id": "01a1c045-9629-7ad0-a626-0d05e3ff2180",
+        "turn_started_at": 1794227148,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531152+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Graphviz lays out file dependencies and routes edges so relationships are visible across independently placed source cards."
+      },
+      "artifacts": [
+        "source_graph.*",
+        "application_view.cpp",
+        "tests/structure_test.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c046-be90-7b02-9580-e1328c24b336",
+      "statement": "also, we want syntax hightlighting in popups too? and make them stay while we mouse over them?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c045-9617-7562-835a-d254f534ce8f",
+        "message_id": "01a1c046-be90-7b02-9580-e1328c24b336",
+        "turn_started_at": 1794227148,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531155+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Human statements are durable primary records. Explicit agent rationale, Git commit trailers, hunk inspection, and line blame connect those records to versioned artifacts while distinguishing recovered milestones and uncommitted work from confirmed attribution."
+      },
+      "artifacts": [
+        "tools/provenance.py",
+        "application_intent*.cpp",
+        "intent_canvas.h",
+        ".canvas/*"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c048-df44-7093-8809-b9e44b6e1e5d",
+      "statement": "i want collapsible blocks",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c045-9617-7562-835a-d254f534ce8f",
+        "message_id": "01a1c048-df44-7093-8809-b9e44b6e1e5d",
+        "turn_started_at": 1794227148,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531157+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Source-to-display row maps let blocks collapse without losing the source coordinates needed for navigation and dependency links."
+      },
+      "artifacts": [
+        "structure.h",
+        "application_model.cpp",
+        "application_view.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c049-baa0-7131-b6bb-2041f25533b7",
+      "statement": "and i want symbols hyrachy",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c045-9617-7562-835a-d254f534ce8f",
+        "message_id": "01a1c049-baa0-7131-b6bb-2041f25533b7",
+        "turn_started_at": 1794227148,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531162+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Preserving clangd document-symbol nesting exposes classes, methods, and fields as a navigable hierarchy."
+      },
+      "artifacts": [
+        "structure.h",
+        "application_popups.cpp",
+        "application_language.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c04b-bd6e-7c90-9ba0-8ec6d8528fac",
+      "statement": "ctrl clinking on symbol in definition shows jumplist to usages",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c045-9617-7562-835a-d254f534ce8f",
+        "message_id": "01a1c04b-bd6e-7c90-9ba0-8ec6d8528fac",
+        "turn_started_at": 1794227148,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531164+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Definition metadata distinguishes a definition click from a usage click, so Ctrl+click on a definition can offer its usages as destinations."
+      },
+      "artifacts": [
+        "application_events.cpp",
+        "application_language.cpp",
+        "application_popups.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c04d-f069-71b0-8af5-95ff24544c6a",
+      "statement": "is there a way to automatically lint code for maintanbility? i want the code to be easy to understand and reason about. maintanable. and i want an automated process which would be able to check and enforse that. think sonar or linters and such",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c045-9617-7562-835a-d254f534ce8f",
+        "message_id": "01a1c04d-f069-71b0-8af5-95ff24544c6a",
+        "turn_started_at": 1794227148,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531168+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "A mandatory quality gate bounds function complexity and module size, rejects include cycles, runs static analysis and tests, and drives refactoring of oversized controller functions."
+      },
+      "artifacts": [
+        ".clang-tidy",
+        "tools/quality.py",
+        ".github/workflows/quality.yml",
+        "application*.cpp",
+        "tests/test_quality.py"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c08f-6305-7fa3-9f70-31e2d470315a",
+      "statement": "is it possible to have arrows from the places where they make sense within the files? and no need to highlight them",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c08f-62f2-7253-afee-0ee132ea6c5d",
+        "message_id": "01a1c08f-6305-7fa3-9f70-31e2d470315a",
+        "turn_started_at": 1794231984,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531175+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Dependency endpoints use the actual filename reference and visible source row; folded code maps to its displayed header and hover no longer changes arrow emphasis."
+      },
+      "artifacts": [
+        "application_view.cpp",
+        "source_graph.*",
+        "tests/structure_test.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c091-a995-7011-853f-25fe874caf0f",
+      "statement": "also move toggle things close to the places they toggle instead of a gutter on the left. and only show them on hover over that place. no need to always draw them.",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c08f-62f2-7253-afee-0ee132ea6c5d",
+        "message_id": "01a1c091-a995-7011-853f-25fe874caf0f",
+        "turn_started_at": 1794231984,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531179+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Inline fold controls appear beside the relevant block on hover, reducing permanent chrome and keeping the control near its effect."
+      },
+      "artifacts": [
+        "application_view.cpp",
+        "application_events.cpp",
+        "application_pointer.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c092-e707-7bb1-976b-7e4d4044e29c",
+      "statement": "and why theres no syntax highlighting inside the doc popups?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c08f-62f2-7253-afee-0ee132ea6c5d",
+        "message_id": "01a1c092-e707-7bb1-976b-7e4d4044e29c",
+        "turn_started_at": 1794231984,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531184+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Documentation needs to preserve code structure and markup through clangd, while serif prose, monospace code, and asynchronously typeset LaTeX remain readable together. This typography interpretation was later clarified by the human intent about provenance."
+      },
+      "artifacts": [
+        "popup_markup.*",
+        "application_popups.cpp",
+        "application_math.cpp",
+        "application_view.cpp",
+        "math_typesetter.*",
+        "fonts/noto-serif/*",
+        "tests/popup_test.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c093-f122-73c1-b201-26c52fb2f050",
+      "statement": "also i saw some <code> tags in popup docs",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c08f-62f2-7253-afee-0ee132ea6c5d",
+        "message_id": "01a1c093-f122-73c1-b201-26c52fb2f050",
+        "turn_started_at": 1794231984,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531189+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Documentation needs to preserve code structure and markup through clangd, while serif prose, monospace code, and asynchronously typeset LaTeX remain readable together. This typography interpretation was later clarified by the human intent about provenance."
+      },
+      "artifacts": [
+        "popup_markup.*",
+        "application_popups.cpp",
+        "application_math.cpp",
+        "application_view.cpp",
+        "math_typesetter.*",
+        "fonts/noto-serif/*",
+        "tests/popup_test.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c094-1800-7380-babf-d47025a87d20",
+      "statement": "also i saw some <code> tags in popup docs. support and fix",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c08f-62f2-7253-afee-0ee132ea6c5d",
+        "message_id": "01a1c094-1800-7380-babf-d47025a87d20",
+        "turn_started_at": 1794231984,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531192+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Documentation needs to preserve code structure and markup through clangd, while serif prose, monospace code, and asynchronously typeset LaTeX remain readable together. This typography interpretation was later clarified by the human intent about provenance."
+      },
+      "artifacts": [
+        "popup_markup.*",
+        "application_popups.cpp",
+        "application_math.cpp",
+        "application_view.cpp",
+        "math_typesetter.*",
+        "fonts/noto-serif/*",
+        "tests/popup_test.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c095-65ba-7670-ad7d-0325757f7369",
+      "statement": "actually i also like knuth ideas on literate programming and latex and stuff. so i want beautiful fonts and prose and code all coexist and be legible where it matters",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c08f-62f2-7253-afee-0ee132ea6c5d",
+        "message_id": "01a1c095-65ba-7670-ad7d-0325757f7369",
+        "turn_started_at": 1794231984,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531196+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Documentation needs to preserve code structure and markup through clangd, while serif prose, monospace code, and asynchronously typeset LaTeX remain readable together. This typography interpretation was later clarified by the human intent about provenance."
+      },
+      "artifacts": [
+        "popup_markup.*",
+        "application_popups.cpp",
+        "application_math.cpp",
+        "application_view.cpp",
+        "math_typesetter.*",
+        "fonts/noto-serif/*",
+        "tests/popup_test.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c097-1e7a-7121-88d6-b32a94a09d38",
+      "statement": "btw. why is our cursor ALWAYS a pan hand?  about it. when its over text it should be text cursor. in other places a normal one. and panning cursor only while we pan",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c08f-62f2-7253-afee-0ee132ea6c5d",
+        "message_id": "01a1c097-1e7a-7121-88d6-b32a94a09d38",
+        "turn_started_at": 1794231984,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531200+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Cursor choice follows the interaction target; the pan cursor is used only while a pan is actually active."
+      },
+      "artifacts": [
+        "application_pointer.cpp",
+        "application_events.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
+      }
+    },
+    {
+      "id": "decision-01a1c097-8605-7dd3-a736-fd6001ac6be0",
+      "statement": "include latex as well",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c08f-62f2-7253-afee-0ee132ea6c5d",
+        "message_id": "01a1c097-8605-7dd3-a736-fd6001ac6be0",
+        "turn_started_at": 1794231984,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531204+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Documentation needs to preserve code structure and markup through clangd, while serif prose, monospace code, and asynchronously typeset LaTeX remain readable together. This typography interpretation was later clarified by the human intent about provenance."
+      },
+      "artifacts": [
+        "popup_markup.*",
+        "application_popups.cpp",
+        "application_math.cpp",
+        "application_view.cpp",
+        "math_typesetter.*",
+        "fonts/noto-serif/*",
+        "tests/popup_test.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "captured_embedded_source_snapshot"
       }
     }
   ]

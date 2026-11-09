@@ -1,0 +1,4 @@
+Noto Serif, unmodified Regular, Bold, Italic and BoldItalic TTF files.
+Copied from the locally installed Debian fonts-noto-core package.
+Upstream: https://github.com/notofonts/noto-fonts
+License: SIL Open Font License 1.1; see LICENSE.
