@@ -422,16 +422,14 @@
         "summary": "Independent source cards keep the project spatially explorable instead of forcing every file into a single column."
       },
       "artifacts": [
+        "application_model.cpp",
         "canvas.h",
-        "source_panel.*",
-        "application_model.cpp"
+        "source_panel.*"
       ],
       "relations": [],
       "association": {
-        "kind": "reconstructed_milestone",
-        "precision": "milestone",
-        "original_git_history": false,
-        "evidence": "working_tree_after_completed_feature"
+        "kind": "reviewed_checkpoint",
+        "precision": "selected_diff"
       }
     },
     {
