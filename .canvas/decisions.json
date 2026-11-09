@@ -108,6 +108,43 @@
         "original_git_history": false,
         "evidence": "public_file_change_patch_replay"
       }
+    },
+    {
+      "id": "decision-01a1bff7-048f-7443-a329-a18446ed2e72",
+      "statement": "good. i want beautiful font. bolds, italics and ligatures",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1bff7-047e-7942-8776-1c754fcb4233",
+        "message_id": "01a1bff7-048f-7443-a329-a18446ed2e72",
+        "turn_started_at": 1794221999,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531080+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "Bundled JetBrains Mono faces and Pango shaping preserve bold, italic, and programming ligatures across the canvas."
+      },
+      "artifacts": [
+        "fonts/JetBrainsMono*",
+        "fonts/OFL.txt",
+        "fonts/SOURCE.txt",
+        "gpu.cpp",
+        "application_view.cpp"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "public_file_change_patch_replay"
+      }
     }
   ]
 }

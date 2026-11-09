@@ -1,10 +1,14 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
+#include <cairo-xlib.h>
+#include <fontconfig/fontconfig.h>
+#include <pango/pangocairo.h>
 
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -13,6 +17,7 @@
 
 #include "source_text.h"
 
+// Style complete lines so programming ligatures keep their natural spacing.
 enum class Syntax { Plain, Keyword, Type, String, Comment, Number, Directive, Function };
 
 struct Token {
@@ -46,7 +51,8 @@ std::vector<Token> highlight(const std::string& line, HighlightState& state)
         "bool", "char", "char8_t", "char16_t", "char32_t", "double", "float", "int",
         "long", "short", "signed", "unsigned", "void", "wchar_t", "size_t",
         "string", "vector", "array", "unordered_set", "istringstream",
-        "Display", "Window", "Atom", "GC", "XEvent", "XFontStruct", "XColor",
+        "Display", "Window", "Atom", "XEvent", "PangoLayout", "PangoAttribute",
+        "PangoAttrList", "PangoFontDescription", "cairo_t", "cairo_surface_t",
         "Syntax", "Token", "HighlightState"
     };
     auto identifier = [](char c) {
@@ -152,6 +158,25 @@ int main()
         return 1;
     }
 
+    // Load the bundled font faces for this application only.
+    std::error_code path_error;
+    const auto executable = std::filesystem::read_symlink("/proc/self/exe", path_error);
+    if (path_error) {
+        std::cerr << "Could not locate the executable: " << path_error.message() << '\n';
+        XCloseDisplay(display);
+        return 1;
+    }
+    for (const char* face : {"Regular", "Bold", "Italic"}) {
+        const auto path = executable.parent_path() / "fonts" /
+            (std::string("JetBrainsMono-") + face + ".ttf");
+        if (!FcConfigAppFontAddFile(FcConfigGetCurrent(),
+                reinterpret_cast<const FcChar8*>(path.c_str()))) {
+            std::cerr << "Could not load bundled font: " << path << '\n';
+            XCloseDisplay(display);
+            return 1;
+        }
+    }
+
     const int screen = DefaultScreen(display);
     Window window = XCreateSimpleWindow(
         display, RootWindow(display, screen),
@@ -162,48 +187,69 @@ int main()
     XSelectInput(display, window, ExposureMask | StructureNotifyMask |
                                  KeyPressMask | ButtonPressMask);
 
-    XFontStruct* font = XLoadQueryFont(display, "9x15");
-    if (!font) {
-        font = XLoadQueryFont(display, "fixed");
-    }
-    if (!font) {
-        std::cerr << "Could not load a monospace font.\n";
-        XDestroyWindow(display, window);
-        XCloseDisplay(display);
-        return 1;
-    }
+    cairo_surface_t* surface = cairo_xlib_surface_create(
+        display, window, DefaultVisual(display, screen), 800, 600);
+    cairo_t* cr = cairo_create(surface);
+    auto* options = cairo_font_options_create();
+    cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_GRAY);
+    cairo_font_options_set_hint_style(options, CAIRO_HINT_STYLE_SLIGHT);
+    cairo_set_font_options(cr, options);
 
-    GC gc = XCreateGC(display, window, 0, nullptr);
-    XSetFont(display, gc, font->fid);
-    XSetForeground(display, gc, BlackPixel(display, screen));
+    PangoLayout* base_layout = pango_cairo_create_layout(cr);
+    pango_cairo_context_set_font_options(pango_layout_get_context(base_layout), options);
+    cairo_font_options_destroy(options);
+    PangoFontDescription* font = pango_font_description_from_string("JetBrains Mono");
+    pango_font_description_set_absolute_size(font, 16 * PANGO_SCALE);
+    pango_layout_set_font_description(base_layout, font);
+    pango_font_description_free(font);
+    pango_layout_set_single_paragraph_mode(base_layout, TRUE);
+    pango_layout_set_text(base_layout, "Ag", -1);
+    int font_height = 0;
+    pango_layout_get_pixel_size(base_layout, nullptr, &font_height);
 
     // Colors follow the order of the Syntax enum and stay readable on white.
-    const std::array<const char*, 8> color_names = {
-        "#24292f", "#0033b3", "#6f42c1", "#a31515",
-        "#39703a", "#006b6b", "#8546a3", "#795e26"
+    const std::array<unsigned, 8> colors = {
+        0x24292f, 0x0033b3, 0x6f42c1, 0xa31515,
+        0x39703a, 0x006b6b, 0x8546a3, 0x795e26
     };
-    std::array<unsigned long, 8> colors{};
-    for (std::size_t i = 0; i < colors.size(); ++i) {
-        XColor color{}, exact{};
-        colors[i] = XAllocNamedColor(display, DefaultColormap(display, screen),
-            color_names[i], &color, &exact) ? color.pixel : BlackPixel(display, screen);
-    }
 
-    std::vector<std::string> lines;
-    std::vector<std::vector<Token>> highlighted_lines;
+    std::vector<PangoLayout*> layouts;
     HighlightState highlight_state;
     std::istringstream source(source_text);
     std::string line;
     int text_width = 0;
     while (std::getline(source, line)) {
-        text_width = std::max(text_width, XTextWidth(
-            font, line.c_str(), static_cast<int>(line.size())));
-        highlighted_lines.push_back(highlight(line, highlight_state));
-        lines.push_back(line);
+        PangoLayout* layout = pango_layout_copy(base_layout);
+        pango_layout_set_text(layout, line.c_str(), static_cast<int>(line.size()));
+        PangoAttrList* attributes = pango_attr_list_new();
+        pango_attr_list_insert(attributes,
+            pango_attr_font_features_new("liga=1,clig=1,calt=1"));
+        for (const auto& token : highlight(line, highlight_state)) {
+            auto add = [&](PangoAttribute* attribute) {
+                attribute->start_index = static_cast<guint>(token.begin);
+                attribute->end_index = static_cast<guint>(token.begin + token.length);
+                pango_attr_list_insert(attributes, attribute);
+            };
+            const auto color = colors[static_cast<std::size_t>(token.syntax)];
+            add(pango_attr_foreground_new(((color >> 16) & 255) * 257,
+                ((color >> 8) & 255) * 257, (color & 255) * 257));
+            if (token.syntax == Syntax::Keyword || token.syntax == Syntax::Directive) {
+                add(pango_attr_weight_new(PANGO_WEIGHT_BOLD));
+            } else if (token.syntax == Syntax::Comment) {
+                add(pango_attr_style_new(PANGO_STYLE_ITALIC));
+            }
+        }
+        pango_layout_set_attributes(layout, attributes);
+        pango_attr_list_unref(attributes);
+        int line_width = 0;
+        pango_layout_get_pixel_size(layout, &line_width, nullptr);
+        text_width = std::max(text_width, line_width);
+        layouts.push_back(layout);
     }
+    g_object_unref(base_layout);
 
-    constexpr int margin = 16;
-    const int line_height = font->ascent + font->descent + 3;
+    constexpr int margin = 24;
+    const int line_height = font_height + 4;
     int width = 800;
     int height = 600;
     int first_line = 0;
@@ -215,26 +261,30 @@ int main()
 
     auto draw = [&]() {
         first_line = std::clamp(first_line, 0,
-            std::max(0, static_cast<int>(lines.size()) - visible_lines()));
+            std::max(0, static_cast<int>(layouts.size()) - visible_lines()));
         horizontal_offset = std::clamp(horizontal_offset, 0,
             std::max(0, text_width - std::max(1, width - 2 * margin)));
-        XClearWindow(display, window);
+        // Paint a complete frame before presenting it to avoid scroll flicker.
+        cairo_push_group(cr);
+        cairo_set_source_rgb(cr, 1, 1, 1);
+        cairo_paint(cr);
+        cairo_save(cr);
+        cairo_rectangle(cr, margin, margin,
+            std::max(0, width - 2 * margin), std::max(0, height - 2 * margin));
+        cairo_clip(cr);
         for (int row = 0; row < visible_lines(); ++row) {
             const int index = first_line + row;
-            if (index >= static_cast<int>(lines.size())) {
+            if (index >= static_cast<int>(layouts.size())) {
                 break;
             }
-            const auto& text = lines[index];
-            int x = margin - horizontal_offset;
-            const int y = margin + font->ascent + row * line_height;
-            for (const auto& token : highlighted_lines[index]) {
-                const char* start = text.c_str() + token.begin;
-                const int length = static_cast<int>(token.length);
-                XSetForeground(display, gc, colors[static_cast<std::size_t>(token.syntax)]);
-                XDrawString(display, window, gc, x, y, start, length);
-                x += XTextWidth(font, start, length);
-            }
+            cairo_move_to(cr, margin - horizontal_offset, margin + row * line_height);
+            pango_cairo_show_layout(cr, layouts[index]);
         }
+        cairo_restore(cr);
+        cairo_pop_group_to_source(cr);
+        cairo_paint(cr);
+        cairo_surface_flush(surface);
+        XFlush(display);
     };
 
     Atom close_message = XInternAtom(display, "WM_DELETE_WINDOW", False);
@@ -243,6 +293,7 @@ int main()
     XMapWindow(display, window);
 
     bool running = true;
+    bool window_destroyed = false;
     while (running) {
         XEvent event{};
         XNextEvent(display, &event);
@@ -253,6 +304,7 @@ int main()
         } else if (event.type == ConfigureNotify) {
             width = event.xconfigure.width;
             height = event.xconfigure.height;
+            cairo_xlib_surface_set_size(surface, width, height);
             draw();
         } else if (event.type == ButtonPress) {
             if (event.xbutton.button == Button4) {
@@ -270,22 +322,24 @@ int main()
             case XK_Page_Up:   first_line -= visible_lines(); break;
             case XK_Page_Down: first_line += visible_lines(); break;
             case XK_Home: first_line = 0; horizontal_offset = 0; break;
-            case XK_End: first_line = static_cast<int>(lines.size()); break;
+            case XK_End: first_line = static_cast<int>(layouts.size()); break;
             }
             draw();
         } else if (event.type == ClientMessage &&
                    event.xclient.message_type == protocols &&
                    event.xclient.format == 32 &&
                    static_cast<Atom>(event.xclient.data.l[0]) == close_message) {
-            XDestroyWindow(display, window);
             running = false;
         } else if (event.type == DestroyNotify) {
+            window_destroyed = true;
             running = false;
         }
     }
 
-    XFreeGC(display, gc);
-    XFreeFont(display, font);
+    for (auto* layout : layouts) g_object_unref(layout);
+    cairo_destroy(cr);
+    cairo_surface_destroy(surface);
+    if (!window_destroyed) XDestroyWindow(display, window);
     XCloseDisplay(display);
     return 0;
 }
