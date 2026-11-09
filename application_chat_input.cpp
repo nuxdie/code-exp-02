@@ -260,10 +260,10 @@ void Application::chat_selection(const XEvent& event)
         const Atom property = request.property == None ? request.target : request.property;
         const Atom utf8 = XInternAtom(display, "UTF8_STRING", False);
         if (request.target == utf8 || request.target == XA_STRING) {
+            const auto& text = request.selection == XA_PRIMARY ? primary_text : clipboard_text;
             XChangeProperty(display, request.requestor, property, request.target, 8,
-                            PropModeReplace,
-                            reinterpret_cast<const unsigned char*>(clipboard_text.data()),
-                            static_cast<int>(clipboard_text.size()));
+                            PropModeReplace, reinterpret_cast<const unsigned char*>(text.data()),
+                            static_cast<int>(text.size()));
             response.xselection.property = property;
         } else if (request.target == XInternAtom(display, "TARGETS", False)) {
             const Atom targets[]{utf8, XA_STRING};

@@ -117,6 +117,7 @@ def main():
     command([tool("clang-format-18", "clang-format"), "--style=file", "--dry-run", "--Werror"]
             + [str(path) for path in files])
     check_architecture(files)
+    command([sys.executable, str(ROOT / "tools/cmake_style.py")])
     if arguments.build:
         command(["cmake", "-S", str(ROOT), "-B", str(build), "-DBUILD_TESTING=ON"])
         command(["cmake", "--build", str(build), "--parallel", str(max(1, arguments.jobs))])

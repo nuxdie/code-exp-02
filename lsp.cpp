@@ -181,6 +181,10 @@ std::string hover_text(const Json& contents)
     return text;
 }
 
+namespace {
+std::atomic<int> next_request_id{2};
+}
+
 struct LanguageServer::Impl {
     struct Request {
         int id;
@@ -192,7 +196,7 @@ struct LanguageServer::Impl {
     int results_fd = -1, commands_fd = -1, stream = -1;
     pid_t child = -1;
     std::atomic<bool> stopping{false};
-    std::atomic<int> next_id{2};
+    ServerOptions options;
     std::mutex mutex;
     std::vector<Request> commands;
     std::vector<Message> results;
@@ -201,9 +205,9 @@ struct LanguageServer::Impl {
     std::vector<Document> documents;
 
     Impl(std::string executable, std::string root, std::string build,
-         std::vector<Document> documents)
-        : executable(std::move(executable)), root(std::move(root)), build(std::move(build)),
-          documents(std::move(documents))
+         std::vector<Document> documents, ServerOptions options)
+        : options(std::move(options)), executable(std::move(executable)), root(std::move(root)),
+          build(std::move(build)), documents(std::move(documents))
     {
         results_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
         commands_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
@@ -238,6 +242,7 @@ struct LanguageServer::Impl {
 
     void publish(Message message)
     {
+        message.language = options.language;
         {
             std::lock_guard<std::mutex> lock(mutex);
             results.push_back(std::move(message));
@@ -258,20 +263,22 @@ struct LanguageServer::Impl {
     {
         int sockets[2];
         if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sockets) != 0)
-            throw std::runtime_error("Could not create clangd transport");
+            throw std::runtime_error("Could not create language server transport");
         posix_spawn_file_actions_t actions;
         posix_spawn_file_actions_init(&actions);
         posix_spawn_file_actions_adddup2(&actions, sockets[1], STDIN_FILENO);
         posix_spawn_file_actions_adddup2(&actions, sockets[1], STDOUT_FILENO);
         posix_spawn_file_actions_addclose(&actions, sockets[0]);
         posix_spawn_file_actions_addclose(&actions, sockets[1]);
-        const auto log = build + "/clangd.log";
+        const auto log = build + "/" + options.language + "-language-server.log";
         posix_spawn_file_actions_addopen(&actions, STDERR_FILENO, log.c_str(),
                                          O_WRONLY | O_CREAT | O_TRUNC, 0644);
-        std::vector<std::string> arguments = {
-            executable,           "--compile-commands-dir=" + build,
-            "--background-index", "--header-insertion=never",
-            "--log=error",        "-j=2"};
+        std::vector<std::string> arguments{executable};
+        if (options.language == "cpp")
+            arguments.insert(arguments.end(),
+                             {"--compile-commands-dir=" + build, "--background-index",
+                              "--header-insertion=never", "--log=error", "-j=2"});
+        arguments.insert(arguments.end(), options.arguments.begin(), options.arguments.end());
         std::vector<char*> argv;
         for (auto& argument : arguments)
             argv.push_back(argument.data());
@@ -283,7 +290,8 @@ struct LanguageServer::Impl {
         if (error) {
             ::close(sockets[0]);
             child = -1;
-            throw std::runtime_error("Could not start clangd: " + std::string(strerror(error)));
+            throw std::runtime_error("Could not start language server: " +
+                                     std::string(strerror(error)));
         }
         stream = sockets[0];
         fcntl(stream, F_SETFL, fcntl(stream, F_GETFL) | O_NONBLOCK);
@@ -296,6 +304,7 @@ struct LanguageServer::Impl {
     std::map<std::string, int> versions;
     bool ready = false;
     bool supports_semantics = false;
+    Json capabilities = Json::object();
     Framer framer;
     std::vector<Request> deferred;
     int shutdown_id = 0;
@@ -320,7 +329,7 @@ struct LanguageServer::Impl {
     {
         if (!supports_semantics || !semantic_pending.insert(uri).second)
             return;
-        send_request({next_id++,
+        send_request({next_request_id++,
                       "textDocument/semanticTokens/full",
                       uri,
                       {{"textDocument", {{"uri", uri}}}}});
@@ -329,8 +338,16 @@ struct LanguageServer::Impl {
     void refresh_structure(const std::string& uri)
     {
         request_semantics(uri);
-        for (const char* method : {"textDocument/documentSymbol", "textDocument/foldingRange"})
-            send_request({next_id++, method, uri, {{"textDocument", {{"uri", uri}}}}});
+        for (const auto& feature :
+             {std::pair{"documentSymbolProvider", "textDocument/documentSymbol"},
+              std::pair{"foldingRangeProvider", "textDocument/foldingRange"},
+              std::pair{"documentLinkProvider", "textDocument/documentLink"},
+              std::pair{"diagnosticProvider", "textDocument/diagnostic"}}) {
+            const auto supported = capabilities.value(feature.first, Json(false));
+            if (supported.is_object() || (supported.is_boolean() && supported.get<bool>()))
+                send_request(
+                    {next_request_id++, feature.second, uri, {{"textDocument", {{"uri", uri}}}}});
+        }
     }
 
     void open_document(const Document& document)
@@ -340,7 +357,7 @@ struct LanguageServer::Impl {
                       {"params",
                        {{"textDocument",
                          {{"uri", document.uri},
-                          {"languageId", "cpp"},
+                          {"languageId", options.language},
                           {"version", 1},
                           {"text", document.text}}}}}});
         refresh_structure(document.uri);
@@ -401,8 +418,8 @@ struct LanguageServer::Impl {
             exit_sent = true;
         } else if (id == 1) {
             if (value.contains("error"))
-                throw std::runtime_error("clangd initialization failed");
-            const auto capabilities = value.at("result").at("capabilities");
+                throw std::runtime_error("Language server initialization failed");
+            capabilities = value.at("result").at("capabilities");
             supports_semantics = capabilities.contains("semanticTokensProvider");
             ready = true;
             send_message({{"method", "initialized"}, {"params", Json::object()}});
@@ -460,7 +477,9 @@ struct LanguageServer::Impl {
                        "async", "modification", "documentation", "defaultLibrary"}},
                      {"overlappingTokenSupport", false},
                      {"multilineTokenSupport", false}}}}}}},
-               {"initializationOptions", {{"fallbackFlags", {"-std=c++17"}}}}}}});
+               {"initializationOptions", options.language == "cpp"
+                                             ? Json{{"fallbackFlags", {"-std=c++17"}}}
+                                             : Json::object()}}}});
     }
 
     void collect_commands()
@@ -505,7 +524,7 @@ struct LanguageServer::Impl {
                 written = 0;
             }
         } else if (sent < 0 && errno != EAGAIN && errno != EINTR)
-            throw std::runtime_error("clangd write failed");
+            throw std::runtime_error("Language server write failed");
     }
     bool read_messages()
     {
@@ -514,12 +533,12 @@ struct LanguageServer::Impl {
         if (received == 0) {
             if (stopping)
                 return false;
-            throw std::runtime_error("clangd disconnected");
+            throw std::runtime_error("Language server disconnected");
         }
         if (received < 0) {
             if (errno == EAGAIN || errno == EINTR)
                 return true;
-            throw std::runtime_error("clangd read failed");
+            throw std::runtime_error("Language server read failed");
         }
         framer.append({bytes, static_cast<std::size_t>(received)});
         while (auto message = framer.pop())
@@ -532,7 +551,7 @@ struct LanguageServer::Impl {
         initialize_protocol();
         while (true) {
             if (stopping && !shutdown_id) {
-                shutdown_id = next_id++;
+                shutdown_id = next_request_id++;
                 send_message({{"id", shutdown_id}, {"method", "shutdown"}, {"params", nullptr}});
                 shutdown_deadline =
                     std::chrono::steady_clock::now() + std::chrono::milliseconds(300);
@@ -547,7 +566,7 @@ struct LanguageServer::Impl {
             if (count < 0) {
                 if (errno == EINTR)
                     continue;
-                throw std::runtime_error("clangd poll failed");
+                throw std::runtime_error("Language server poll failed");
             }
             if (fds[1].revents & POLLIN)
                 collect_commands();
@@ -594,9 +613,9 @@ struct LanguageServer::Impl {
 };
 
 LanguageServer::LanguageServer(std::string executable, std::string root, std::string build,
-                               std::vector<Document> documents)
+                               std::vector<Document> documents, ServerOptions options)
     : impl(std::make_unique<Impl>(std::move(executable), std::move(root), std::move(build),
-                                  std::move(documents)))
+                                  std::move(documents), std::move(options)))
 {
 }
 LanguageServer::~LanguageServer() = default;
@@ -616,7 +635,7 @@ std::vector<Message> LanguageServer::take_messages()
 
 int LanguageServer::request(std::string method, std::string uri, Json params)
 {
-    const int id = impl->next_id++;
+    const int id = next_request_id++;
     impl->enqueue({id, std::move(method), std::move(uri), std::move(params)});
     return id;
 }

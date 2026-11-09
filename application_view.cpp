@@ -83,9 +83,9 @@ void Application::draw_files(const Viewport& view)
         const auto& panel = panels[i];
         if (!panel.bounds.intersects(visible))
             continue;
-        if (language_server && panel.cpp && camera.zoom >= 0.35 &&
-            opened_documents.insert(panel.uri).second)
-            language_server->open({panel.uri, panel.source});
+        auto* server = server_for(panel);
+        if (server && camera.zoom >= 0.35 && opened_documents.insert(panel.uri).second)
+            server->open({panel.uri, panel.source});
         const Vec2 origin{screen_center.x + (panel.bounds.origin.x - camera.center.x) * camera.zoom,
                           screen_center.y +
                               (panel.bounds.origin.y - camera.center.y) * camera.zoom};
@@ -98,6 +98,7 @@ void Application::draw_files(const Viewport& view)
                  {panel.bounds.size.x * camera.zoom, line_height * camera.zoom}},
                 {0.92f, 0.95f, 1, 1});
         }
+        draw_source_selection(panel, origin);
         // One cached GPU mesh per file; navigation only updates uniforms.
         renderer->draw(panel.mesh, origin, camera.zoom);
     }
@@ -194,6 +195,14 @@ void Application::draw_popup()
         }
         int text_width = 0, text_height = 0;
         pango_layout_get_pixel_size(popup_layout, &text_width, &text_height);
+        auto last = popup_text.find_last_not_of(" \t\r\n");
+        if (last != std::string::npos) {
+            while (last && (static_cast<unsigned char>(popup_text[last]) & 0xc0) == 0x80)
+                --last;
+            PangoRectangle tail{};
+            pango_layout_index_to_pos(popup_layout, static_cast<int>(last), &tail);
+            text_height = std::min(text_height, (tail.y + tail.height) / PANGO_SCALE);
+        }
         const double x =
             std::clamp(popup_origin.x + 16, 0.0, std::max(0.0, width - text_width - 24.0));
         const double visible_height =
@@ -206,6 +215,9 @@ void Application::draw_popup()
         renderer->rectangle(popup_bounds, {0.97f, 0.98f, 1, 1});
         renderer->clip({{x + 12, y + 12}, {static_cast<double>(text_width), visible_height}},
                        height);
+        if (text_selection.surface == TextSurface::Popup && text_selection.range.text == popup_text)
+            draw_selection_layout(popup_layout, {x + 12, y + 12 - popup_scroll}, 1,
+                                  text_selection.range.selection());
         renderer->draw(popup_mesh, {x + 12, y + 12 - popup_scroll}, 1);
         renderer->clear_clip();
         if (text_height > visible_height) {
@@ -388,6 +400,46 @@ void Application::configure_document(PangoLayout* layout, const PopupDocument& d
     pango_attr_list_unref(attributes);
 }
 
+namespace {
+void compact_popup_layout(PangoLayout* layout, const PopupDocument& document, bool prose)
+{
+    auto* font = pango_font_description_copy(pango_layout_get_font_description(layout));
+    pango_font_description_set_absolute_size(font, (prose ? 16 : 14) * PANGO_SCALE);
+    pango_layout_set_font_description(layout, font);
+    pango_font_description_free(font);
+    pango_layout_set_spacing(layout, PANGO_SCALE);
+    auto* attributes = pango_attr_list_copy(pango_layout_get_attributes(layout));
+    for (const auto& span : document.styles) {
+        if (span.style != PopupStyle::Heading)
+            continue;
+        auto* scale = pango_attr_scale_new(1.1);
+        scale->start_index = static_cast<guint>(span.begin);
+        scale->end_index = static_cast<guint>(span.begin + span.length);
+        pango_attr_list_change(attributes, scale);
+    }
+    std::istringstream input(document.text);
+    std::string line;
+    std::size_t offset = 0, row = 0;
+    bool previous_blank = true;
+    while (std::getline(input, line)) {
+        const bool blank = line.find_first_not_of(" \t\r") == std::string::npos;
+        const bool code = row < document.code_lines.size() && document.code_lines[row];
+        if (blank && !code && prose) {
+            auto* height =
+                pango_attr_line_height_new_absolute((previous_blank ? 1 : 7) * PANGO_SCALE);
+            height->start_index = static_cast<guint>(offset);
+            height->end_index = static_cast<guint>(offset + line.size() + 1);
+            pango_attr_list_change(attributes, height);
+        }
+        previous_blank = blank;
+        offset += line.size() + 1;
+        ++row;
+    }
+    pango_layout_set_attributes(layout, attributes);
+    pango_attr_list_unref(attributes);
+}
+} // namespace
+
 void Application::update_popup_mesh(int layout_width)
 {
     PopupDocument document;
@@ -397,6 +449,7 @@ void Application::update_popup_mesh(int layout_width)
     document.math = popup_math;
     document.inline_code = popup_inline_code;
     configure_document(popup_layout, document, layout_width, popup_prose);
+    compact_popup_layout(popup_layout, document, popup_prose);
     upload_document_mesh(popup_mesh, popup_layout, popup_math);
     cached_popup = popup_text;
     cached_popup_width = layout_width;

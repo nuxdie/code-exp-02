@@ -12,9 +12,9 @@ void Application::draw_conversation()
     renderer->rectangle({{origin.x + 3, origin.y + 4}, bounds.size}, {0.1f, 0.15f, 0.2f, 0.08f});
     renderer->rectangle(bounds, {0.995f, 0.993f, 0.985f, 1});
     chat->hits.clear();
-    chat->hits.push_back({ChatHit::Kind::Title, {chat->bounds.origin, {chat->bounds.size.x, 64}}});
-    chat->body = {{chat->bounds.origin.x + 24, chat->bounds.origin.y + 88},
-                  {chat->bounds.size.x - 48, chat->bounds.size.y - 256}};
+    chat->hits.push_back({ChatHit::Kind::Title, {chat->bounds.origin, {chat->bounds.size.x, 48}}});
+    chat->body = {{chat->bounds.origin.x + 24, chat->bounds.origin.y + 64},
+                  {chat->bounds.size.x - 48, chat->bounds.size.y - 232}};
     chat->editor = {{chat->bounds.origin.x + 20, chat->bounds.origin.y + chat->bounds.size.y - 144},
                     {chat->bounds.size.x - 40, 90}};
     if (!chat->conversation.error.empty()) {
@@ -38,8 +38,7 @@ void Application::draw_conversation()
 void Application::draw_chat_chrome()
 {
     const auto& model = chat->conversation;
-    const auto label =
-        model.title + "\n" + model.status + (build_status.empty() ? "" : " · " + build_status);
+    const auto& label = model.title;
     update_document(chat->header, label, static_cast<int>(chat->bounds.size.x - 200), false);
     const auto point = camera.world_to_screen(
         {chat->bounds.origin.x + 24, chat->bounds.origin.y + 16}, viewport());
@@ -54,7 +53,7 @@ void Application::draw_chat_chrome()
         auto& error = chat->messages["__error"];
         update_document(error, model.error, static_cast<int>(chat->body.size.x), false);
         const auto point = camera.world_to_screen(
-            {chat->bounds.origin.x + 24, chat->bounds.origin.y + 88}, viewport());
+            {chat->bounds.origin.x + 24, chat->bounds.origin.y + 64}, viewport());
         renderer->clip({point, {chat->body.size.x * camera.zoom, 90 * camera.zoom}}, height);
         renderer->draw(error.mesh, point, camera.zoom);
         renderer->clear_clip();
@@ -89,6 +88,11 @@ void Application::draw_chat_messages()
             const auto found = chat->messages.find(entry.id);
             if (bounds.intersects(chat->body) && found != chat->messages.end() &&
                 found->second.layout) {
+                if (text_selection.surface == TextSurface::Chat && text_selection.key == entry.id &&
+                    text_selection.range.text == found->second.document.text)
+                    draw_selection_layout(found->second.layout.get(),
+                                          camera.world_to_screen(bounds.origin, viewport()),
+                                          camera.zoom, text_selection.range.selection());
                 renderer->draw(found->second.mesh,
                                camera.world_to_screen(bounds.origin, viewport()), camera.zoom);
                 chat->hits.push_back({ChatHit::Kind::Message, bounds, i});
@@ -155,9 +159,5 @@ void Application::draw_chat_controls()
                        camera.zoom);
         chat->hits.push_back({ChatHit::Kind::Stop, stop});
     }
-    auto& hint = chat->messages["__hint"];
-    update_document(hint, "Wheel zooms · Drag scrollbar to scroll · Enter sends", 520, false);
-    renderer->draw(hint.mesh, camera.world_to_screen({chat->editor.origin.x, y}, viewport()),
-                   camera.zoom);
     draw_chat_questions();
 }

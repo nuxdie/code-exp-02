@@ -1,5 +1,6 @@
 #pragma once
 #include "agent_client.h"
+#include "canvas_selection.h"
 #include "chat_canvas.h"
 #include "conversation.h"
 #include "document_view.h"
@@ -66,7 +67,8 @@ class Application {
     std::unique_ptr<SystemTheme> system_theme;
     XIM input_method = nullptr;
     XIC input_context = nullptr;
-    std::string clipboard_text;
+    std::string clipboard_text, primary_text;
+    CanvasSelection text_selection;
     Clock::time_point save_due = Clock::time_point::max();
     std::unique_ptr<GpuRenderer> renderer;
     Window window = 0;
@@ -93,6 +95,10 @@ class Application {
     GraphLayout graph;
     Vec2 content_size;
     std::unique_ptr<lsp::LanguageServer> language_server;
+    std::unique_ptr<lsp::LanguageServer> cmake_server;
+    bool cmake_ready = false;
+    std::string cmake_failure;
+    std::vector<std::string> cmake_token_legend;
     std::vector<std::string> token_legend;
     unsigned deprecated_modifier = 0;
     unsigned definition_modifier = 0;
@@ -172,6 +178,11 @@ class Application {
 
     bool initialize();
     void initialize_workspace();
+    void initialize_cmake();
+    lsp::LanguageServer* server_for(const SourcePanel& panel);
+    bool open_document_link(Vec2 pointer);
+    bool open_literal_file(const SourceHit& hit);
+    void language_links(const lsp::Message& message);
     void initialize_reload();
     void queue_rebuild();
     void poll_reload(Clock::time_point now);
@@ -217,6 +228,22 @@ class Application {
     void chat_selection(const XEvent& event);
     bool chat_over_text(Vec2 pointer);
     bool open_chat_link(const DocumentView& view, Vec2 point);
+    TextTarget text_at(Vec2 pointer);
+    TextTarget active_text_target();
+    TextTarget chat_text_target(Vec2 pointer);
+    TextTarget source_text_target(Vec2 pointer);
+    std::size_t text_byte_at(const TextTarget& target, Vec2 pointer, bool* inside = nullptr);
+    std::size_t source_byte_at(const SourcePanel& panel, Vec2 pointer);
+    TextInput& selected_input();
+    bool begin_text_selection(const XEvent& event, Vec2 pointer);
+    void move_text_selection(Vec2 pointer);
+    void end_text_selection(const XEvent& event);
+    void selection_click(const XEvent& event);
+    bool selection_key(const XEvent& event);
+    std::string selected_text();
+    void draw_selection_layout(PangoLayout* layout, Vec2 origin, double scale,
+                               std::pair<std::size_t, std::size_t> range);
+    void draw_source_selection(const SourcePanel& panel, Vec2 origin);
     void load_session();
     void save_session();
     void schedule_save();
@@ -253,6 +280,7 @@ class Application {
     bool over_text(Vec2 screen);
     void handle_release(const XEvent& event);
     void handle_key(const XEvent& event);
+    bool cancel_pointer_drag(const XEvent& event);
     void handle_message(const lsp::Message& message);
     void handle_event(const XEvent& event);
     void remember_view();
@@ -288,6 +316,7 @@ class Application {
     void discover_braces(SourcePanel& panel, const std::string& line,
                          const std::vector<Token>& tokens, std::vector<int>& brace_stack);
     void apply_diagnostics(const SourcePanel& panel, std::size_t line, PangoAttrList* attributes);
+    void language_error(const lsp::Message& message);
     void language_initialized(const lsp::Message& message);
     void language_structure(const lsp::Message& message);
     void language_styles(const lsp::Message& message);

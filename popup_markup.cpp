@@ -76,6 +76,9 @@ class HtmlDocumentation {
             name[1] <= '6') {
             return "\n### ";
         }
+        if (!pre && !code && name.size() == 3 && name[0] == '/' && name[1] == 'h' &&
+            name[2] >= '1' && name[2] <= '6')
+            return "\n";
         if (pre || code)
             return literal;
         if (name == "br" || name == "p" || name == "/p" || name == "div" || name == "/div")

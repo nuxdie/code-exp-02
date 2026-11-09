@@ -33,6 +33,11 @@ void Application::draw_intent()
     const auto body = camera.world_to_screen(intent->body.origin, viewport());
     renderer->clip({body, {intent->body.size.x * camera.zoom, intent->body.size.y * camera.zoom}},
                    height);
+    if (text_selection.surface == TextSurface::Intent &&
+        text_selection.range.text == intent->document.document.text)
+        draw_selection_layout(intent->document.layout.get(),
+                              {body.x, body.y - intent->scroll * camera.zoom}, camera.zoom,
+                              text_selection.range.selection());
     renderer->draw(intent->document.mesh, {body.x, body.y - intent->scroll * camera.zoom},
                    camera.zoom);
     renderer->clear_clip();
@@ -62,12 +67,16 @@ void Application::draw_intent_controls()
         {origin, {intent->editor.size.x * camera.zoom, intent->editor.size.y * camera.zoom}},
         {0.92f, 0.94f, 0.95f, 1});
     update_document(intent->rationale,
-                    "Human rationale · Enter saves · Esc cancels\n" +
-                        intent_literal(intent->input.text) + "│",
+                    "Human rationale · Enter saves · Esc cancels\n" + intent->input.text + "│",
                     static_cast<int>(intent->editor.size.x - 24), false);
     renderer->clip(
         {origin, {intent->editor.size.x * camera.zoom, intent->editor.size.y * camera.zoom}},
         height);
+    const auto range = intent->input.selection();
+    const std::string prefix = "Human rationale · Enter saves · Esc cancels\n";
+    draw_selection_layout(intent->rationale.layout.get(),
+                          {origin.x + 12 * camera.zoom, origin.y + 10 * camera.zoom}, camera.zoom,
+                          {range.first + prefix.size(), range.second + prefix.size()});
     renderer->draw(intent->rationale.mesh,
                    {origin.x + 12 * camera.zoom, origin.y + 10 * camera.zoom}, camera.zoom);
     renderer->clear_clip();

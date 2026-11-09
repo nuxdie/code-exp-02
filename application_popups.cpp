@@ -59,8 +59,9 @@ void Application::show_outline(int index)
     if (index < 0 || index >= static_cast<int>(panels.size()))
         return;
     auto& panel = panels[index];
-    if (language_server && panel.cpp && opened_documents.insert(panel.uri).second)
-        language_server->open({panel.uri, panel.source});
+    auto* server = server_for(panel);
+    if (server && opened_documents.insert(panel.uri).second)
+        server->open({panel.uri, panel.source});
     outline_panel = index;
     list_title = "Symbols · " + panel.path;
     jump_rows.clear();

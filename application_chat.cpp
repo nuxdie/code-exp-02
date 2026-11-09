@@ -16,6 +16,7 @@ void Application::initialize_workspace()
             language_failure = error.what();
         }
     }
+    initialize_cmake();
     camera.reset(viewport());
     initialize_chat();
 }

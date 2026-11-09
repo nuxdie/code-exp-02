@@ -17,14 +17,14 @@ SourcePanel Application::make_panel(const std::string& path, const std::string& 
     int text_width = 0;
     pango_layout_get_pixel_size(panel.title, &text_width, nullptr);
     text_width += 32;
-    const bool cmake =
-        path == "CMakeLists.txt" || std::filesystem::path(path).extension() == ".cmake";
+    panel.cmake =
+        std::filesystem::path(path).filename() == "CMakeLists.txt" || extension == ".cmake";
     HighlightState highlight_state;
     std::vector<int> brace_stack;
     std::istringstream source(text);
     std::string line;
     while (std::getline(source, line)) {
-        const auto tokens = highlight(line, highlight_state, cmake);
+        const auto tokens = highlight(line, highlight_state, panel.cmake);
         auto* layout = make_line(line, tokens);
         discover_braces(panel, line, tokens, brace_stack);
         int line_width = 0;
@@ -205,17 +205,19 @@ int Application::query_at_pointer(const std::string& method)
     if (std::getenv("SOURCE_CANVAS_TRACE_LSP"))
         std::cerr << method << " at " << mouse_position.x << ',' << mouse_position.y << " -> panel "
                   << hit.panel << " line " << hit.line << " byte " << hit.byte << '\n';
-    if (hit.panel < 0 || !panels[hit.panel].cpp)
+    if (hit.panel < 0 || (!panels[hit.panel].cpp && !panels[hit.panel].cmake))
         return 0;
-    if (!language_ready || !language_server) {
-        show_popup(language_failure.empty() ? "Language features are starting…"
-                                            : "Language features unavailable: " + language_failure,
+    const auto& panel = panels[hit.panel];
+    auto* server = server_for(panel);
+    const auto& failure = panel.cmake ? cmake_failure : language_failure;
+    if (!(panel.cmake ? cmake_ready : language_ready) || !server) {
+        show_popup(failure.empty() ? "Language features are starting…"
+                                   : "Language features unavailable: " + failure,
                    mouse_position);
         return 0;
     }
-    const auto& panel = panels[hit.panel];
     if (opened_documents.insert(panel.uri).second)
-        language_server->open({panel.uri, panel.source});
+        server->open({panel.uri, panel.source});
     lsp::Json params = {
         {"textDocument", {{"uri", panel.uri}}},
         {"position",
@@ -235,7 +237,7 @@ int Application::query_at_pointer(const std::string& method)
             }
         }
     }
-    return language_server->request(method, panel.uri, std::move(params));
+    return server->request(method, panel.uri, std::move(params));
 }
 
 bool Application::jump_to(const lsp::Json& location)
@@ -261,8 +263,9 @@ bool Application::jump_to(const lsp::Json& location)
         panel.bounds.origin = {content_size.x + 96, 0};
         content_size.x = panel.bounds.origin.x + panel.bounds.size.x;
         content_size.y = std::max(content_size.y, panel.bounds.size.y);
-        if (language_server && panel.cpp && opened_documents.insert(panel.uri).second)
-            language_server->open({panel.uri, text});
+        auto* server = server_for(panel);
+        if (server && opened_documents.insert(panel.uri).second)
+            server->open({panel.uri, text});
         panels.push_back(std::move(panel));
         found = std::prev(panels.end());
     }

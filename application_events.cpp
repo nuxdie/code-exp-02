@@ -60,14 +60,14 @@ void Application::handle_button(const XEvent& event)
         !popup_text.empty() && Viewport{popup_bounds.origin.x, popup_bounds.origin.y,
                                         popup_bounds.size.x, popup_bounds.size.y}
                                    .contains(pointer);
-    if (popup_button(event, pointer, in_popup))
-        return;
-    if (intent_button(event, pointer))
-        return;
-    if (chat_button(event, pointer))
+    if (begin_text_selection(event, pointer) || popup_button(event, pointer, in_popup) ||
+        intent_button(event, pointer) || chat_button(event, pointer))
         return;
     schedule_save();
     hide_popup();
+    if (event.xbutton.button == Button1 && !(event.xbutton.state & Mod1Mask) &&
+        open_document_link(pointer))
+        return;
     if (event.xbutton.button == Button4 || event.xbutton.button == Button5) {
         zoom_wheel(event.xbutton.button, pointer);
     } else if (event.xbutton.button == Button1 && (event.xbutton.state & Mod1Mask)) {
@@ -88,7 +88,7 @@ void Application::zoom_wheel(unsigned button, Vec2 pointer)
 {
     const auto view = viewport();
     if (drag_button) {
-        if (!chat || !chat->scrolling)
+        if ((!chat || !chat->scrolling) && !text_selection.dragging)
             camera.pan({pointer.x - last_pointer.x, pointer.y - last_pointer.y});
         last_pointer = pointer;
     }
@@ -102,6 +102,10 @@ void Application::handle_motion(const XEvent& event)
     mouse_position = pointer;
     redraw = true;
     update_cursor();
+    if (text_selection.dragging) {
+        move_text_selection(pointer);
+        return;
+    }
     if (drag_button) {
         hide_popup();
         const Vec2 delta{pointer.x - last_pointer.x, pointer.y - last_pointer.y};
@@ -150,6 +154,10 @@ void Application::handle_motion(const XEvent& event)
 
 void Application::handle_release(const XEvent& event)
 {
+    if (text_selection.dragging) {
+        end_text_selection(event);
+        return;
+    }
     if (chat && chat->scrolling)
         drag_chat_scroll(camera.screen_to_world(
             {static_cast<double>(event.xbutton.x), static_cast<double>(event.xbutton.y)},
@@ -172,15 +180,21 @@ void Application::handle_release(const XEvent& event)
     update_cursor();
 }
 
+bool Application::cancel_pointer_drag(const XEvent& event)
+{
+    auto key = event.xkey;
+    if (XLookupKeysym(&key, 0) != XK_Escape ||
+        (!text_selection.dragging && (!chat || !chat->scrolling)))
+        return false;
+    text_selection.moved = true;
+    handle_release(event);
+    return true;
+}
+
 void Application::handle_key(const XEvent& event)
 {
-    auto pointer_key = event.xkey;
-    if (chat && chat->scrolling && XLookupKeysym(&pointer_key, 0) == XK_Escape) {
-        handle_release(event);
-        redraw = true;
-        return;
-    }
-    if (intent_key(event) || chat_key(event)) {
+    if (cancel_pointer_drag(event) || selection_key(event) || intent_key(event) ||
+        chat_key(event)) {
         redraw = true;
         return;
     }
@@ -289,6 +303,8 @@ void Application::handle_key(const XEvent& event)
             mouse_position);
         break;
     case XK_F12:
+        if (!(event.xkey.state & ShiftMask) && open_document_link(mouse_position))
+            break;
         if (event.xkey.state & ShiftMask)
             list_request = query_at_pointer("textDocument/references");
         else

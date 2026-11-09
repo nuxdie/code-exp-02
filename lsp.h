@@ -42,6 +42,11 @@ struct Document {
     std::string uri;
     std::string text;
 };
+struct ServerOptions {
+    std::string language = "cpp";
+    std::vector<std::string> arguments;
+};
+
 struct Message {
     std::string method;
     std::string uri;
@@ -49,13 +54,14 @@ struct Message {
     Json result;
     std::string error;
     int version = 0;
+    std::string language = "cpp";
 };
 
 // All process IO runs on a worker. The UI polls event_fd alongside X11.
 class LanguageServer {
   public:
     LanguageServer(std::string executable, std::string root, std::string build,
-                   std::vector<Document> documents);
+                   std::vector<Document> documents, ServerOptions options = {});
     ~LanguageServer();
     LanguageServer(const LanguageServer&) = delete;
     LanguageServer& operator=(const LanguageServer&) = delete;

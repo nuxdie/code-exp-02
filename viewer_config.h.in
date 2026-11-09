@@ -5,3 +5,5 @@ inline constexpr const char* project_build = R"CONFIG(@CMAKE_CURRENT_BINARY_DIR@
 inline constexpr const char* clangd_executable = R"CONFIG(@CLANGD_EXECUTABLE@)CONFIG";
 
 inline constexpr const char* python_executable = R"CONFIG(@Python3_EXECUTABLE@)CONFIG";
+
+inline constexpr const char* cmake_lsp_executable = R"CONFIG(@CMAKE_LSP_EXECUTABLE@)CONFIG";

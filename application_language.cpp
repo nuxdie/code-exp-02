@@ -9,23 +9,21 @@ void Application::handle_message(const lsp::Message& message)
     if (message.version > 0 && (panel == panels.end() || panel->version != message.version))
         return;
     if (!message.error.empty()) {
-        std::cerr << "Language feature: " << message.error << '\n';
-        if (message.method == "error") {
-            language_ready = false;
-            language_failure = message.error;
-        }
-        if (message.id > 0 && (message.id == hover_request || message.id == navigation_request ||
-                               message.id == list_request))
-            show_popup(message.error, mouse_position);
+        language_error(message);
         return;
     }
     if (message.method == "initialized") {
         language_initialized(message);
+    } else if (message.method == "textDocument/documentLink") {
+        language_links(message);
+    } else if (message.method == "documentLink/resolve" && message.id == navigation_request) {
+        language_definition(message);
     } else if (message.method == "textDocument/documentSymbol" ||
                message.method == "textDocument/foldingRange") {
         language_structure(message);
     } else if (message.method == "textDocument/semanticTokens/full" ||
-               message.method == "textDocument/publishDiagnostics") {
+               message.method == "textDocument/publishDiagnostics" ||
+               message.method == "textDocument/diagnostic") {
         language_styles(message);
     } else if (message.method == "textDocument/hover" && message.id == hover_request) {
         language_hover(message);
@@ -38,9 +36,33 @@ void Application::handle_message(const lsp::Message& message)
     }
 }
 
+void Application::language_error(const lsp::Message& message)
+{
+    std::cerr << "Language feature: " << message.error << '\n';
+    if (message.method == "error") {
+        if (message.language == "cmake") {
+            cmake_ready = false;
+            cmake_failure = message.error;
+        } else {
+            language_ready = false;
+            language_failure = message.error;
+        }
+    }
+    if (message.id > 0 && (message.id == hover_request || message.id == navigation_request ||
+                           message.id == list_request))
+        show_popup(message.error, mouse_position);
+}
+
 void Application::language_initialized(const lsp::Message& message)
 {
 
+    if (message.language == "cmake") {
+        cmake_ready = true;
+        if (message.result.contains("semanticTokensProvider"))
+            cmake_token_legend = message.result["semanticTokensProvider"]["legend"]["tokenTypes"]
+                                     .get<std::vector<std::string>>();
+        return;
+    }
     language_ready = true;
     if (message.result.contains("semanticTokensProvider")) {
         const auto& legend = message.result["semanticTokensProvider"]["legend"];
@@ -91,10 +113,13 @@ void Application::language_styles(const lsp::Message& message)
     if (found == panels.end())
         return;
     if (message.method == "textDocument/semanticTokens/full" && message.result.is_object())
-        found->semantics = lsp::semantic_tokens(message.result.value("data", lsp::Json::array()),
-                                                token_legend, found->text);
+        found->semantics =
+            lsp::semantic_tokens(message.result.value("data", lsp::Json::array()),
+                                 found->cmake ? cmake_token_legend : token_legend, found->text);
     else if (message.method == "textDocument/publishDiagnostics")
         found->diagnostics = message.result;
+    else if (message.method == "textDocument/diagnostic")
+        found->diagnostics = message.result.value("items", lsp::Json::array());
     apply_styles(*found);
     redraw = true;
 }
@@ -113,6 +138,11 @@ void Application::language_hover(const lsp::Message& message)
 void Application::language_definition(const lsp::Message& message)
 {
 
+    if (message.method == "documentLink/resolve" && message.result.is_object()) {
+        jump_to({{"uri", message.result.value("target", "")},
+                 {"range", {{"start", {{"line", 0}, {"character", 0}}}}}});
+        return;
+    }
     const auto location = message.result.is_array()
                               ? (message.result.empty() ? lsp::Json() : message.result.front())
                               : message.result;

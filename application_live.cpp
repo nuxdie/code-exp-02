@@ -6,7 +6,7 @@ bool needs_viewer_build(const std::string& path)
     if (path.compare(0, 6, "tests/") == 0)
         return false;
     if (path == "tools/agent_bridge.py" || path == "CMakeLists.txt" || path == ".clang-format" ||
-        path == ".clang-tidy")
+        path == ".clang-tidy" || path == ".cmake-format.json" || path == "tools/cmake_style.py")
         return true;
     const auto extension = std::filesystem::path(path).extension().string();
     return extension == ".cpp" || extension == ".cc" || extension == ".cxx" || extension == ".c" ||
@@ -80,9 +80,10 @@ void Application::replace_source(int index, const std::string& source)
     updated.mesh = old.mesh;
     updated.header_mesh = old.header_mesh;
     updated.version = old.version;
-    if (language_server && opened_documents.count(old.uri)) {
+    auto* server = server_for(old);
+    if (server && opened_documents.count(old.uri)) {
         ++updated.version;
-        language_server->change({updated.uri, source});
+        server->change({updated.uri, source});
     }
     release_panel(old);
     old = std::move(updated);
@@ -96,8 +97,9 @@ void Application::apply_project_change(const ProjectChange& change)
     if (!change.source) {
         if (found == panels.end())
             return;
-        if (language_server && opened_documents.erase(found->uri))
-            language_server->close(found->uri);
+        auto* server = server_for(*found);
+        if (server && opened_documents.erase(found->uri))
+            server->close(found->uri);
         release_panel(*found);
         renderer->release(found->mesh);
         renderer->release(found->header_mesh);

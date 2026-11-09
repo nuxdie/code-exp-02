@@ -10,7 +10,7 @@ struct SourcePanel {
     std::string path;
     std::string uri;
     std::string source;
-    bool cpp = false;
+    bool cpp = false, cmake = false;
     int version = 1;
     RsvgHandle* icon = nullptr;
     GpuImage gpu_icon;
@@ -27,6 +27,7 @@ struct SourcePanel {
     std::vector<PangoAttrList*> lexical;
     std::vector<lsp::SemanticToken> semantics;
     lsp::Json diagnostics = lsp::Json::array();
+    lsp::Json links = lsp::Json::array();
     CanvasRect bounds{};
 };
 

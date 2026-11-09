@@ -1345,6 +1345,191 @@
         "kind": "recorded_live",
         "precision": "artifact_changes"
       }
+    },
+    {
+      "id": "decision-01a1c194-278f-7b91-b496-b6c985199a88",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c194-278f-7b91-b496-b6c985199a88",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c194-277e-7932-9c82-d1b2a39c0818"
+      },
+      "statement": "the popups contents are too spaced out for some reason. use your taste and design skill to improve the UX. also theres no need for the status line in the agent window",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T18:31:14.586792+00:00",
+      "statement_hash": "fc2cd34eb937cd5853a9f8e0c3e1ce3bcc64e81290d657970b2ba36b5526ba25",
+      "artifacts": [
+        "application_view.cpp",
+        "application_chat_view.cpp",
+        "popup_markup.cpp",
+        "tests/integration_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "author_role": "agent",
+        "basis": "recorded_agent_summary",
+        "summary": "Documentation popups need a compact inspection rhythm: modest headings, tighter line leading, and small paragraph gaps instead of full-height blank rows introduced by markup. Apply that typography only to popups, retaining source text, highlighting ranges, meaningful code whitespace, and LaTeX layout. The conversation header shows only its title, reclaims the removed status row, and drops the persistent footer hint."
+      },
+      "association": {
+        "kind": "recorded_live",
+        "precision": "artifact_changes"
+      }
+    },
+    {
+      "id": "decision-01a1c195-0550-7aa3-90cd-430906fb7099",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c195-0550-7aa3-90cd-430906fb7099",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c194-277e-7932-9c82-d1b2a39c0818"
+      },
+      "statement": "why clicking on a file name in cmake does nothing? is there like a lsp for cmake too?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T18:32:11.346418+00:00",
+      "statement_hash": "1d629daec114a6b11b99cc5568e32f334a9db53a6dafcf1ed5082f3f75e8c234",
+      "artifacts": [
+        ".github/workflows/quality.yml",
+        "CMakeLists.txt",
+        "application.cpp",
+        "application.h",
+        "application_chat.cpp",
+        "application_cmake.cpp",
+        "application_file_links.cpp",
+        "application_events.cpp",
+        "application_language.cpp",
+        "application_live.cpp",
+        "application_model.cpp",
+        "application_popups.cpp",
+        "application_view.cpp",
+        "lsp.cpp",
+        "lsp.h",
+        "source_panel.h",
+        "tests/cmake_canvas_test.cpp",
+        "tools/install_cmake_lsp.py",
+        "viewer_config.h.in"
+      ],
+      "relations": [],
+      "rationale": {
+        "author_role": "agent",
+        "basis": "recorded_agent_summary",
+        "summary": "CMake filenames are document links, while the viewer previously asked only clangd for C++ symbol definitions. Reuse the asynchronous LSP transport for neocmakelsp and route CMake documents to it. Cache versioned document links and open their actual server-provided targets on click; retain definition requests for symbols. Share globally unique request IDs across servers, respect advertised capabilities, and refresh links and diagnostics on source changes. Pin and verify the upstream language-server release for reproducible installation. The server omits quoted paths containing spaces, so literal existing project paths have a narrow file-navigation fallback without attempting CMake variable evaluation."
+      },
+      "association": {
+        "kind": "recorded_live",
+        "precision": "artifact_changes"
+      }
+    },
+    {
+      "id": "decision-01a1c1a1-4a81-72e2-a6d9-2c8144098d32",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c1a1-4a81-72e2-a6d9-2c8144098d32",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c194-277e-7932-9c82-d1b2a39c0818"
+      },
+      "statement": "the text cursor creates expectation that text can be selected. can we add ability to select text?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T18:45:35.491086+00:00",
+      "statement_hash": "aa669d7eb534e21d91240506d7c1f7871387b560e340890530537be3a519d0c2",
+      "artifacts": [
+        "canvas_selection.h",
+        "application_text_targets.cpp",
+        "application_text_selection.cpp",
+        "application_text_selection_view.cpp",
+        "application.h",
+        "application_events.cpp",
+        "application_pointer.cpp",
+        "application_view.cpp",
+        "application_chat_view.cpp",
+        "application_chat_input.cpp",
+        "application_intent_view.cpp",
+        "CMakeLists.txt",
+        "tests/selection_test.cpp",
+        "tests/integration_test.cpp",
+        "tests/cmake_canvas_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "author_role": "agent",
+        "basis": "recorded_agent_summary",
+        "summary": "A text cursor promises selectable text. Use the same Pango UTF-8 caret and range geometry as rendering for drag selection in source cards, popups, messages, decision documents and editors. Selection capture keeps dragging separate from panning, supports Shift extension and clipboard shortcuts, and exposes PRIMARY selection on X11. Text links activate on click release so dragging over them can select. Keep rendering GPU-based, cull offscreen highlights, and reject stale document snapshots after live edits; copied equations retain their LaTeX expression."
+      },
+      "association": {
+        "kind": "recorded_live",
+        "precision": "artifact_changes"
+      }
+    },
+    {
+      "id": "decision-01a1c1b1-210c-7861-876c-915dcbbabec1",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c1b1-210c-7861-876c-915dcbbabec1",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c194-277e-7932-9c82-d1b2a39c0818"
+      },
+      "statement": "now that we have lsp for cmake, it reports some untydiness there. can we add like a formatter or something to automatically maintain it error and warning free?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T19:02:53.462632+00:00",
+      "statement_hash": "b99dd4c207572f5048c698c74f50b58a45899b9556e938eb47fb09326d2c2609",
+      "artifacts": [
+        "CMakeLists.txt",
+        ".cmake-format.json",
+        "tools/cmake_style.py",
+        "tools/quality.py",
+        ".github/workflows/quality.yml",
+        "project_watch.cpp",
+        "application_live.cpp",
+        "tests/test_cmake_style.py"
+      ],
+      "relations": [],
+      "rationale": {
+        "author_role": "agent",
+        "basis": "recorded_agent_summary",
+        "summary": "Use cmake-format and cmake-lint with a shared 80-column, four-space policy. Configure/build and the format target repair layout automatically; remaining lint findings stop the build and the same checks run in the quality gate and CI. Fix actual loop-variable naming and long argument lists rather than suppressing warnings. Watch policy and tooling changes so the live viewer rebuilds when the policy changes. Verify both lint rejection and formatting repair, and confirm the real CMake language server reports an empty diagnostic list."
+      },
+      "association": {
+        "kind": "recorded_live",
+        "precision": "artifact_changes"
+      }
+    },
+    {
+      "id": "decision-01a1c1bb-b410-72f3-80fc-03b911ff1112",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c1bb-b410-72f3-80fc-03b911ff1112",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c194-277e-7932-9c82-d1b2a39c0818"
+      },
+      "statement": "now, i want to be able to spawn the agent window wherever i want. and i wnat it understand the context of where i'm at the moment. ",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T19:14:26.450264+00:00",
+      "statement_hash": "88f7dfa338495d06b51a592e517ae2e21b4fd2e5571338869ac85de76f81676a",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
     }
   ]
 }

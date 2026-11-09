@@ -1,5 +1,7 @@
 #include "application.h"
 
+#include <cstring>
+#include <epoxy/gl.h>
 #include <stdexcept>
 
 void expect(bool condition, const char* message)
@@ -79,6 +81,7 @@ struct ApplicationTestAccess {
         app.update_timers(Application::Clock::now() + std::chrono::seconds(1));
         expect(!app.popup_text.empty(), "Popup must stay open while the pointer is inside");
         app.handle_button(click(app.mouse_position));
+        app.handle_release(click(app.mouse_position));
         expect(!app.popup_text.empty(),
                "Clicking popup code must not dismiss it or pan the canvas");
         motion.xmotion.x = -10;
@@ -126,6 +129,7 @@ struct ApplicationTestAccess {
         const Vec2 arrow{app.popup_bounds.origin.x + 17,
                          app.popup_bounds.origin.y + 12 + rectangle.y / PANGO_SCALE + 8};
         app.handle_button(click(arrow));
+        app.handle_release(click(arrow));
         expect(camera->expanded && app.popup_text.find("zoom_at") != std::string::npos,
                "Clicking an outline chevron must expand the actual nested symbol hierarchy");
     }
@@ -274,6 +278,62 @@ struct ApplicationTestAccess {
                "Releasing a pan must immediately restore the text cursor beneath it");
     }
 
+    static void capture_popup(Application& app)
+    {
+        const auto* output = std::getenv("SOURCE_CANVAS_POPUP_SCREENSHOT");
+        if (!output)
+            return;
+        const auto camera = app.camera;
+        app.camera.center = {-10000, -10000};
+        app.update_timers(Application::Clock::now());
+        app.renderer->begin(app.width, app.height);
+        app.draw_popup();
+        app.renderer->finish();
+        std::vector<unsigned char> pixels(static_cast<std::size_t>(app.width) * app.height * 4);
+        glReadBuffer(GL_BACK);
+        glReadPixels(0, 0, app.width, app.height, GL_BGRA, GL_UNSIGNED_BYTE, pixels.data());
+        glReadBuffer(GL_BACK);
+        auto* image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, app.width, app.height);
+        auto* bytes = cairo_image_surface_get_data(image);
+        const auto stride = cairo_image_surface_get_stride(image);
+        for (int y = 0; y < app.height; ++y)
+            std::memcpy(bytes + y * stride, pixels.data() + (app.height - y - 1) * app.width * 4,
+                        static_cast<std::size_t>(app.width) * 4);
+        cairo_surface_mark_dirty(image);
+        cairo_surface_write_to_png(image, output);
+        cairo_surface_destroy(image);
+        app.camera = camera;
+    }
+    static void test_compact_documentation(Application& app)
+    {
+        const std::string source =
+            "\n\n<h3>Camera</h3>\n\n<p>A compact explanation with **emphasis** and "
+            "`inline_code`.</p>\n\n\n<p>A second paragraph.</p>\n<pre><code>const int first = "
+            "1;\n\nreturn first;\n</code></pre>";
+        app.show_popup(source, {60, 60}, true);
+        app.draw();
+        DocumentView reading;
+        app.update_document(reading, source, app.cached_popup_width);
+        int popup_height = 0;
+        pango_layout_get_pixel_size(app.popup_layout, nullptr, &popup_height);
+        expect(popup_height < reading.size.y * 0.8,
+               "Popup paragraphs and HTML-generated blank lines must use a compact reading rhythm");
+        expect(app.popup_text.find("</h3>") == std::string::npos,
+               "HTML heading tags must not leak into the popup");
+        expect(app.popup_text == reading.document.text &&
+                   app.popup_text.find("const int first = 1;\n\nreturn first;") !=
+                       std::string::npos,
+               "Compact typography must preserve code whitespace and markup byte ranges");
+        const auto literal = app.popup_text.find("return first;");
+        PangoRectangle bounds{};
+        pango_layout_index_to_pos(app.popup_layout, static_cast<int>(literal), &bounds);
+        expect(bounds.height >= 14 * PANGO_SCALE, "Compact code must retain a legible line height");
+        expect(app.popup_bounds.size.y < popup_height + 24,
+               "Popup bounds must exclude trailing blank markup rows");
+        capture_popup(app);
+        app.renderer->release(reading.mesh);
+        app.hide_popup();
+    }
     static void test_typeset_documentation(Application& app)
     {
         app.show_popup("## Camera\nReadable **prose** with <code>const int n = 2;</code>.\n"
@@ -390,6 +450,7 @@ struct ApplicationTestAccess {
         test_connections(app);
         test_folded_connections(app, index);
         test_inline_toggles_and_cursor(app, index);
+        test_compact_documentation(app);
         test_typeset_documentation(app);
         test_live_documentation(app, index);
         test_popup(app);

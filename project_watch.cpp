@@ -68,7 +68,7 @@ bool project_source(const std::string& path)
                                                   ".c",    ".in", ".cmake", ".py", ".yml",
                                                   ".yaml", ".md", ".tex"};
     return name == "CMakeLists.txt" || name == ".clang-format" || name == ".clang-tidy" ||
-           extensions.count(file.extension().string()) != 0;
+           name == ".cmake-format.json" || extensions.count(file.extension().string()) != 0;
 }
 ProjectSnapshot read_project(const std::string& root)
 {

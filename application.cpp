@@ -2,6 +2,13 @@
 #include <X11/Xatom.h>
 #include <unistd.h>
 
+namespace {
+template <class Source> int wake_fd(const std::unique_ptr<Source>& source)
+{
+    return source ? source->event_fd() : -1;
+}
+} // namespace
+
 bool Application::initialize()
 {
     benchmark = std::getenv("SOURCE_CANVAS_BENCHMARK") != nullptr;
@@ -176,6 +183,10 @@ int Application::run()
             for (const auto& message : language_server->take_messages())
                 handle_message(message);
 
+        if (cmake_server)
+            for (const auto& message : cmake_server->take_messages())
+                handle_message(message);
+
         const auto now = Clock::now();
         update_timers(now);
         if ((redraw || zoom_animation.active(camera)) && now >= next_frame) {
@@ -219,6 +230,7 @@ Application::~Application()
     if (drag_cursor)
         XFreeCursor(display, drag_cursor);
     language_server.reset();
+    cmake_server.reset();
     if (popup_layout)
         g_object_unref(popup_layout);
     if (base_layout)
@@ -308,14 +320,15 @@ void Application::wait_for_work(Clock::time_point next_frame)
         timeout = timeout < 0 ? delay : std::min(timeout, delay);
     }
     pollfd connections[] = {{ConnectionNumber(display), POLLIN, 0},
-                            {language_server ? language_server->event_fd() : -1, POLLIN, 0},
-                            {math_typesetter ? math_typesetter->event_fd() : -1, POLLIN, 0},
-                            {project_watcher ? project_watcher->event_fd() : -1, POLLIN, 0},
+                            {wake_fd(language_server), POLLIN, 0},
+                            {wake_fd(math_typesetter), POLLIN, 0},
+                            {wake_fd(project_watcher), POLLIN, 0},
                             {chat && chat->client ? chat->client->event_fd() : -1, POLLIN, 0},
-                            {live_build ? live_build->event_fd() : -1, POLLIN, 0},
+                            {wake_fd(live_build), POLLIN, 0},
                             {intent && intent->client ? intent->client->event_fd() : -1, POLLIN, 0},
-                            {system_theme ? system_theme->event_fd() : -1, POLLIN, 0}};
-    if (poll(connections, 8, timeout) < 0 && errno != EINTR) {
+                            {wake_fd(system_theme), POLLIN, 0},
+                            {wake_fd(cmake_server), POLLIN, 0}};
+    if (poll(connections, 9, timeout) < 0 && errno != EINTR) {
         std::cerr << "Could not wait for window input.\n";
         running = false;
     }
