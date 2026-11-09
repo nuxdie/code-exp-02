@@ -1637,6 +1637,39 @@
         "kind": "recorded_live",
         "precision": "artifact_changes"
       }
+    },
+    {
+      "id": "decision-01a1c221-6f01-7792-837d-9b62f096c297",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c221-6f01-7792-837d-9b62f096c297",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c221-6ef0-7a13-b9d0-0cbcd86c5c35"
+      },
+      "statement": "see image in my clipboard. why is there an erorr? i cant seem to send anything into popup agent ",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T21:05:33.447738+00:00",
+      "statement_hash": "670cfac15019b9d709bd9126eebd52e464531fd703a82dbbbec92885bc9538df",
+      "artifacts": [
+        "conversation.cpp",
+        "conversation.h",
+        "tests/conversation_test.cpp",
+        "tests/agent_live_test.cpp",
+        "CMakeLists.txt"
+      ],
+      "relations": [],
+      "rationale": {
+        "author_role": "agent",
+        "basis": "recorded_agent_summary",
+        "summary": "The clipboard screenshot exposed a premature thread history read before the first accepted user message. A real isolated send probe also revealed that the context attachment name contained spaces and uppercase letters rejected by the local server. Use a valid lowercase identifier, send the first turn directly after thread creation, and load history only on resume. Keep history failures independent from send acknowledgements so they cannot clear pending sends or enable duplicate submissions. Mark a new thread persistent only after an accepted turn and recover previously unsent cards when their ephemeral thread has no saved rollout, preserving the composer draft without replaying it. Validate the exact request ordering, retry and reload state with regressions, and add an explicit opt-in live contextual-send test that verifies the actual agent reply and archives its isolated test conversation. Run the native live-canvas mouse-capture test on an isolated X display so validation does not contend with the user desktop."
+      },
+      "association": {
+        "kind": "recorded_live",
+        "precision": "artifact_changes"
+      }
     }
   ]
 }

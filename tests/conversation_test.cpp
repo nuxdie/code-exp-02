@@ -2,6 +2,7 @@
 #include "text_input.h"
 
 #include <iostream>
+#include <regex>
 #include <stdexcept>
 
 using Json = nlohmann::json;
@@ -105,15 +106,22 @@ void test_contextual_conversation()
     request = take_request(model, "thread/start");
     expect(request["params"]["cwd"] == "/project", "New cards must retain the project workspace");
     model.receive({{"id", request["id"]}, {"result", {{"thread", {{"id", "new-thread"}}}}}});
-    request = take_request(model, "turn/start");
+    const auto first_turn = model.outgoing();
+    expect(first_turn.size() == 1 && first_turn.front()["method"] == "turn/start" &&
+               model.sending && !model.history_loading,
+           "A fresh thread must send its first turn without reading nonexistent persisted history");
+    request = first_turn.front();
     const auto& params = request["params"];
     expect(params["threadId"] == "new-thread" && params["input"][0]["text"] == "Make this smoother",
            "The human's message must remain exact and go to the card's own thread");
     expect(params["additionalContext"]["source-canvas"]["kind"] == "untrusted" &&
+               std::regex_match(
+                   params["additionalContext"]["source-canvas"]["name"].get<std::string>(),
+                   std::regex("[a-z][a-z0-9_]{0,63}")) &&
                params["additionalContext"]["source-canvas"]["value"] == model.canvas_context,
            "Source and selection context must be attached separately as project data");
     model.receive({{"id", request["id"]}, {"result", {{"turn", {{"id", "new-turn"}}}}}});
-    expect(model.accepted_text == "Make this smoother",
+    expect(model.accepted_text == "Make this smoother" && !model.fresh && model.error.empty(),
            "Context must not prevent clearing an acknowledged draft");
     model.canvas_context = "Updated source snapshot";
     expect(model.submit("Continue"), "The context card must support steering");
@@ -124,6 +132,66 @@ void test_contextual_conversation()
                    {"method", "item/commandExecution/requestApproval"},
                    {"params", {{"threadId", "another-thread"}}}});
     expect(model.questions.empty(), "Other cards' approvals must not enter this conversation");
+}
+void test_unsent_thread_recovery()
+{
+    Conversation model("/project");
+    model.fresh = true;
+    model.thread_id = "unmaterialized-thread";
+    model.receive({{"method", "canvas/connected"}, {"params", Json::object()}});
+    auto request = take_request(model, "initialize");
+    model.receive({{"id", request["id"]}, {"result", Json::object()}});
+    request = take_request(model, "thread/resume");
+    model.receive({{"id", request["id"]},
+                   {"error",
+                    {{"code", -32600},
+                     {"message", "no rollout found for thread id unmaterialized-thread"}}}});
+    expect(
+        model.ready && model.fresh && model.thread_id.empty() && model.error.empty() &&
+            model.outgoing().empty(),
+        "Reloading an unsent card must recover without replaying its draft or selecting history");
+    expect(model.submit("Keep my original draft"),
+           "The recovered card must accept its first message");
+    request = take_request(model, "thread/start");
+    model.receive(
+        {{"id", request["id"]}, {"result", {{"thread", {{"id", "replacement-thread"}}}}}});
+    request = take_request(model, "turn/start");
+    expect(request["params"]["input"][0]["text"] == "Keep my original draft",
+           "Recovery must retain the human's exact message");
+    model.receive({{"id", request["id"]},
+                   {"error", {{"code", -32600}, {"message", "Send rejected by server"}}}});
+    expect(!model.sending && model.accepted_text.empty() &&
+               model.error == "Send rejected by server",
+           "A rejected send must leave the draft unacknowledged and available to retry");
+    expect(model.submit("Keep my original draft"), "A rejected first turn must be retryable");
+    request = take_request(model, "turn/start");
+    model.receive({{"id", request["id"]}, {"result", {{"turn", {{"id", "accepted-turn"}}}}}});
+    expect(model.accepted_text == "Keep my original draft" && !model.fresh && model.error.empty(),
+           "Only a successful acknowledgement may clear the error and mark the thread persistent");
+}
+void test_history_failure_during_send()
+{
+    Conversation model("/project");
+    model.thread_id = "existing-thread";
+    model.receive({{"method", "canvas/connected"}, {"params", Json::object()}});
+    auto request = take_request(model, "initialize");
+    model.receive({{"id", request["id"]}, {"result", Json::object()}});
+    request = take_request(model, "thread/resume");
+    model.receive({{"id", request["id"]}, {"result", {{"thread", {{"id", "existing-thread"}}}}}});
+    const auto history = take_request(model, "thread/turns/list");
+    expect(model.submit("A pending turn"), "A resumed card must remain usable while history loads");
+    const auto send = take_request(model, "turn/start");
+    model.receive({{"id", history["id"]},
+                   {"error",
+                    {{"code", -32600},
+                     {"message", "thread existing-thread is not materialized yet; "
+                                 "thread/turns/list is unavailable before first user message"}}}});
+    expect(model.sending && !model.history_loading && model.error.empty() &&
+               !model.submit("Duplicate pending turn"),
+           "A history error must not show a false send failure or allow duplicate submissions");
+    model.receive({{"id", send["id"]}, {"result", {{"turn", {{"id", "accepted-turn"}}}}}});
+    expect(model.accepted_text == "A pending turn" && !model.sending,
+           "The actual turn acknowledgement must determine whether sending succeeded");
 }
 void test_input()
 {
@@ -149,6 +217,8 @@ int main()
         test_conversation();
         test_input();
         test_contextual_conversation();
+        test_unsent_thread_recovery();
+        test_history_failure_during_send();
         std::cout
             << "Conversation streaming, history, steering, approvals and Unicode input passed.\n";
     } catch (const std::exception& error) {

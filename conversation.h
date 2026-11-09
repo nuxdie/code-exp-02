@@ -48,6 +48,8 @@ class Conversation {
     std::vector<Json> queued;
     int request(const std::string& method, Json params);
     void response(const Json& message);
+    void request_failed(const std::string& method, const Json& failure);
+    void thread_ready(const std::string& method, const Json& result);
     void notification(const std::string& method, const Json& params);
     void history_page(const Json& result);
     void put_item(const std::string& turn, const Json& item, int sequence = -1);

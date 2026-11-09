@@ -84,9 +84,7 @@ void Conversation::response(const Json& message)
     const auto method = found->second;
     pending.erase(found);
     if (message.contains("error")) {
-        error = message["error"].value("message", "Agent request failed");
-        status = "Request failed";
-        sending = false;
+        request_failed(method, message["error"]);
         ++revision;
         return;
     }
@@ -102,14 +100,7 @@ void Conversation::response(const Json& message)
         } else
             list_threads();
     } else if (method == "thread/resume" || method == "thread/start") {
-        hydrate_thread(result.at("thread"));
-        history_loading = true;
-        request("thread/turns/list", {{"threadId", thread_id},
-                                      {"itemsView", "full"},
-                                      {"sortDirection", "asc"},
-                                      {"limit", 10}});
-        if (!submitted.empty())
-            send_prompt();
+        thread_ready(method, result);
     } else if (method == "thread/turns/list") {
         history_page(result);
     } else if (method == "thread/list") {
@@ -126,9 +117,55 @@ void Conversation::response(const Json& message)
         accepted_text = std::move(submitted);
         submitted.clear();
         sending = false;
+        fresh = false;
+        error.clear();
         status = "Agent working";
     }
     ++revision;
+}
+void Conversation::thread_ready(const std::string& method, const Json& result)
+{
+    hydrate_thread(result.at("thread"));
+    if (method == "thread/start")
+        fresh = true;
+    error.clear();
+    history_loading = method == "thread/resume";
+    if (history_loading) {
+        fresh = false;
+        request("thread/turns/list", {{"threadId", thread_id},
+                                      {"itemsView", "full"},
+                                      {"sortDirection", "asc"},
+                                      {"limit", 10}});
+    }
+    if (!submitted.empty())
+        send_prompt();
+}
+void Conversation::request_failed(const std::string& method, const Json& failure)
+{
+    const auto detail = failure.value("message", "Agent request failed");
+    if (method == "thread/resume" && fresh &&
+        detail.find("no rollout found for thread id ") != std::string::npos) {
+        // A thread without an accepted first message has no saved history to resume.
+        thread_id.clear();
+        submitted.clear();
+        history_loading = sending = false;
+        ready = connected;
+        title = "New conversation";
+        status = "Ready";
+        error.clear();
+        return;
+    }
+    if (method == "thread/turns/list") {
+        history_loading = false;
+        if (detail.find("is not materialized yet") != std::string::npos)
+            return;
+    }
+    error = detail;
+    status = "Request failed";
+    if (method == "turn/start" || method == "turn/steer" || method == "thread/start") {
+        sending = false;
+        submitted.clear();
+    }
 }
 void Conversation::history_page(const Json& result)
 {
@@ -258,7 +295,7 @@ void Conversation::send_prompt()
     if (!canvas_context.empty())
         params["additionalContext"] = {
             {"source-canvas",
-             {{"kind", "untrusted"}, {"name", "Canvas context"}, {"value", canvas_context}}}};
+             {{"kind", "untrusted"}, {"name", "canvas_context"}, {"value", canvas_context}}}};
     const bool active = !active_turn.empty();
     if (active)
         params["expectedTurnId"] = active_turn;
@@ -295,6 +332,7 @@ void Conversation::select_thread(const std::string& id)
     submitted.clear();
     accepted_text.clear();
     thread_id = id;
+    fresh = false;
     active_turn.clear();
     entries.clear();
     questions.clear();
