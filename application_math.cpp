@@ -26,6 +26,7 @@ Application::MathArtwork Application::load_math_artwork(const std::string& svg)
     MathArtwork result;
     if (drawn)
         result = {renderer->image(image), {width, height}, true};
+    result.image.monochrome = true;
     cairo_destroy(context);
     cairo_surface_destroy(image);
     g_object_unref(handle);

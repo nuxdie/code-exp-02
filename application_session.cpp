@@ -24,6 +24,7 @@ void Application::load_session()
     if (!state.is_object() || state.value("root", "") != workspace_root)
         return;
     try {
+        intent_session = state.value("intent", lsp::Json::object());
         const auto origin = state.value("originThread", "");
         if (!environment_thread || origin == environment_thread)
             chat->conversation.thread_id = state.value("threadId", chat->conversation.thread_id);
@@ -127,7 +128,13 @@ void Application::save_session()
         {"chat", {{"x", chat->bounds.origin.x}, {"y", chat->bounds.origin.y}}},
         {"camera", {{"x", camera.center.x}, {"y", camera.center.y}, {"zoom", camera.zoom}}},
         {"window", {{"x", x}, {"y", y}, {"width", width}, {"height", height}}},
-        {"files", files}};
+        {"files", files},
+        {"intent", intent ? lsp::Json{{"x", intent->bounds.origin.x},
+                                      {"y", intent->bounds.origin.y},
+                                      {"selected", intent->selected},
+                                      {"overview", intent->overview},
+                                      {"scroll", intent->scroll}}
+                          : lsp::Json::object()}};
     const auto path = session_path(workspace_root);
     std::error_code error;
     std::filesystem::create_directories(path.parent_path(), error);

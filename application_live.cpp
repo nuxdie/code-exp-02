@@ -172,6 +172,8 @@ void Application::refresh_project_geometry()
     auto bounds = graph.files;
     if (chat)
         bounds.push_back(chat->bounds);
+    if (intent && intent->placed)
+        bounds.push_back(intent->bounds);
     content_size = canvas_size(bounds);
     std::ofstream(std::string(project_build) + "/source-graph.dot")
         << graph_dot(files, dependencies);

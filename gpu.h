@@ -18,6 +18,7 @@ struct GpuMesh {
 
 struct GpuImage {
     float u0 = 0, v0 = 0, u1 = 0, v1 = 0;
+    bool monochrome = false;
 };
 
 struct PlacedText {
@@ -49,6 +50,7 @@ class GpuRenderer {
                 const std::vector<PlacedImage>& images = {});
     void release(GpuMesh& mesh);
     void paths(GpuMesh& mesh, const std::vector<GpuPath>& paths);
+    void set_dark_theme(bool dark);
     void begin(int width, int height);
     void draw(const GpuMesh& mesh, Vec2 screen_origin, double zoom);
     void rectangle(CanvasRect screen_bounds, std::array<float, 4> color);

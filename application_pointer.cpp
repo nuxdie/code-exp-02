@@ -20,6 +20,26 @@ bool Application::over_text(Vec2 screen)
                          chat->bounds.size.y}
                     .contains(world))
         return chat_over_text(screen);
+    if (intent && intent->placed &&
+        Viewport{intent->bounds.origin.x, intent->bounds.origin.y, intent->bounds.size.x,
+                 intent->bounds.size.y}
+            .contains(world)) {
+        if (intent->editing && Viewport{intent->editor.origin.x, intent->editor.origin.y,
+                                        intent->editor.size.x, intent->editor.size.y}
+                                   .contains(world))
+            return true;
+        int index = 0, trailing = 0;
+        return intent->document.layout &&
+               Viewport{intent->body.origin.x, intent->body.origin.y, intent->body.size.x,
+                        intent->body.size.y}
+                   .contains(world) &&
+               pango_layout_xy_to_index(
+                   intent->document.layout.get(),
+                   static_cast<int>((world.x - intent->body.origin.x) * PANGO_SCALE),
+                   static_cast<int>((world.y - intent->body.origin.y + intent->scroll) *
+                                    PANGO_SCALE),
+                   &index, &trailing);
+    }
     for (const auto& panel : panels) {
         const double x = world.x - panel.bounds.origin.x - 24;
         const double y = world.y - panel.bounds.origin.y - header_height;
@@ -41,7 +61,7 @@ void Application::update_cursor()
 {
     Cursor cursor = normal_cursor;
     if (drag_button) {
-        if (dragged_panel < 0 && (!chat || !chat->dragging))
+        if (dragged_panel < 0 && (!chat || !chat->dragging) && (!intent || !intent->dragging))
             cursor = drag_cursor;
     } else if (viewport().contains(mouse_position) && over_text(mouse_position)) {
         cursor = text_cursor;

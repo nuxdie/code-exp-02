@@ -1214,6 +1214,102 @@
         "original_git_history": false,
         "evidence": "working_tree_after_completed_feature"
       }
+    },
+    {
+      "id": "decision-01a1c0f7-8c9a-79a2-a75b-ae60f4c84edf",
+      "statement": "ok. when i was talking about literate programming i meant this: today the most valuable nuggets of information are these sentences and desisions that human (me) make. and the resulting code and artifacts are circumstantial. so you need to think how can we tie them together. think diffs. each line has a git history (init git and do several commits btw based on when and after what we've built here). each diff has a human intent behind it and LLM agent reasoning of WHY. that is what i want to see. that is what is important. attributing desicions to artifacts",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c0f7-8c86-7053-a6fd-bd6660fbf908",
+        "message_id": "01a1c0f7-8c9a-79a2-a75b-ae60f4c84edf",
+        "turn_started_at": 1794238811,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531241+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "recorded_agent_summary",
+        "summary": "Preserve exact human statements as primary, immutable records. Keep explicit agent rationale and its public source separate from those words. Git trailers, immutable commit manifests, diffs and rename-aware line blame link decisions to artifacts; unknown and uncommitted lines remain unattributed. Review freezes the Git tree and checkpoints only those bytes, preserving later working edits and unrelated staged files. A local commit hook requires an intent, scope and rationale. Earlier milestones are explicitly reconstructed from recorded patches and captured snapshots."
+      },
+      "artifacts": [
+        ".githooks/commit-msg",
+        ".gitignore",
+        "CMakeLists.txt",
+        "application.cpp",
+        "application.h",
+        "application_chat_input.cpp",
+        "application_events.cpp",
+        "application_intent.cpp",
+        "application_intent_input.cpp",
+        "application_intent_view.cpp",
+        "application_live.cpp",
+        "application_model.cpp",
+        "application_pointer.cpp",
+        "application_session.cpp",
+        "application_view.cpp",
+        "intent_canvas.h",
+        "intent_document.cpp",
+        "intent_document.h",
+        "popup_markup.cpp",
+        "tests/intent_canvas_test.cpp",
+        "tests/test_provenance.py",
+        "tools/provenance.py",
+        "tools/provenance_git.py",
+        "tools/provenance_store.py"
+      ],
+      "relations": [
+        {
+          "kind": "clarifies",
+          "decision_id": "decision-01a1c095-65ba-7670-ad7d-0325757f7369"
+        }
+      ],
+      "association": {
+        "kind": "recorded_live",
+        "precision": "artifact_changes",
+        "original_git_history": false
+      }
+    },
+    {
+      "id": "decision-01a1c10c-f2c0-79a3-a40f-a90afe257c6b",
+      "statement": "i want the app to change to dark theme automatically based on os current system theme",
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1c0f7-8c86-7053-a6fd-bd6660fbf908",
+        "message_id": "01a1c10c-f2c0-79a3-a40f-a90afe257c6b"
+      },
+      "rationale": {
+        "author_role": "agent",
+        "basis": "recorded_agent_summary",
+        "summary": "Follow the desktop appearance portal with GTK and Xfce fallbacks, and subscribe to live changes. Apply colors through a GPU uniform so cached source meshes, camera state, and syntax hues remain intact; keep file icons unchanged and give monochrome LaTeX a legible foreground."
+      },
+      "artifacts": [
+        "system_theme.*",
+        "gpu.*",
+        "application.cpp",
+        "application.h",
+        "application_math.cpp",
+        "CMakeLists.txt",
+        "tests/system_theme_test.cpp",
+        "tests/gpu_test.cpp"
+      ],
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-09T16:10:07.209061+00:00",
+      "statement_hash": "8c0e75959a16bc7792afe3b3215997e02093f61d428e69bc1b5163064337f6f5",
+      "relations": [],
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
     }
   ]
 }

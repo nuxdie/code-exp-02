@@ -3,6 +3,7 @@
 #include "chat_canvas.h"
 #include "conversation.h"
 #include "document_view.h"
+#include "intent_canvas.h"
 #include "live_build.h"
 #include "math_typesetter.h"
 #include "popup_markup.h"
@@ -10,6 +11,7 @@
 #include "source_graph.h"
 #include "source_panel.h"
 #include "syntax.h"
+#include "system_theme.h"
 #include "text_input.h"
 #include "viewer_config.h"
 #include <X11/cursorfont.h>
@@ -59,6 +61,9 @@ class Application {
     std::unique_ptr<ProjectWatcher> project_watcher;
     int screen = 0;
     std::unique_ptr<ChatCanvas> chat;
+    std::unique_ptr<IntentCanvas> intent;
+    lsp::Json intent_session = lsp::Json::object();
+    std::unique_ptr<SystemTheme> system_theme;
     XIM input_method = nullptr;
     XIC input_context = nullptr;
     std::string clipboard_text;
@@ -172,6 +177,20 @@ class Application {
     void poll_reload(Clock::time_point now);
     void handle_build_result(const BuildResult& result);
     void request_reload();
+    void initialize_intent();
+    void intent_request(const std::string& method, lsp::Json params = lsp::Json::object());
+    void poll_intent();
+    void receive_intent(const lsp::Json& message);
+    void capture_intents();
+    void attribute_chat_entry(std::size_t index);
+    void focus_intent();
+    void inspect_intent(Vec2 pointer);
+    void draw_intent();
+    void draw_intent_controls();
+    bool intent_button(const XEvent& event, Vec2 pointer);
+    bool intent_key(const XEvent& event);
+    void intent_action(const std::string& action);
+    void open_intent_conversation(const std::string& id);
     void initialize_chat();
     void poll_agent();
     void flush_agent();

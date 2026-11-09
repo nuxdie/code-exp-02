@@ -117,6 +117,7 @@ GLuint shader(GLenum type, const char* source)
 } // namespace
 
 struct GpuRenderer::Impl {
+    bool dark_theme = false;
     Display* display = nullptr;
     Window window = 0;
     Colormap colormap = 0;
@@ -178,6 +179,7 @@ void main() {
     kind = int(mode);
 })GLSL";
         const char* fragment_source = R"GLSL(#version 330 core
+uniform bool dark_theme;
 uniform sampler2D glyph_atlas;
 uniform sampler2D icon_atlas;
 in vec2 uv;
@@ -185,7 +187,12 @@ in vec4 tint;
 flat in int kind;
 out vec4 output_color;
 void main() {
-    if (kind == 2) { output_color = texture(icon_atlas, uv); return; }
+    if (kind == 2 || kind == 4) {
+        output_color = texture(icon_atlas, uv);
+        if (kind == 4 && dark_theme)
+            output_color.rgb = vec3(0.84, 0.87, 0.91) * output_color.a;
+        return;
+    }
     float coverage = 1.0;
     if (kind == 1) {
         float distance = texture(glyph_atlas, uv).r;
@@ -193,7 +200,14 @@ void main() {
         coverage = smoothstep(0.5 - smoothing, 0.5 + smoothing, distance);
     }
     float alpha = tint.a * coverage;
-    output_color = vec4(tint.rgb * alpha, alpha);
+    vec3 color = tint.rgb;
+    if (dark_theme) {
+        float lightness = (max(max(color.r, color.g), color.b) + min(min(color.r, color.g), color.b)) * 0.5;
+        float target = 0.08 + (1.0 - lightness) * 0.82;
+        color = clamp(color + vec3(target - lightness) + vec3(0.0, 0.008, 0.022), 0.0, 1.0);
+        if (kind == 0 && tint.a < 0.15) color = vec3(0.0);
+    }
+    output_color = vec4(color * alpha, alpha);
 })GLSL";
         const auto vertex = shader(GL_VERTEX_SHADER, vertex_source);
         const auto fragment = shader(GL_FRAGMENT_SHADER, fragment_source);
@@ -484,7 +498,7 @@ void GpuRenderer::upload(GpuMesh& mesh, const std::vector<PlacedText>& text,
     for (const auto& line : text)
         impl->text(vertices, line);
     for (const auto& image : images)
-        quad(vertices, image.bounds, image.image, {1, 1, 1, 1}, 2);
+        quad(vertices, image.bounds, image.image, {1, 1, 1, 1}, image.image.monochrome ? 4 : 2);
     if (!mesh.buffer) {
         glGenBuffers(1, &mesh.buffer);
         impl->buffers.insert(mesh.buffer);
@@ -552,12 +566,21 @@ void GpuRenderer::paths(GpuMesh& mesh, const std::vector<GpuPath>& paths)
     mesh.vertices = static_cast<int>(vertices.size());
 }
 
+void GpuRenderer::set_dark_theme(bool dark)
+{
+    impl->dark_theme = dark;
+}
+
 void GpuRenderer::begin(int width, int height)
 {
     glViewport(0, 0, width, height);
-    glClearColor(1, 1, 1, 1);
+    if (impl->dark_theme)
+        glClearColor(0.08f, 0.088f, 0.102f, 1);
+    else
+        glClearColor(1, 1, 1, 1);
     glClear(GL_COLOR_BUFFER_BIT);
     glUseProgram(impl->program);
+    glUniform1i(glGetUniformLocation(impl->program, "dark_theme"), impl->dark_theme);
     glBindVertexArray(impl->vao);
     glUniform2f(impl->screen_uniform, width, height);
     glActiveTexture(GL_TEXTURE0);

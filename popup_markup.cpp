@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <sstream>
 #include <string_view>
 
@@ -118,6 +119,29 @@ class HtmlDocumentation {
     }
 };
 
+std::string inline_literals(const std::string& source)
+{
+    std::string result;
+    for (std::size_t position = 0; position < source.size(); ++position) {
+        if (source.compare(position, 2, "&#") == 0) {
+            const auto end = source.find(';', position + 2);
+            unsigned value = 0;
+            if (end != std::string::npos && end - position < 8) {
+                const auto converted =
+                    std::from_chars(source.data() + position + 2, source.data() + end, value);
+                if (converted.ec == std::errc{} && converted.ptr == source.data() + end &&
+                    value >= 32 && value <= 126) {
+                    result += static_cast<char>(value);
+                    position = end;
+                    continue;
+                }
+            }
+        }
+        result += source[position];
+    }
+    return result;
+}
+
 class InlineDocumentation {
   public:
     InlineDocumentation(PopupDocument& target, std::size_t start) : document(target), offset(start)
@@ -128,8 +152,8 @@ class InlineDocumentation {
     {
         std::size_t position = 0;
         while (position < line.size()) {
-            if (math(line, position) || code(line, position) || emphasis(line, position) ||
-                link(line, position))
+            if (entity(line, position) || math(line, position) || code(line, position) ||
+                emphasis(line, position) || link(line, position))
                 continue;
             result += line[position++];
         }
@@ -140,6 +164,22 @@ class InlineDocumentation {
     PopupDocument& document;
     std::size_t offset;
     std::string result;
+
+    bool entity(const std::string& line, std::size_t& position)
+    {
+        if (line.compare(position, 2, "&#") != 0)
+            return false;
+        const auto end = line.find(';', position + 2);
+        if (end == std::string::npos)
+            return false;
+        const auto encoded = line.substr(position, end - position + 1);
+        const auto decoded = inline_literals(encoded);
+        if (decoded == encoded)
+            return false;
+        result += decoded;
+        position = end + 1;
+        return true;
+    }
 
     bool math(const std::string& line, std::size_t& position)
     {
@@ -210,10 +250,11 @@ class InlineDocumentation {
         const auto end = middle == std::string::npos ? middle : line.find(')', middle + 2);
         if (end == std::string::npos)
             return false;
-        const auto length = middle - position - 1;
+        const auto label = inline_literals(line.substr(position + 1, middle - position - 1));
+        const auto length = label.size();
         document.styles.push_back({offset + result.size(), length, PopupStyle::Link,
                                    line.substr(middle + 2, end - middle - 2)});
-        result += line.substr(position + 1, length);
+        result += label;
         position = end + 1;
         return true;
     }

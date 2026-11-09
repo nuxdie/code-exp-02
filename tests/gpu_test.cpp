@@ -33,6 +33,41 @@ void test_clip(GpuRenderer& renderer)
            "Documentation clipping must contain its content and release the clip for later draws");
 }
 
+void test_theme(GpuRenderer& renderer)
+{
+    renderer.set_dark_theme(true);
+    renderer.begin(320, 240);
+    renderer.rectangle({{20, 20}, {40, 40}}, {1, 1, 1, 1});
+    renderer.rectangle({{70, 20}, {40, 40}}, {0.14f, 0.16f, 0.19f, 1});
+    auto* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 16, 16);
+    auto* context = cairo_create(surface);
+    cairo_set_source_rgb(context, 0, 0, 0);
+    cairo_paint(context);
+    auto icon = renderer.image(surface);
+    auto formula = icon;
+    formula.monochrome = true;
+    GpuMesh images;
+    renderer.upload(images, {}, {{icon, {{120, 20}, {16, 16}}}, {formula, {{150, 20}, {16, 16}}}});
+    renderer.draw(images, {}, 1);
+    renderer.finish();
+    auto pixel = [](int x, int y) {
+        std::array<unsigned char, 4> color{};
+        glReadPixels(x, 239 - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, color.data());
+        return color;
+    };
+    expect(pixel(5, 5)[0] < 35 && pixel(30, 30)[0] < 35 && pixel(80, 30)[0] > 180,
+           "Dark theme must provide dark surfaces and legible text colors");
+    expect(pixel(125, 25)[0] < 5 && pixel(155, 25)[0] > 200,
+           "Dark theme preserves file artwork and makes monochrome LaTeX readable");
+    renderer.set_dark_theme(false);
+    renderer.begin(320, 240);
+    renderer.finish();
+    expect(pixel(5, 5)[0] == 255, "Returning to light theme restores the background immediately");
+    renderer.release(images);
+    cairo_destroy(context);
+    cairo_surface_destroy(surface);
+}
+
 int main()
 {
     Display* display = XOpenDisplay(nullptr);
@@ -111,6 +146,7 @@ int main()
                    "The renderer must use Pango's ligature glyphs rather than rendering separate "
                    "characters");
             test_clip(renderer);
+            test_theme(renderer);
             std::cout << "GPU atlas, color, ligature and cache reuse checks passed on "
                       << renderer.device() << '\n';
             g_object_unref(layout);

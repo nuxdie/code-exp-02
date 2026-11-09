@@ -62,6 +62,8 @@ void Application::handle_button(const XEvent& event)
                                    .contains(pointer);
     if (popup_button(event, pointer, in_popup))
         return;
+    if (intent_button(event, pointer))
+        return;
     if (chat_button(event, pointer))
         return;
     schedule_save();
@@ -73,6 +75,8 @@ void Application::handle_button(const XEvent& event)
         }
         zoom_animation.request(camera, event.xbutton.button == Button4 ? 1.15 : 1 / 1.15,
                                drag_button || view.contains(pointer) ? pointer : view.center());
+    } else if (event.xbutton.button == Button1 && (event.xbutton.state & Mod1Mask)) {
+        inspect_intent(pointer);
     } else if (event.xbutton.button == Button1 && (event.xbutton.state & ControlMask)) {
         if (definition_at_pointer())
             list_request = query_at_pointer("textDocument/references");
@@ -95,7 +99,10 @@ void Application::handle_motion(const XEvent& event)
         hide_popup();
         const Vec2 delta{pointer.x - last_pointer.x, pointer.y - last_pointer.y};
         drag_moved = drag_moved || std::hypot(delta.x, delta.y) > 1;
-        if (chat && chat->dragging) {
+        if (intent && intent->dragging) {
+            intent->bounds.origin.x += delta.x / camera.zoom;
+            intent->bounds.origin.y += delta.y / camera.zoom;
+        } else if (chat && chat->dragging) {
             chat->bounds.origin.x = std::max(0.0, chat->bounds.origin.x + delta.x / camera.zoom);
             chat->bounds.origin.y = std::max(0.0, chat->bounds.origin.y + delta.y / camera.zoom);
         } else if (dragged_panel >= 0) {
@@ -118,11 +125,14 @@ void Application::handle_motion(const XEvent& event)
         if (!popup_text.empty() && popup_dismiss_due == Clock::time_point::max())
             popup_dismiss_due = Clock::now() + std::chrono::milliseconds(300);
         const auto world = camera.screen_to_world(pointer, viewport());
+        const bool in_intent = intent && Viewport{intent->bounds.origin.x, intent->bounds.origin.y,
+                                                  intent->bounds.size.x, intent->bounds.size.y}
+                                             .contains(world);
         const bool in_chat = chat && Viewport{chat->bounds.origin.x, chat->bounds.origin.y,
                                               chat->bounds.size.x, chat->bounds.size.y}
                                          .contains(world);
-        hover_due =
-            in_chat ? Clock::time_point::max() : Clock::now() + std::chrono::milliseconds(400);
+        hover_due = in_chat || in_intent ? Clock::time_point::max()
+                                         : Clock::now() + std::chrono::milliseconds(400);
     } else {
         popup_dismiss_due = Clock::time_point::max();
         hover_due = Clock::time_point::max();
@@ -140,13 +150,15 @@ void Application::handle_release(const XEvent& event)
     dragged_panel = -1;
     if (chat)
         chat->dragging = false;
+    if (intent)
+        intent->dragging = false;
     schedule_save();
     update_cursor();
 }
 
 void Application::handle_key(const XEvent& event)
 {
-    if (chat_key(event)) {
+    if (intent_key(event) || chat_key(event)) {
         redraw = true;
         return;
     }
@@ -227,13 +239,24 @@ void Application::handle_key(const XEvent& event)
         connections_dirty = true;
         break;
     }
+    case XK_i:
+    case XK_I:
+        inspect_intent(mouse_position);
+        break;
+    case XK_d:
+    case XK_D:
+        focus_intent();
+        break;
     case XK_k:
     case XK_K:
         hover_request = query_at_pointer("textDocument/hover");
         break;
     case XK_F1:
         show_popup(
-            "Tab / Ctrl+L — conversation\nEnter — send, Shift+Enter — newline\n\nHover or K — "
+            "D — decisions · I / Alt+click source — intent and diff\nAlt+click a human message — "
+            "select intent\nAlt+click agent response — record rationale for selected intent\nTab / "
+            "Ctrl+L — "
+            "conversation\nEnter — send, Shift+Enter — newline\n\nHover or K — "
             "inspect symbol\nCtrl+click or F12 — go to "
             "definition\nShift+F12 — references (click to jump)\nCtrl+Space — "
             "completion suggestions\nAlt+Left — go back\n\nWheel — smooth "

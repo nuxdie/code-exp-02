@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+"""Require durable human intent and rationale for artifact commits."""
+import sys
+from pathlib import Path
+
+root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(root / "tools"))
+from provenance_git import Repository
+from provenance_store import validate_intent_commit
+
+try:
+    validate_intent_commit(Repository(root), Path(sys.argv[1]).read_text())
+except Exception as error:
+    print("Intent check: " + str(error), file=sys.stderr)
+    raise SystemExit(1)

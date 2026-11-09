@@ -105,6 +105,10 @@ void Application::relayout()
         content_size.x = std::max(content_size.x, chat->bounds.origin.x + chat->bounds.size.x);
         content_size.y = std::max(content_size.y, chat->bounds.origin.y + chat->bounds.size.y);
     }
+    if (intent && intent->placed) {
+        content_size.x = std::max(content_size.x, intent->bounds.origin.x + intent->bounds.size.x);
+        content_size.y = std::max(content_size.y, intent->bounds.origin.y + intent->bounds.size.y);
+    }
     connections_dirty = true;
 }
 

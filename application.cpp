@@ -90,7 +90,9 @@ bool Application::initialize()
         g_object_unref(layout);
     }
 
+    system_theme = std::make_unique<SystemTheme>();
     initialize_workspace();
+    initialize_intent();
     initialize_reload();
 
     popup_layout = pango_layout_copy(base_layout);
@@ -199,6 +201,9 @@ Application::~Application()
         return;
     save_session();
     live_build.reset();
+    system_theme.reset();
+    if (intent)
+        intent->client.reset();
     if (chat)
         chat->client.reset();
     if (input_context)
@@ -239,6 +244,14 @@ void Application::update_timers(Clock::time_point now)
 {
     poll_project();
     poll_agent();
+    poll_intent();
+    if (system_theme) {
+        const auto dark = system_theme->take_change();
+        if (dark) {
+            renderer->set_dark_theme(*dark);
+            redraw = true;
+        }
+    }
     poll_reload(now);
     if (save_due <= now)
         save_session();
@@ -286,7 +299,8 @@ void Application::wait_for_work(Clock::time_point next_frame)
     }
     const auto pending =
         std::min({save_due, chat ? chat->reconnect : Clock::time_point::max(),
-                  build_running ? Clock::time_point::max() : rebuild_due, binary_check_due});
+                  build_running ? Clock::time_point::max() : rebuild_due, binary_check_due,
+                  intent ? intent->refresh : Clock::time_point::max()});
     if (pending != Clock::time_point::max()) {
         const int delay = static_cast<int>(std::max(
             0.0,
@@ -298,8 +312,10 @@ void Application::wait_for_work(Clock::time_point next_frame)
                             {math_typesetter ? math_typesetter->event_fd() : -1, POLLIN, 0},
                             {project_watcher ? project_watcher->event_fd() : -1, POLLIN, 0},
                             {chat && chat->client ? chat->client->event_fd() : -1, POLLIN, 0},
-                            {live_build ? live_build->event_fd() : -1, POLLIN, 0}};
-    if (poll(connections, 6, timeout) < 0 && errno != EINTR) {
+                            {live_build ? live_build->event_fd() : -1, POLLIN, 0},
+                            {intent && intent->client ? intent->client->event_fd() : -1, POLLIN, 0},
+                            {system_theme ? system_theme->event_fd() : -1, POLLIN, 0}};
+    if (poll(connections, 8, timeout) < 0 && errno != EINTR) {
         std::cerr << "Could not wait for window input.\n";
         running = false;
     }

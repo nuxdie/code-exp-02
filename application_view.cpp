@@ -55,6 +55,7 @@ void Application::draw()
     draw_headers(view);
     draw_fold_toggle();
     draw_conversation();
+    draw_intent();
     draw_popup();
     renderer->present();
     update_cursor();

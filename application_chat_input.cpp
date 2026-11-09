@@ -28,7 +28,10 @@ bool Application::chat_button(const XEvent& event, Vec2 pointer)
     } else if (event.xbutton.button == Button1) {
         for (auto hit = chat->hits.rbegin(); hit != chat->hits.rend(); ++hit)
             if (contains(hit->bounds, world)) {
-                chat_action(*hit, world);
+                if (hit->kind == ChatHit::Kind::Message && (event.xbutton.state & Mod1Mask))
+                    attribute_chat_entry(hit->index);
+                else
+                    chat_action(*hit, world);
                 break;
             }
     }
