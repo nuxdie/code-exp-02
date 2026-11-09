@@ -39,6 +39,41 @@
         "original_git_history": false,
         "evidence": "public_file_change_patch_replay"
       }
+    },
+    {
+      "id": "decision-01a1bff2-c000-7730-aa0a-854ff0b27cf0",
+      "statement": "good. now i want the program code of this program to be displayed in the window",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "thread_id": "01a1bfef-9987-7f02-9b54-aa5f1f019067",
+        "turn_id": "01a1bff2-bfee-7760-b633-2fc0ca8a760a",
+        "message_id": "01a1bff2-c000-7730-aa0a-854ff0b27cf0",
+        "turn_started_at": 1794221719,
+        "context": ""
+      },
+      "recorded_at": "2026-11-09T15:50:12.531070+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "retrospective_summary",
+        "summary": "The original viewer embedded its own source so it could display code without depending on a runtime source path. A later live-source decision replaces this implementation strategy."
+      },
+      "artifacts": [
+        "main.cpp",
+        "CMakeLists.txt",
+        "source_text.h.in"
+      ],
+      "relations": [],
+      "association": {
+        "kind": "reconstructed_milestone",
+        "precision": "milestone",
+        "original_git_history": false,
+        "evidence": "public_file_change_patch_replay"
+      }
     }
   ]
 }
