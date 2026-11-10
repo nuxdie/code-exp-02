@@ -2719,6 +2719,33 @@
       }
     },
     {
+      "id": "decision-01a1c500-c745-7260-b5b2-894328742be3",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c500-c745-7260-b5b2-894328742be3",
+        "thread_id": "01a1c500-c295-74b1-9e48-dddb87b18dfb",
+        "turn_id": "01a1c500-c2a7-7a53-ae1b-e9994a882f79"
+      },
+      "statement": "why does conversation window title has blue background?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T10:28:45.003657+00:00",
+      "statement_hash": "df5b7b2c3f97237f22dc2b8f55eebd9810e4ae79e86f9ddadd238bdc8822d4dc",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
       "id": "decision-01a1c501-e394-7c21-b93f-05b42c8a3758",
       "origin": {
         "kind": "conversation",
@@ -2785,6 +2812,33 @@
         "author_role": "agent",
         "basis": "recorded_live",
         "recorded_at": "2026-11-10T10:39:34.452975+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c503-667f-76a1-ba31-bd30c80a9dc3",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c503-667f-76a1-ba31-bd30c80a9dc3",
+        "thread_id": "01a1c500-c295-74b1-9e48-dddb87b18dfb",
+        "turn_id": "01a1c503-6668-7fa3-a988-39ce7e24a378"
+      },
+      "statement": "i dont see it. have you rebuilt?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T10:31:36.836678+00:00",
+      "statement_hash": "b492a361ce5173157510b54ae330bb79f7c011f5073359ef88d62ee6f4d8515a",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
       },
       "association": {
         "kind": "captured_statement",
@@ -2878,6 +2932,87 @@
       }
     },
     {
+      "id": "decision-01a1c510-8305-7c91-a389-9d7e044c9742",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c510-8305-7c91-a389-9d7e044c9742",
+        "thread_id": "01a1c510-64ea-7ed3-bf3d-85fb277d910f",
+        "turn_id": "01a1c510-80fc-79e3-b82a-42aebdc6ca2a"
+      },
+      "statement": "why is it broken?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T10:50:35.732021+00:00",
+      "statement_hash": "944f4ac7e897af350a5efb55ebcbc21416c7732d7e7e6d9c44d403807af8dea0",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c510-f3ca-7e12-b59f-487551255f66",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c510-f3ca-7e12-b59f-487551255f66",
+        "thread_id": "01a1c510-64ea-7ed3-bf3d-85fb277d910f",
+        "turn_id": "01a1c510-80fc-79e3-b82a-42aebdc6ca2a"
+      },
+      "statement": "<send_user_message_question_reply>\n[{\"answer\":\"launghin it does nothing\",\"question\":\"What’s broken—does the app fail to build or launch, or is a particular feature misbehaving? Any error text will help me pinpoint it.\",\"questionItemId\":\"[\\\"request_user_input_async\\\",\\\"call_d7f7332080444942813a6f5fd3e2c567\\\",0]\"}]\n</send_user_message_question_reply>",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T10:50:35.836975+00:00",
+      "statement_hash": "b0290d21edbc8f2ad4bececddec43f2b3095082959aed1dc78df487b85c2e967",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c527-8f35-7493-9513-0db44d2aa537",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c527-8f35-7493-9513-0db44d2aa537",
+        "thread_id": "01a1c527-8b2d-7843-9684-12deb9d876dd",
+        "turn_id": "01a1c527-8b3e-7d90-8ba0-0a2bd84b06d8"
+      },
+      "statement": "show me how the agent reply is wired",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T11:11:06.562244+00:00",
+      "statement_hash": "cfe03d0165bdd9950a2168973471c94cf54f25af1b1cf985e726cf4dee015180",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
       "id": "decision-01a1c535-f2cd-7a01-b07c-ed012bfd498c",
       "origin": {
         "kind": "conversation",
@@ -2904,6 +3039,33 @@
         "author_role": "agent",
         "basis": "implementation_explanation",
         "recorded_at": "2026-11-10T11:28:16.579557+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c72c-6f50-7e42-b096-a7825cc3ed26",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c72c-6f50-7e42-b096-a7825cc3ed26",
+        "thread_id": "01a1c72c-62dd-7483-9b7c-2e987c356362",
+        "turn_id": "01a1c72c-62f4-7ec1-a1aa-f950216ff4a5"
+      },
+      "statement": "comiit all and push",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T20:35:40.501164+00:00",
+      "statement_hash": "ed3c32eb8fa6ff9409dc582782575a05c50e1c7862383f14a0cef244c6d2d119",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
       },
       "association": {
         "kind": "captured_statement",
