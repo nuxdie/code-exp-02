@@ -56,8 +56,6 @@ void Application::draw_chat_card()
         chat->body.size.y -= space;
     }
     draw_chat_chrome();
-    if (camera.zoom < 0.25)
-        return;
     prepare_chat_messages();
     if (chat->scrolling)
         drag_chat_scroll(camera.screen_to_world(mouse_position, viewport()));
