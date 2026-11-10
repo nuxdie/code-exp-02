@@ -400,6 +400,8 @@ class Application {
     CanvasRect fold_toggle_bounds(const SourcePanel& panel, int line);
     SourceHit fold_at(Vec2 screen);
     void draw_popup();
+    void style_shortcuts(int layout_width);
+    void draw_shortcut_keys(Vec2 origin);
     GpuPath dependency_path(std::size_t index);
     Vec2 dependency_anchor(const SourcePanel& panel, int line, std::size_t byte, bool outgoing);
     void rebuild_connections();

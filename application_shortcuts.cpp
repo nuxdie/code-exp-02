@@ -4,70 +4,72 @@
 void Application::show_shortcuts()
 {
     hide_popup();
-    show_popup("# Shortcuts\n\n"
+    show_popup("# Keyboard shortcuts\n"
+               "Find your way around the canvas.\n"
+               "Scroll to explore   •   Esc to close\n\n"
                "## Search and help\n"
-               "`Ctrl+O` — choose a project directory\n"
-               "`/` — search file names and text across the project\n"
-               "`?` or `F1` — this guide\n"
-               "`↑ / ↓` or `Shift+Tab / Tab` — choose a search result\n"
-               "`Page Up / Down` — move through search results\n"
-               "`Enter` — jump to the selected result\n"
-               "`Esc` — close search or this guide\n"
+               "`Ctrl+O`\tchoose a project directory\n"
+               "`/`\tsearch file names and text across the project\n"
+               "`?` or `F1`\tthis guide\n"
+               "`↑ / ↓` or `Shift+Tab / Tab`\tchoose a search result\n"
+               "`Page Up / Down`\tmove through search results\n"
+               "`Enter`\tjump to the selected result\n"
+               "`Esc`\tclose search or this guide\n"
                "In this guide: arrows, Page Up/Down, Home/End or wheel scroll.\n\n"
                "## Canvas and camera\n"
-               "`Wheel` — smooth zoom at the pointer\n"
-               "`+ / = / −` — zoom at the viewport center\n"
-               "`Arrow keys` — pan\n"
-               "`Alt+Left / Alt+Right` — camera back / forward\n"
-               "`Mouse back / forward buttons` — camera back / forward\n"
-               "`Page Up / Down` — pan by a screen\n"
-               "`Home / End` — top / bottom of the canvas\n"
-               "`0` — reset camera\n"
-               "`F` — fit everything · `W` — fit width\n"
-               "`L` — arrange files with Graphviz\n"
-               "`G` — toggle dependency arrows\n"
+               "`Wheel`\tsmooth zoom at the pointer\n"
+               "`+ / = / −`\tzoom at the viewport center\n"
+               "`Arrow keys`\tpan\n"
+               "`Alt+Left / Alt+Right`\tcamera back / forward\n"
+               "`Mouse back / forward buttons`\tcamera back / forward\n"
+               "`Page Up / Down`\tpan by a screen\n"
+               "`Home / End`\ttop / bottom of the canvas\n"
+               "`0`\treset camera\n"
+               "`F / W`\tfit everything / fit width\n"
+               "`L`\tarrange files with Graphviz\n"
+               "`G`\ttoggle dependency arrows\n"
                "Drag blank space or middle-drag on source or blank canvas to pan.\n"
                "Middle-click a conversation, intent card, search or popup to close it.\n"
                "Drag a file, agent or decision title to move its card.\n"
                "Wheel zoom continues while panning.\n\n"
                "## Code and navigation\n"
-               "`Hover` or `K` — documentation for the pointed symbol\n"
-               "`Ctrl+click / F12` — definition; at a definition, Ctrl+click shows usages\n"
-               "`Shift+F12` — usages\n"
-               "`Ctrl+Space` — completion suggestions\n"
-               "`S` or click a file title — symbol hierarchy\n"
-               "`C / Shift+C` — collapse / expand blocks in the pointed file\n"
+               "`Hover` or `K`\tdocumentation for the pointed symbol\n"
+               "`Ctrl+click / F12`\tdefinition; at a definition, Ctrl+click shows usages\n"
+               "`Shift+F12`\tusages\n"
+               "`Ctrl+Space`\tcompletion suggestions\n"
+               "`S / click file title`\tsymbol hierarchy\n"
+               "`C / Shift+C`\tcollapse / expand blocks in the pointed file\n"
                "Without a pointed file, C / Shift+C applies to all files.\n"
                "Hover a block header and click ▸/▾ to fold it.\n"
                "Click a file link or a navigation result to jump.\n\n"
                "## Agent conversations\n"
-               "`Right-click / Ctrl+Shift+A` — type a message here to start a conversation\n"
-               "`Tab / Ctrl+L` — focus and fit the active conversation\n"
-               "`Enter` — send, reply or steer the active turn\n"
-               "`Shift+Enter` — newline\n"
-               "`Esc` — dismiss a new input or leave the message editor\n"
+               "`Right-click / Ctrl+Shift+A`\ttype a message here to start a conversation\n"
+               "`Tab / Ctrl+L`\tfocus and fit the active conversation\n"
+               "`Enter`\tsend, reply or steer the active turn\n"
+               "`Shift+Enter`\tnewline\n"
+               "`Esc`\tdismiss a new input or leave the message editor\n"
                "Drag the agent scrollbar to scroll; wheel still zooms the canvas.\n"
                "Use Conversations to switch threads.\n\n"
                "## Decisions and intent\n"
                "Click an intent label beside a file title to browse its requests.\n"
                "Select a request for details beside the code; drag its title to detach it.\n"
-               "`D` — browse all intents\n"
-               "`I / Alt+click source` — intent and diff for that line\n"
-               "`Alt+click a human message` — select its intent\n"
-               "`Alt+click an agent response` — record its public explanation as rationale\n"
+               "`D`\tbrowse all intents\n"
+               "`I / Alt+click source`\tintent and diff for that line\n"
+               "`Alt+click a human message`\tselect its intent\n"
+               "`Alt+click an agent response`\trecord its public explanation as rationale\n"
                "In a rationale editor: Enter saves, Esc cancels, arrows move the caret.\n\n"
                "## Text selection and editing\n"
                "Drag text to select; Shift+click extends a selection.\n"
-               "`Ctrl+A / Ctrl+C` — select all / copy the active text\n"
-               "`Ctrl+X / Ctrl+V` — cut / paste in message and search editors\n"
-               "`← / →` — move the caret; hold Shift to select\n"
-               "`↑ / ↓` — move between message editor lines\n"
-               "`Home / End` — start / end of the line; Shift extends\n"
-               "`Backspace / Delete` — delete before / after the caret\n"
-               "`Esc` — clear selection or cancel a text / scrollbar drag\n\n"
+               "`Ctrl+A / Ctrl+C`\tselect all / copy the active text\n"
+               "`Ctrl+X / Ctrl+V`\tcut / paste in message and search editors\n"
+               "`← / →`\tmove the caret; hold Shift to select\n"
+               "`↑ / ↓`\tmove between message editor lines\n"
+               "`Home / End`\tstart / end of the line; Shift extends\n"
+               "`Backspace / Delete`\tdelete before / after the caret\n"
+               "`Esc`\tclear selection or cancel a text / scrollbar drag\n\n"
                "Canvas letter shortcuts accept uppercase too. / and ? type normally in editors.\n"
                "Keypad 0, +, − and Enter work like their main keyboard keys.",
-               {std::max(0.0, (width - 660.0) / 2), 0}, true);
+               {std::max(0.0, (width - 868.0) / 2), 12}, true);
     shortcuts_visible = true;
 }
 bool Application::shortcuts_key(KeySym key)
@@ -139,4 +141,64 @@ bool Application::canvas_shortcut_key(const XEvent& event)
         return shortcuts_key(key);
     }
     return false;
+}
+
+void Application::style_shortcuts(int layout_width)
+{
+    // Keep byte offsets stable for selection while stacking key/action pairs on small windows.
+    if (layout_width < 600) {
+        auto stacked = popup_text;
+        std::replace(stacked.begin(), stacked.end(), '\t', '\n');
+        pango_layout_set_text(popup_layout, stacked.c_str(), static_cast<int>(stacked.size()));
+    }
+    // The guide is a reference sheet: UI text for actions, monospace for physical keys.
+    auto* font = pango_font_description_from_string("sans-serif");
+    pango_font_description_set_absolute_size(font, 14 * PANGO_SCALE);
+    pango_layout_set_font_description(popup_layout, font);
+    pango_font_description_free(font);
+    auto* tabs = pango_tab_array_new(1, TRUE);
+    pango_tab_array_set_tab(tabs, 0, PANGO_TAB_LEFT, std::min(280, layout_width / 2));
+    pango_layout_set_tabs(popup_layout, tabs);
+    pango_tab_array_free(tabs);
+    pango_layout_set_spacing(popup_layout, 8 * PANGO_SCALE);
+    auto* attributes = pango_attr_list_new();
+    auto add = [&](PangoAttribute* attribute, std::size_t begin, std::size_t length) {
+        attribute->start_index = static_cast<guint>(begin);
+        attribute->end_index = static_cast<guint>(begin + length);
+        pango_attr_list_insert(attributes, attribute);
+    };
+    add(pango_attr_foreground_new(0x2900, 0x3500, 0x4500), 0, popup_text.size());
+    for (const auto& span : popup_styles) {
+        if (span.style != PopupStyle::Heading)
+            continue;
+        add(pango_attr_size_new_absolute((span.begin == 0 ? 28 : 18) * PANGO_SCALE), span.begin,
+            span.length);
+        add(pango_attr_weight_new(PANGO_WEIGHT_BOLD), span.begin, span.length);
+        add(pango_attr_foreground_new(0x2300, 0x4400, 0x6a00), span.begin, span.length);
+    }
+    for (const auto& [begin, length] : popup_inline_code) {
+        add(pango_attr_family_new("JetBrains Mono"), begin, length);
+        add(pango_attr_size_new_absolute(12 * PANGO_SCALE), begin, length);
+        add(pango_attr_weight_new(PANGO_WEIGHT_MEDIUM), begin, length);
+    }
+    pango_layout_set_attributes(popup_layout, attributes);
+    pango_attr_list_unref(attributes);
+}
+
+void Application::draw_shortcut_keys(Vec2 origin)
+{
+    for (const auto& [begin, length] : popup_inline_code) {
+        PangoRectangle first{}, last{};
+        pango_layout_index_to_pos(popup_layout, static_cast<int>(begin), &first);
+        pango_layout_index_to_pos(popup_layout, static_cast<int>(begin + length), &last);
+        // A key label may wrap in a small window. Never draw across unrelated rows.
+        if (first.y != last.y || last.x <= first.x)
+            continue;
+        const double x = origin.x + static_cast<double>(first.x) / PANGO_SCALE;
+        const double y = origin.y + static_cast<double>(first.y) / PANGO_SCALE;
+        renderer->rectangle({{x - 3, y - 2},
+                             {static_cast<double>(last.x - first.x) / PANGO_SCALE + 6,
+                              static_cast<double>(first.height) / PANGO_SCALE + 4}},
+                            {0.89f, 0.92f, 0.96f, 1});
+    }
 }

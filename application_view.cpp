@@ -197,7 +197,8 @@ void Application::draw_fold_toggle()
 void Application::draw_popup()
 {
     if (!popup_text.empty()) {
-        const int layout_width = std::max(1, std::min(620, width - 24));
+        const int layout_width = std::max(
+            1, std::min(shortcuts_visible ? 820 : 620, width - (shortcuts_visible ? 48 : 24)));
         if (cached_popup != popup_text || cached_popup_width != layout_width ||
             cached_popup_code_lines != popup_code_lines) {
             update_popup_mesh(layout_width);
@@ -212,8 +213,9 @@ void Application::draw_popup()
             pango_layout_index_to_pos(popup_layout, static_cast<int>(last), &tail);
             text_height = std::min(text_height, (tail.y + tail.height) / PANGO_SCALE);
         }
-        const double x =
-            std::clamp(popup_origin.x + 16, 0.0, std::max(0.0, width - text_width - 24.0));
+        const double popup_x =
+            shortcuts_visible ? (width - text_width - 24.0) / 2 : popup_origin.x + 16;
+        const double x = std::clamp(popup_x, 0.0, std::max(0.0, width - text_width - 24.0));
         const double visible_height =
             std::min(static_cast<double>(text_height), std::max(1.0, height - 48.0));
         const double y =
@@ -224,6 +226,8 @@ void Application::draw_popup()
         renderer->rectangle(popup_bounds, {0.97f, 0.98f, 1, 1});
         renderer->clip({{x + 12, y + 12}, {static_cast<double>(text_width), visible_height}},
                        height);
+        if (shortcuts_visible)
+            draw_shortcut_keys({x + 12, y + 12 - popup_scroll});
         if (text_selection.surface == TextSurface::Popup && text_selection.range.text == popup_text)
             draw_selection_layout(popup_layout, {x + 12, y + 12 - popup_scroll}, 1,
                                   text_selection.range.selection());
@@ -380,6 +384,7 @@ void Application::configure_document(PangoLayout* layout, const PopupDocument& d
     pango_font_description_set_absolute_size(font, (prose ? 17 : 14) * PANGO_SCALE);
     pango_layout_set_font_description(layout, font);
     pango_font_description_free(font);
+    pango_layout_set_tabs(layout, nullptr);
     pango_layout_set_single_paragraph_mode(layout, FALSE);
     pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
     pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_NONE);
@@ -460,6 +465,8 @@ void Application::update_popup_mesh(int layout_width)
     document.inline_code = popup_inline_code;
     configure_document(popup_layout, document, layout_width, popup_prose);
     compact_popup_layout(popup_layout, document, popup_prose);
+    if (shortcuts_visible)
+        style_shortcuts(layout_width);
     upload_document_mesh(popup_mesh, popup_layout, popup_math);
     cached_popup = popup_text;
     cached_popup_width = layout_width;

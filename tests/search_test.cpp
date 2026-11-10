@@ -126,6 +126,17 @@ struct ApplicationTestAccess {
                    app.popup_text.find("Ctrl+V") != std::string::npos,
                "Question mark must open the complete shortcut guide");
         app.draw();
+        expect(std::string(pango_font_description_get_family(
+                   pango_layout_get_font_description(app.popup_layout))) == "sans-serif",
+               "The shortcut guide must use UI typography rather than documentation prose");
+        const int original_width = app.width;
+        app.width = 360;
+        app.draw();
+        expect(app.popup_bounds.origin.x >= 0 &&
+                   app.popup_bounds.origin.x + app.popup_bounds.size.x <= app.width,
+               "The shortcut guide must remain inside narrow windows");
+        app.width = original_width;
+        app.draw();
         XEvent motion{};
         motion.type = MotionNotify;
         motion.xmotion.x = 0;

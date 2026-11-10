@@ -3122,6 +3122,38 @@
         "tests/test_agent_bridge.py",
         "tools/agent_bridge.py"
       ]
+    },
+    {
+      "id": "decision-01a1c753-9e63-7c40-bce3-efa80aff18d0",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c753-9e63-7c40-bce3-efa80aff18d0",
+        "thread_id": "01a1c753-9835-7f53-8d75-17475c0ad5b2",
+        "turn_id": "01a1c753-98b2-7e50-aaa9-002ae61ebb12"
+      },
+      "statement": "why is help window so ugly? redesign it using frontend design skill",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T21:18:28.461129+00:00",
+      "statement_hash": "901d475cf114981fcd3eaa98113d35c06ff2bda4aeccff78ae17ec6e837a093d",
+      "artifacts": [
+        "application.h",
+        "application_shortcuts.cpp",
+        "application_view.cpp",
+        "tests/search_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Apply the frontend-design skill to turn the narrow serif help popup into a wider shortcut reference with sans-serif UI text, aligned key/action columns, distinct headings, monospace key backgrounds, theme support, and narrow-window containment while preserving selection and keyboard scrolling.",
+        "author_role": "agent",
+        "basis": "implementation_analysis"
+      },
+      "association": {
+        "kind": "reviewed_checkpoint",
+        "precision": "selected_diff"
+      }
     }
   ]
 }
