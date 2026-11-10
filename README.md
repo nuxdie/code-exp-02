@@ -34,6 +34,8 @@ The repository is named `code-exp-02`; the executable is currently called `white
 
 Pan between files and zoom around the pointer. Syntax stays sharp as the camera moves; dependency arrows keep related files connected.
 
+Use **Alt+Left / Alt+Right** or your mouse's **back / forward buttons** to revisit camera positions and zoom levels after panning, zooming, fitting, or jumping to code and conversations. Continuous movement counts as one step. Moving somewhere new after going back clears the forward history; the last 100 positions are saved with the project session.
+
 ![A real capture of Source Canvas zooming and panning between main.cpp, camera.h, and canvas.h](docs/media/canvas-tour.gif)
 
 ### Find it. Jump to it.

@@ -126,6 +126,7 @@ void Application::open_search_match(std::size_t index)
         camera.center = panel->bounds.origin;
         camera.zoom = 1;
         zoom_animation.cancel(camera);
+        finish_view();
         return;
     }
     const auto line = std::min(match.line, std::max(0, static_cast<int>(panel->text.size()) - 1));

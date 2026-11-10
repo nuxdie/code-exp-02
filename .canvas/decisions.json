@@ -1182,7 +1182,7 @@
         "turn_id": "01a1c0af-1a0b-75e2-a51c-bdd0a8f81788",
         "message_id": "01a1c0bc-e2b0-7931-84cf-f068aef9fb1e",
         "turn_started_at": 1794234063,
-        "context": "I’ll make source cards update immediately from disk. Should successful builds also reload the running viewer itself while preserving the conversation and view?"
+        "context": "I\u2019ll make source cards update immediately from disk. Should successful builds also reload the running viewer itself while preserving the conversation and view?"
       },
       "recorded_at": "2026-11-09T15:50:12.531227+00:00",
       "status": "recorded",
@@ -2669,6 +2669,49 @@
         "author_role": "agent",
         "basis": "recorded_live",
         "recorded_at": "2026-11-10T10:30:27.646657+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c502-a0f2-7e63-b3f9-7c011063fdec",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c502-a0f2-7e63-b3f9-7c011063fdec",
+        "thread_id": "01a1c502-9d02-79e3-9762-fc05f1cd8631",
+        "turn_id": "01a1c502-9d16-7d03-b922-2fc99dbc1207"
+      },
+      "statement": "i want history of camera positions. i want to go back and forward",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T10:30:46.269891+00:00",
+      "statement_hash": "763113ae986da9266c797ba1b2664b3c8e25021f979c76b4d2d5535a8b276e74",
+      "artifacts": [
+        "CMakeLists.txt",
+        "README.md",
+        "application.h",
+        "application_chat.cpp",
+        "application_events.cpp",
+        "application_intent.cpp",
+        "application_live.cpp",
+        "application_model.cpp",
+        "application_navigation.cpp",
+        "application_search.cpp",
+        "application_session.cpp",
+        "application_shortcuts.cpp",
+        "application_view.cpp",
+        "tests/navigation_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Extend camera history to record position and zoom for panning, zooming, framing, code jumps and card focus. Add bidirectional navigation through Alt+Left/Right and mouse buttons, group continuous gestures, discard the forward branch after new movement, retain file-relative anchors, and save bounded history in project sessions. Cover actual input handling, animation cancellation, no-op navigation, branching, session restoration and history limits.",
+        "author_role": "agent",
+        "basis": "recorded_live",
+        "recorded_at": "2026-11-10T10:39:34.452975+00:00"
       },
       "association": {
         "kind": "captured_statement",

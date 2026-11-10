@@ -199,6 +199,7 @@ add_library(
     application_workspace.cpp
     directory_picker.cpp
     application_model.cpp
+    application_navigation.cpp
     application_popups.cpp
     application_search.cpp
     application_search_input.cpp
@@ -356,6 +357,16 @@ if(BUILD_TESTING)
         add_test(NAME search COMMAND search_tests)
     endif()
     set_tests_properties(search PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30)
+    add_executable(navigation_tests tests/navigation_test.cpp)
+    target_link_libraries(navigation_tests PRIVATE application_core)
+    if(XVFB_RUN_EXECUTABLE)
+        add_test(NAME navigation COMMAND "${XVFB_RUN_EXECUTABLE}" -a
+                                         $<TARGET_FILE:navigation_tests>
+        )
+    else()
+        add_test(NAME navigation COMMAND navigation_tests)
+    endif()
+    set_tests_properties(navigation PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30)
     target_link_libraries(agent_windows_tests PRIVATE application_core)
     if(XVFB_RUN_EXECUTABLE)
         add_test(NAME agent_windows COMMAND "${XVFB_RUN_EXECUTABLE}" -a
@@ -443,6 +454,7 @@ if(BUILD_TESTING)
         selection_tests
         agent_windows_tests
         search_tests
+        navigation_tests
         cmake_canvas_tests
         intent_canvas_tests
         system_theme_tests

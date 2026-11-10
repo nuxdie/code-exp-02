@@ -153,10 +153,14 @@ class Application {
     std::string list_title;
     struct SavedView {
         Camera camera;
-        int panel = -1;
+        std::string path;
         Vec2 relative_center;
     };
     std::vector<SavedView> navigation_history;
+    std::vector<SavedView> navigation_forward;
+    std::optional<SavedView> pending_view;
+    Clock::time_point navigation_input;
+    bool navigation_continuous = false;
     std::optional<SourceHit> focused_line;
     struct MathArtwork {
         GpuImage image;
@@ -344,8 +348,18 @@ class Application {
     bool cancel_pointer_drag(const XEvent& event);
     void handle_message(const lsp::Message& message);
     void handle_event(const XEvent& event);
-    void remember_view();
+    SavedView current_view();
+    Camera saved_camera(const SavedView& saved);
+    void remember_view(bool continuous = false);
+    void finish_view();
+    bool navigate_view(bool forward);
+    bool navigation_key(const XEvent& event);
+    bool navigation_button(unsigned button);
+    bool camera_key(KeySym key);
     bool go_back();
+    bool go_forward();
+    lsp::Json save_navigation();
+    void load_navigation(const lsp::Json& state);
 
     void update_timers(Clock::time_point now);
     void wait_for_work(Clock::time_point next_frame);

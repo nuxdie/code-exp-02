@@ -18,6 +18,8 @@ void Application::show_shortcuts()
                "`Wheel` — smooth zoom at the pointer\n"
                "`+ / = / −` — zoom at the viewport center\n"
                "`Arrow keys` — pan\n"
+               "`Alt+Left / Alt+Right` — camera back / forward\n"
+               "`Mouse back / forward buttons` — camera back / forward\n"
                "`Page Up / Down` — pan by a screen\n"
                "`Home / End` — top / bottom of the canvas\n"
                "`0` — reset camera\n"
@@ -33,7 +35,6 @@ void Application::show_shortcuts()
                "`Ctrl+click / F12` — definition; at a definition, Ctrl+click shows usages\n"
                "`Shift+F12` — usages\n"
                "`Ctrl+Space` — completion suggestions\n"
-               "`Alt+Left` — go back\n"
                "`S` or click a file title — symbol hierarchy\n"
                "`C / Shift+C` — collapse / expand blocks in the pointed file\n"
                "Without a pointed file, C / Shift+C applies to all files.\n"
@@ -98,6 +99,8 @@ bool Application::shortcuts_key(KeySym key)
 }
 bool Application::canvas_shortcut_key(const XEvent& event)
 {
+    if (navigation_key(event))
+        return true;
     auto key_event = event.xkey;
     const auto symbol = XLookupKeysym(&key_event, 0);
     if ((event.xkey.state & ControlMask) && !(event.xkey.state & Mod1Mask) &&

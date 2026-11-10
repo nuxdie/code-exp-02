@@ -65,6 +65,8 @@ void Application::handle_button(const XEvent& event)
     const auto view = viewport();
     mouse_position = pointer;
     redraw = true;
+    if (navigation_button(event.xbutton.button))
+        return;
     if (close_window_button(event, pointer)) {
         hover_due = Clock::time_point::max();
         update_cursor();
@@ -140,6 +142,7 @@ bool Application::close_window_button(const XEvent& event, Vec2 pointer)
 
 void Application::zoom_wheel(unsigned button, Vec2 pointer)
 {
+    remember_view(true);
     const auto view = viewport();
     if (drag_button) {
         if ((!chat || !chat->scrolling) && !text_selection.dragging)
@@ -185,8 +188,10 @@ void Application::handle_motion(const XEvent& event)
             content_size.y =
                 std::max(content_size.y, position.y + panels[dragged_panel].bounds.size.y);
             connections_dirty = true;
-        } else
+        } else {
+            remember_view(true);
             camera.pan(delta);
+        }
         last_pointer = pointer;
         zoom_animation.anchor = pointer;
         redraw = true;
@@ -232,6 +237,8 @@ void Application::handle_release(const XEvent& event)
     }
     if (intent)
         intent->dragging = false;
+    if (!zoom_animation.active(camera))
+        finish_view();
     schedule_save();
     redraw = true;
     update_cursor();
@@ -256,62 +263,17 @@ void Application::handle_key(const XEvent& event)
         return;
     }
     schedule_save();
-    const auto view = viewport();
     hide_popup();
     auto key_event = event.xkey;
-    switch (XLookupKeysym(&key_event, 0)) {
-    case XK_Up:
-        camera.pan({0, 40});
-        break;
-    case XK_Down:
-        camera.pan({0, -40});
-        break;
-    case XK_Left:
-        if (!(event.xkey.state & Mod1Mask) || !go_back())
-            camera.pan({40, 0});
-        break;
-    case XK_Right:
-        camera.pan({-40, 0});
-        break;
-    case XK_Page_Up:
-        camera.pan({0, view.height * 0.9});
-        break;
-    case XK_Page_Down:
-        camera.pan({0, -view.height * 0.9});
-        break;
-    case XK_Home:
-        camera.home(view);
-        zoom_animation.cancel(camera);
-        break;
-    case XK_End:
-        camera.home(view);
-        camera.center.y += std::max(0.0, content_size.y - view.height / camera.zoom);
-        zoom_animation.cancel(camera);
-        break;
-    case XK_0:
-    case XK_KP_0:
-        camera.reset(view);
-        zoom_animation.cancel(camera);
-        break;
-    case XK_f:
-    case XK_F:
-        camera.fit(content_size, view);
-        zoom_animation.cancel(camera);
-        break;
-    case XK_w:
-    case XK_W:
-        fit_width();
-        break;
+    const auto key = XLookupKeysym(&key_event, 0);
+    if (camera_key(key)) {
+        redraw = true;
+        return;
+    }
+    switch (key) {
     case XK_g:
     case XK_G:
         show_connections = !show_connections;
-        break;
-    case XK_l:
-    case XK_L:
-        relayout();
-        connections_dirty = true;
-        camera.fit(content_size, view);
-        zoom_animation.cancel(camera);
         break;
     case XK_s:
     case XK_S:
@@ -358,15 +320,6 @@ void Application::handle_key(const XEvent& event)
     case XK_space:
         if (event.xkey.state & ControlMask)
             list_request = query_at_pointer("textDocument/completion");
-        break;
-    case XK_equal:
-    case XK_plus:
-    case XK_KP_Add:
-        zoom_animation.request(camera, 1.15, view.center());
-        break;
-    case XK_minus:
-    case XK_KP_Subtract:
-        zoom_animation.request(camera, 1 / 1.15, view.center());
         break;
     case XK_Escape:
         drag_button = 0;
@@ -450,6 +403,8 @@ void Application::begin_drag(const XEvent& event, Vec2 pointer, const Viewport& 
         zoom_animation.anchor = pointer;
         dragged_panel = header;
         drag_moved = false;
+        if (header < 0)
+            remember_view(true);
         update_cursor();
     }
 }

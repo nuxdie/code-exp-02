@@ -288,37 +288,10 @@ bool Application::jump_to(const lsp::Json& location)
                      found->bounds.origin.y + header_height +
                          found->folded.display_lines[line] * line_height + line_height / 2.0};
     zoom_animation.cancel(camera);
+    finish_view();
     focused_line = SourceHit{static_cast<int>(found - panels.begin()), line, byte};
     hide_popup();
     redraw = true;
-    return true;
-}
-
-void Application::remember_view()
-{
-    int index = panel_at(viewport().center());
-    if (index < 0)
-        index = panel_at(mouse_position);
-    Vec2 relative = camera.center;
-    if (index >= 0) {
-        relative.x -= panels[index].bounds.origin.x;
-        relative.y -= panels[index].bounds.origin.y;
-    }
-    navigation_history.push_back({camera, index, relative});
-}
-
-bool Application::go_back()
-{
-    if (navigation_history.empty())
-        return false;
-    const auto saved = navigation_history.back();
-    navigation_history.pop_back();
-    camera = saved.camera;
-    if (saved.panel >= 0 && saved.panel < static_cast<int>(panels.size()))
-        camera.center = {panels[saved.panel].bounds.origin.x + saved.relative_center.x,
-                         panels[saved.panel].bounds.origin.y + saved.relative_center.y};
-    zoom_animation.cancel(camera);
-    focused_line.reset();
     return true;
 }
 

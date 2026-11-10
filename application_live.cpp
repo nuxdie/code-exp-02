@@ -123,9 +123,6 @@ void Application::poll_project()
         return;
     if (!shortcuts_visible)
         hide_popup();
-    std::vector<std::string> previous_paths;
-    for (const auto& panel : panels)
-        previous_paths.push_back(panel.path);
     const auto dragged = dragged_panel >= 0 && dragged_panel < static_cast<int>(panels.size())
                              ? panels[dragged_panel].path
                              : "";
@@ -143,9 +140,6 @@ void Application::poll_project()
             XUngrabPointer(display, CurrentTime);
         }
     }
-    for (auto& saved : navigation_history)
-        if (saved.panel >= 0 && saved.panel < static_cast<int>(previous_paths.size()))
-            saved.panel = index_for(previous_paths[saved.panel]);
     focused_line.reset();
     refresh_project_geometry();
     if (search.active)

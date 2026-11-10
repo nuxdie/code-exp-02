@@ -49,6 +49,7 @@ void Application::focus_chat()
 {
     if (!chat)
         return;
+    remember_view();
     camera.zoom = std::clamp(
         std::min((width - 80.0) / chat->bounds.size.x, (height - 48.0) / chat->bounds.size.y), 0.4,
         1.0);
@@ -56,6 +57,7 @@ void Application::focus_chat()
                      chat->bounds.origin.y + chat->bounds.size.y / 2};
     zoom_animation.cancel(camera);
     initial_view = false;
+    finish_view();
     chat->visible = true;
     chat->focused = true;
     chat->follow = true;

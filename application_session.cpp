@@ -67,6 +67,7 @@ void Application::load_session()
             initial_view = false;
         }
         const auto window = state.value("window", lsp::Json::object());
+        load_navigation(state.value("cameraHistory", lsp::Json::object()));
         if (window.contains("width")) {
             width = std::max(320, window.value("width", width));
             height = std::max(240, window.value("height", height));
@@ -115,6 +116,7 @@ void Application::save_session()
          {"globalSearch", {{"query", search.query.text}, {"active", search.active}}},
          {"additionalAgents", additional},
          {"camera", {{"x", camera.center.x}, {"y", camera.center.y}, {"zoom", camera.zoom}}},
+         {"cameraHistory", save_navigation()},
          {"window", {{"x", x}, {"y", y}, {"width", width}, {"height", height}}},
          {"files", files},
          {"intent", intent ? lsp::Json{{"x", intent->bounds.origin.x},

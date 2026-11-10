@@ -113,6 +113,7 @@ void Application::focus_intent()
 {
     if (!intent || !intent->placed)
         return;
+    remember_view();
     intent->visible = true;
     content_size.x = std::max(content_size.x, intent->bounds.origin.x + intent->bounds.size.x);
     content_size.y = std::max(content_size.y, intent->bounds.origin.y + intent->bounds.size.y);
@@ -122,6 +123,7 @@ void Application::focus_intent()
     camera.center = {intent->bounds.origin.x + intent->bounds.size.x / 2,
                      intent->bounds.origin.y + intent->bounds.size.y / 2};
     zoom_animation.cancel(camera);
+    finish_view();
     chat->focused = false;
     hide_popup();
     redraw = true;

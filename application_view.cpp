@@ -35,10 +35,12 @@ Viewport Application::viewport()
 
 void Application::fit_width()
 {
+    remember_view();
     const auto view = viewport();
     camera.zoom = std::clamp(view.width / std::max(1.0, content_size.x), Camera::min_zoom, 1.0);
     camera.home(view);
     zoom_animation.cancel(camera);
+    finish_view();
 }
 
 void Application::draw()
