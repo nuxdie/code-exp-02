@@ -1,6 +1,7 @@
 #include "application.h"
 
-SourcePanel Application::make_panel(const std::string& path, const std::string& text)
+SourcePanel Application::make_panel(const std::string& path, const std::string& text,
+                                    ImagePreview* preview)
 {
     SourcePanel panel;
     panel.path = path;
@@ -21,7 +22,7 @@ SourcePanel Application::make_panel(const std::string& path, const std::string& 
     panel.cmake =
         std::filesystem::path(path).filename() == "CMakeLists.txt" || extension == ".cmake";
     if (panel.image) {
-        load_image_panel(panel, text, text_width);
+        load_image_panel(panel, preview ? std::move(*preview) : decode_image(text), text_width);
         return panel;
     }
     HighlightState highlight_state;
@@ -97,14 +98,29 @@ void Application::relayout()
     for (const auto& panel : panels)
         files.push_back({panel.path, panel.source, panel.bounds.size});
     dependencies = file_dependencies(files);
+    graph = layout_files(files, dependencies, workspace_build);
+    apply_graph_layout();
+}
+
+GraphLayout Application::layout_files(const std::vector<GraphFile>& files,
+                                      const std::vector<Dependency>& edges,
+                                      const std::string& directory)
+{
     try {
-        graph = graph_layout(files, dependencies, workspace_build);
+        return graph_layout(files, edges, directory);
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
-        graph.files = arrange_files(file_sizes);
-        graph.routes.clear();
-        graph.size = canvas_size(graph.files);
     }
+    std::vector<Vec2> sizes;
+    for (const auto& file : files)
+        sizes.push_back(file.size);
+    auto bounds = arrange_files(sizes);
+    const auto size = canvas_size(bounds);
+    return {std::move(bounds), {}, size};
+}
+
+void Application::apply_graph_layout()
+{
     for (std::size_t i = 0; i < panels.size(); ++i)
         panels[i].bounds.origin = graph.files[i].origin;
     content_size = graph.size;

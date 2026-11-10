@@ -40,29 +40,6 @@ void Application::release_panel(SourcePanel& panel)
         g_object_unref(label);
 }
 
-void Application::load_project()
-{
-    auto snapshot = read_project(workspace_root);
-    std::vector<std::string> paths;
-    for (const char* first : {"main.cpp", "camera.h", "canvas.h"})
-        if (snapshot.count(first))
-            paths.emplace_back(first);
-    for (const auto& [path, source] : snapshot)
-        if (std::find(paths.begin(), paths.end(), path) == paths.end())
-            paths.push_back(path);
-    for (const auto& path : paths) {
-        auto panel = make_panel(path, snapshot.at(path));
-        update_mesh(panel);
-        if (panel.cpp && documents.size() < 3) {
-            documents.push_back({panel.uri, panel.source});
-            opened_documents.insert(panel.uri);
-        }
-        file_sizes.push_back(panel.bounds.size);
-        panels.push_back(std::move(panel));
-    }
-    project_watcher = std::make_unique<ProjectWatcher>(workspace_root, std::move(snapshot));
-}
-
 void Application::replace_source(int index, const std::string& source)
 {
     auto& old = panels[index];

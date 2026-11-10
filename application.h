@@ -32,6 +32,7 @@
 #include <filesystem>
 #include <fontconfig/fontconfig.h>
 #include <fstream>
+#include <future>
 #include <iostream>
 #include <iterator>
 #include <map>
@@ -70,6 +71,26 @@ class Application {
     std::string workspace_root;
     std::string workspace_build;
     std::unique_ptr<ProjectWatcher> project_watcher;
+    struct ImagePreview {
+        std::unique_ptr<cairo_surface_t, decltype(&cairo_surface_destroy)> pixels{
+            nullptr, cairo_surface_destroy};
+        std::string error;
+    };
+    struct WorkspaceLayout {
+        std::vector<Dependency> dependencies;
+        GraphLayout graph;
+        std::unique_ptr<ProjectWatcher> watcher;
+    };
+    struct WorkspaceLoad {
+        std::future<ProjectSnapshot> reading;
+        ProjectSnapshot snapshot;
+        std::vector<std::string> paths;
+        std::size_t next = 0;
+        std::future<ImagePreview> image;
+        std::future<WorkspaceLayout> layout;
+        GpuMesh label;
+    };
+    std::optional<WorkspaceLoad> workspace_load;
     int screen = 0;
     std::unique_ptr<ChatCanvas> chat;
     std::vector<std::unique_ptr<ChatCanvas>> chat_windows;
@@ -221,12 +242,18 @@ class Application {
     Clock::time_point binary_check_due = Clock::time_point::max();
 
     bool initialize();
+    bool initialize_window();
+    int run_window();
     void receive_agent_activity(const lsp::Json& message);
     std::optional<CanvasRect> activity_bounds(const ActivityTouch& touch);
     void advance_agent_activity();
     void draw_activity_highlights();
     void draw_agent_activity();
-    void initialize_workspace();
+    void begin_workspace_load();
+    void advance_workspace_load();
+    bool add_workspace_panel();
+    void finish_workspace_load();
+    void restore_file_layouts(const lsp::Json& files);
     void open_directory_picker();
     void poll_directory_picker();
     void initialize_cmake();
@@ -364,12 +391,17 @@ class Application {
     void schedule_save();
     int benchmark_run();
     PangoLayout* make_line(const std::string& line, const std::vector<Token>& tokens);
-    SourcePanel make_panel(const std::string& path, const std::string& text);
+    SourcePanel make_panel(const std::string& path, const std::string& text,
+                           ImagePreview* preview = nullptr);
     void update_mesh(SourcePanel& panel);
-    void load_image_panel(SourcePanel& panel, const std::string& bytes, int title_width);
+    static ImagePreview decode_image(const std::string& bytes);
+    void load_image_panel(SourcePanel& panel, ImagePreview preview, int title_width);
     void update_image_geometry(SourcePanel& panel, int title_width);
     void relayout();
-    void load_project();
+    static GraphLayout layout_files(const std::vector<GraphFile>& files,
+                                    const std::vector<Dependency>& edges,
+                                    const std::string& directory);
+    void apply_graph_layout();
     void poll_project();
     void release_panel(SourcePanel& panel);
     void replace_source(int index, const std::string& source);

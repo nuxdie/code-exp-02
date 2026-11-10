@@ -9,6 +9,31 @@ void expect(bool condition, const char* message)
 }
 
 struct ApplicationTestAccess {
+    static void check_progressive_load(const std::filesystem::path& root)
+    {
+        Application app(root.string());
+        expect(app.initialize_window(), "Window must initialize before loading the project");
+        XMapWindow(app.display, app.window);
+        XSync(app.display, False);
+        expect(app.window && app.panels.empty() && !app.chat,
+               "Mapping the window must not build the workspace");
+        app.workspace_load = Application::WorkspaceLoad{};
+        app.draw();
+        app.begin_workspace_load();
+        app.workspace_load->reading.wait();
+        app.advance_workspace_load();
+        expect(app.workspace_load && app.panels.size() == 1 && !app.chat,
+               "The first file card must be ready before the complete workspace");
+        app.draw();
+        XEvent close{};
+        close.xclient.type = ClientMessage;
+        close.xclient.message_type = app.protocols;
+        close.xclient.format = 32;
+        close.xclient.data.l[0] = app.close_message;
+        app.handle_event(close);
+        expect(!app.running, "The window must accept close while loading");
+    }
+
     static void check(const std::filesystem::path& root, const std::filesystem::path& build,
                       const std::string& file, const std::string& argument)
     {
@@ -83,7 +108,11 @@ struct ApplicationTestAccess {
     static void check_default()
     {
         Application app;
-        expect(app.initialize(), "Default application must initialize from any working directory");
+        expect(app.initialize_window(), "Default application must open from any working directory");
+        app.workspace_load = Application::WorkspaceLoad{};
+        app.begin_workspace_load();
+        app.workspace_load->reading.wait();
+        app.advance_workspace_load();
         expect(app.workspace_root == std::filesystem::canonical(project_root).string(),
                "Without a directory argument the viewer must open its own source tree");
         expect(app.workspace_build == project_build, "Own source must use the viewer build");
@@ -171,9 +200,12 @@ int main()
         setenv("SOURCE_CANVAS_DISABLE_AGENT", "1", 1);
         setenv("SOURCE_CANVAS_DISABLE_SESSION", "1", 1);
         setenv("SOURCE_CANVAS_DISABLE_INTENT", "1", 1);
+        ApplicationTestAccess::check_progressive_load(root);
+        std::filesystem::current_path(root / "other/build");
         ApplicationTestAccess::check_default();
         setenv("SOURCE_CANVAS_PROJECT_ROOT", "", 1);
         ApplicationTestAccess::check_default();
+        std::filesystem::current_path(root);
         ApplicationTestAccess::check(root, root / ".cache/source-canvas", "hello.py", ".");
         std::ofstream(root / "other/override.cpp") << "int override_value = 42;\n";
         setenv("SOURCE_CANVAS_PROJECT_ROOT", "other/../other", 1);

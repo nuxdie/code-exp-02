@@ -46,6 +46,24 @@ void Application::fit_width()
 void Application::draw()
 {
     const auto view = viewport();
+    if (workspace_load) {
+        const auto saved_camera = camera;
+        const auto preview = arrange_files(file_sizes);
+        for (std::size_t i = 0; i < panels.size(); ++i)
+            panels[i].bounds.origin = preview[i].origin;
+        auto preview_view = view;
+        preview_view.height = std::max(1.0, view.height - 44);
+        camera.fit(canvas_size(preview), preview_view);
+        camera.center.y += 22 / camera.zoom;
+        renderer->begin(width, height);
+        draw_files(view);
+        draw_headers(view);
+        renderer->rectangle({{0, view.height - 44}, {view.width, 44}}, {1, 1, 1, 1});
+        renderer->draw(workspace_load->label, {16, view.height - 34}, 1);
+        renderer->present();
+        camera = saved_camera;
+        return;
+    }
     if (initial_view) {
         camera.fit(content_size, view);
         zoom_animation.cancel(camera);

@@ -11,7 +11,23 @@ template <class Source> int wake_fd(const std::unique_ptr<Source>& source)
 
 bool Application::initialize()
 {
-    benchmark = std::getenv("SOURCE_CANVAS_BENCHMARK") != nullptr;
+    if (!initialize_window())
+        return false;
+    XMapWindow(display, window);
+    XFlush(display);
+    workspace_load = WorkspaceLoad{};
+    begin_workspace_load();
+    while (workspace_load) {
+        advance_workspace_load();
+        if (workspace_load && (workspace_load->reading.valid() || workspace_load->image.valid() ||
+                               workspace_load->layout.valid()))
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return true;
+}
+
+bool Application::initialize_window()
+{
     display = XOpenDisplay(nullptr);
     if (!display) {
         std::cerr << "Could not open the X display.\n";
@@ -85,9 +101,6 @@ bool Application::initialize()
     configure_source_font();
 
     system_theme = std::make_unique<SystemTheme>();
-    initialize_workspace();
-    initialize_intent();
-    initialize_reload();
 
     popup_layout = pango_layout_copy(base_layout);
     pango_layout_set_single_paragraph_mode(popup_layout, FALSE);
@@ -98,7 +111,6 @@ bool Application::initialize()
     close_message = XInternAtom(display, "WM_DELETE_WINDOW", False);
     protocols = XInternAtom(display, "WM_PROTOCOLS", False);
     XSetWMProtocols(display, window, &close_message, 1);
-    XMapWindow(display, window);
 
     return true;
 }
@@ -200,13 +212,24 @@ int Application::benchmark_run()
 
 int Application::run()
 {
-    if (!initialize())
-        return 1;
+    benchmark = std::getenv("SOURCE_CANVAS_BENCHMARK") != nullptr;
     if (benchmark)
-        return benchmark_run();
+        return initialize() ? benchmark_run() : 1;
+    if (!initialize_window())
+        return 1;
+    workspace_load = WorkspaceLoad{};
+    auto* label = make_line("Opening workspace…", {});
+    renderer->upload(workspace_load->label, {{label, {0, 0}}});
+    g_object_unref(label);
+    XMapWindow(display, window);
+    XFlush(display);
+    draw();
+    begin_workspace_load();
+    return run_window();
+}
 
-    running = !benchmark;
-
+int Application::run_window()
+{
     auto last_frame = Clock::now();
     auto next_frame = last_frame;
     while (running) {
@@ -221,6 +244,9 @@ int Application::run()
         }
         if (!running)
             break;
+
+        if (workspace_load)
+            advance_workspace_load();
 
         if (language_server)
             for (const auto& message : language_server->take_messages())
@@ -378,6 +404,8 @@ void Application::wait_for_work(Clock::time_point next_frame)
             std::ceil(std::chrono::duration<double, std::milli>(pending - Clock::now()).count())));
         timeout = timeout < 0 ? delay : std::min(timeout, delay);
     }
+    if (workspace_load)
+        timeout = timeout < 0 ? 8 : std::min(timeout, 8);
     std::vector<pollfd> connections = {
         {ConnectionNumber(display), POLLIN, 0},
         {wake_fd(language_server), POLLIN, 0},

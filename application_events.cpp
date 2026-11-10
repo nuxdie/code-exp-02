@@ -2,6 +2,10 @@
 
 void Application::handle_event(const XEvent& event)
 {
+    if (workspace_load && event.type != Expose && event.type != ConfigureNotify &&
+        event.type != ClientMessage && event.type != DestroyNotify)
+        return;
+
     switch (event.type) {
     case Expose:
         if (!event.xexpose.count)

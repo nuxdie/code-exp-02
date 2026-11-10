@@ -61,20 +61,7 @@ void Application::load_session()
             load_agent_window(*card, saved);
             chat_windows.push_back(std::move(card));
         }
-        for (auto& panel : panels) {
-            const auto saved =
-                state.value("files", lsp::Json::object()).value(panel.path, lsp::Json::object());
-            if (!saved.contains("x"))
-                continue;
-            panel.bounds.origin = {saved.at("x"), saved.at("y")};
-            for (auto& fold : panel.folds) {
-                const auto folds = saved.value("folds", lsp::Json::object());
-                fold.collapsed =
-                    folds.value(fold_identity(panel, fold.first),
-                                folds.value(std::to_string(fold.first), fold.collapsed));
-            }
-            update_mesh(panel);
-        }
+        restore_file_layouts(state.value("files", lsp::Json::object()));
         const auto view = state.value("camera", lsp::Json::object());
         if (view.contains("zoom")) {
             camera.center = {view.at("x"), view.at("y")};
@@ -102,6 +89,27 @@ void Application::load_session()
         // A partially written or older view-state file must never prevent opening the project.
     }
 }
+void Application::restore_file_layouts(const lsp::Json& files)
+{
+    for (auto& panel : panels) {
+        const auto saved = files.value(panel.path, lsp::Json::object());
+        if (!saved.contains("x"))
+            continue;
+        panel.bounds.origin = {saved.at("x"), saved.at("y")};
+        const auto folds = saved.value("folds", lsp::Json::object());
+        bool changed = false;
+        for (auto& fold : panel.folds) {
+            const auto collapsed =
+                folds.value(fold_identity(panel, fold.first),
+                            folds.value(std::to_string(fold.first), fold.collapsed));
+            changed |= collapsed != fold.collapsed;
+            fold.collapsed = collapsed;
+        }
+        if (changed)
+            update_mesh(panel);
+    }
+}
+
 void Application::save_session()
 {
     save_due = Clock::time_point::max();
