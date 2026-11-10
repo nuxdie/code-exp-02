@@ -5,7 +5,6 @@ void Application::draw_intent()
 {
     if (!intent || !intent->placed || !intent->visible)
         return;
-    anchor_intent();
     const auto origin = camera.world_to_screen(intent->bounds.origin, viewport());
     const CanvasRect screen{
         origin, {intent->bounds.size.x * camera.zoom, intent->bounds.size.y * camera.zoom}};

@@ -93,8 +93,7 @@ struct ApplicationTestAccess {
         expect(app.intent->scroll == 0, "Dragging to the top must reach the first intent");
         app.intent->document.size.y = content_height;
         app.draw();
-        expect(app.intent->visible && app.intent->overview && app.intent->path == "code.cpp" &&
-                   app.intent->anchor_path == "code.cpp",
+        expect(app.intent->visible && app.intent->overview && app.intent->path == "code.cpp",
                "Clicking a source label must open that file's concise intent list");
         expect(app.intent->document.document.text.find("different file") == std::string::npos &&
                    app.intent->document.document.text.find("A reviewed checkpoint") ==
@@ -122,11 +121,23 @@ struct ApplicationTestAccess {
                "Selecting a concise intent must reveal its exact explanation and code links");
         expect(app.intent->bounds.origin.x == panel->bounds.origin.x + panel->bounds.size.x + 24,
                "Selected details must sit beside the source");
+        const auto origin = app.intent->bounds.origin;
         panel->bounds.origin.x += 80;
-        app.draw();
-        expect(app.intent->bounds.origin.x == panel->bounds.origin.x + panel->bounds.size.x + 24,
-               "Attached details must follow the source when it moves");
+        const Vec2 prompt{origin.x + 40, origin.y + 90};
         app.intent_action("why:");
+        app.intent->input.set("Draft rationale");
+        app.spawn_agent_window(prompt, lsp::Json::object());
+        app.draw();
+        expect(app.intent->visible && app.intent->bounds.origin.x == origin.x &&
+                   app.intent->bounds.origin.y == origin.y,
+               "An overlapping prompt must leave the intent window in place");
+        const auto overlap =
+            app.camera.world_to_screen({prompt.x + 10, prompt.y + 10}, app.viewport());
+        expect(app.chat_at(overlap) == app.chat.get(),
+               "The new prompt must receive input over the intent window");
+        expect(app.intent->editing && app.intent->input.text == "Draft rationale",
+               "Opening a prompt must preserve an open rationale draft");
+        app.close_agent_window();
         app.draw();
         expect(app.intent->body.origin.y + app.intent->body.size.y < app.intent->editor.origin.y,
                "The rationale editor must not cover the intent being read");
@@ -135,9 +146,8 @@ struct ApplicationTestAccess {
         expect(!app.intent->editing && app.intent->path.empty() &&
                    app.intent->document.document.text.find("different file") != std::string::npos,
                "All intents must restore the complete history and close editing");
-        app.intent->anchor_path.clear();
         app.intent_action("intent:decision-human-id");
-        expect(app.intent->anchor_path == "code.cpp",
+        expect(app.intent->path == "code.cpp",
                "Selecting from the global history must also reveal details beside linked code");
         const lsp::Json wildcard{{"artifacts", {"*.cpp", "include/*.h"}}};
         expect(intent_matches_path(wildcard, "code.cpp") &&

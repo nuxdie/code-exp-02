@@ -597,7 +597,7 @@ struct ApplicationTestAccess {
         app.intent->placed = app.intent->visible = true;
         app.intent->bounds = app.chat->bounds;
         app.intent->path = "a_file-name_[draft].cpp";
-        app.intent->anchor_path.clear();
+        app.intent_in_front = true;
         app.camera.zoom = 0.15;
         app.camera.center = app.intent->bounds.origin;
         app.zoom_animation.cancel(app.camera);

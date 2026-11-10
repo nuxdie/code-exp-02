@@ -138,6 +138,7 @@ class Application {
     int dragged_panel = -1;
     CanvasWindowManager window_manager;
     std::vector<CanvasRect> window_headers;
+    bool intent_in_front = true;
     enum class WindowKind { Canvas, Source, Walkthrough, Chat, Intent, Popup, Search };
     WindowKind window_at(Vec2 pointer);
     bool begin_window_drag(Vec2& origin, Vec2 pointer);
@@ -250,7 +251,6 @@ class Application {
     void rebuild_intent_index();
     void show_file_intents(const std::string& path, double offset = 0);
     void select_intent(const std::string& id);
-    void anchor_intent();
     void draw_intent_badges();
     bool intent_badge_button(const XEvent& event, Vec2 pointer);
     void inspect_intent(Vec2 pointer);

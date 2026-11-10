@@ -117,7 +117,7 @@ void Application::focus_intent()
         return;
     remember_view();
     intent->visible = true;
-    anchor_intent();
+    intent_in_front = true;
     content_size.x = std::max(content_size.x, intent->bounds.origin.x + intent->bounds.size.x);
     content_size.y = std::max(content_size.y, intent->bounds.origin.y + intent->bounds.size.y);
     camera.zoom = std::clamp(
@@ -125,16 +125,6 @@ void Application::focus_intent()
         0.4, 1.0);
     camera.center = {intent->bounds.origin.x + intent->bounds.size.x / 2,
                      intent->bounds.origin.y + intent->bounds.size.y / 2};
-    for (const auto& panel : panels)
-        if (panel.path == intent->anchor_path) {
-            const double code_width = panel.bounds.size.x;
-            const double combined =
-                intent->bounds.origin.x + intent->bounds.size.x - panel.bounds.origin.x;
-            camera.zoom = std::clamp(std::min(camera.zoom, (width - 64.0) / combined), 0.25, 1.0);
-            camera.center.x =
-                panel.bounds.origin.x + panel.bounds.size.x - code_width + combined / 2;
-            break;
-        }
     zoom_animation.cancel(camera);
     finish_view();
     chat->focused = false;
@@ -165,7 +155,6 @@ void Application::attribute_chat_entry(std::size_t index)
     if (entry.role == "You") {
         capture_intents();
         intent->path.clear();
-        intent->anchor_path.clear();
         select_intent("decision-" + entry.id);
     } else if (entry.role == "Agent") {
         intent_request("decisions/rationale", {{"decision_id", intent->selected},

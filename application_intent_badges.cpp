@@ -69,43 +69,26 @@ bool Application::intent_badge_button(const XEvent& event, Vec2 pointer)
     return false;
 }
 
-void Application::anchor_intent()
-{
-    for (const auto& panel : panels)
-        if (panel.path == intent->anchor_path) {
-            intent->bounds.origin = {panel.bounds.origin.x + panel.bounds.size.x + 24,
-                                     panel.bounds.origin.y + intent->anchor_offset};
-            std::vector<CanvasRect> occupied;
-            for (const auto& source : panels)
-                occupied.push_back(source.bounds);
-            if (chat && chat->visible)
-                occupied.push_back(chat->bounds);
-            for (const auto& card : chat_windows)
-                if (card->visible)
-                    occupied.push_back(card->bounds);
-            intent->bounds = place_canvas_window(intent->bounds, occupied);
-            if (intent->visible) {
-                content_size.x =
-                    std::max(content_size.x, intent->bounds.origin.x + intent->bounds.size.x);
-                content_size.y =
-                    std::max(content_size.y, intent->bounds.origin.y + intent->bounds.size.y);
-            }
-            return;
-        }
-}
-
 void Application::show_file_intents(const std::string& path, double offset)
 {
     if (!intent || !intent->placed)
         return;
-    intent->path = intent->anchor_path = path;
-    intent->anchor_offset = offset;
+    intent->path = path;
+    const auto panel = std::find_if(panels.begin(), panels.end(),
+                                    [&](const auto& source) { return source.path == path; });
+    if (panel != panels.end()) {
+        intent->bounds.origin = {panel->bounds.origin.x + panel->bounds.size.x + 24,
+                                 panel->bounds.origin.y + offset};
+        std::vector<CanvasRect> occupied;
+        for (const auto& source : panels)
+            occupied.push_back(source.bounds);
+        intent->bounds = place_canvas_window(intent->bounds, occupied);
+    }
     intent->overview = true;
     intent->editing = false;
     intent->evidence.clear();
     intent->token.clear();
     intent->scroll = 0;
-    anchor_intent();
     focus_intent();
 }
 
@@ -113,7 +96,6 @@ void Application::select_intent(const std::string& id)
 {
     intent->selected = id;
     if (intent->path.empty()) {
-        intent->anchor_path.clear();
         for (const auto& record : intent->records) {
             if (record.value("id", "") != id)
                 continue;

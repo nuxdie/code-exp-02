@@ -124,7 +124,7 @@ bool Application::canvas_shortcut_key(const XEvent& event)
         show_shortcuts();
         return true;
     }
-    const bool editing = (chat && chat->focused) || (intent && intent->editing);
+    const bool editing = (chat && chat->focused) || (intent_in_front && intent && intent->editing);
     if (!editing && !drag_button && !(event.xkey.state & (ControlMask | Mod1Mask)) && length == 1) {
         if (text[0] == '/') {
             open_search();

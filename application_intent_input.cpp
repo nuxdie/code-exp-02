@@ -36,7 +36,6 @@ bool Application::intent_button(const XEvent& event, Vec2 pointer)
     if (event.xbutton.button == Button1) {
         if (inside(intent->header_bounds, pointer)) {
             if (begin_window_drag(intent->bounds.origin, pointer)) {
-                intent->anchor_path.clear();
                 intent->dragging = true;
             }
             chat->focused = false;
@@ -78,7 +77,6 @@ bool Application::intent_button(const XEvent& event, Vec2 pointer)
         else if ((inside(intent->header_bounds, pointer) ||
                   world.y < intent->bounds.origin.y + 32) &&
                  begin_window_drag(intent->bounds.origin, pointer)) {
-            intent->anchor_path.clear();
             intent->dragging = true;
         }
         chat->focused = false;
@@ -149,7 +147,7 @@ void Application::open_intent_conversation(const std::string& id)
 }
 bool Application::intent_key(const XEvent& event)
 {
-    if (!intent || !intent->editing)
+    if (!intent_in_front || !intent || !intent->editing)
         return false;
     auto key_event = event.xkey;
     const auto key = XLookupKeysym(&key_event, 0);

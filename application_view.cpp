@@ -63,7 +63,6 @@ void Application::draw()
     draw_walkthrough();
     draw_agent_activity();
     draw_conversation();
-    draw_intent();
     draw_popup();
     draw_search();
     renderer->present();

@@ -58,7 +58,8 @@ void Application::start_agent_windows()
 void Application::draw_conversation()
 {
     chat_animation_due = Clock::time_point::max();
-    auto occupied = header_hits;
+    auto& occupied = window_headers;
+    occupied = header_hits;
     if (walkthrough) {
         occupied.push_back(walkthrough->header_bounds);
         for (const auto& step : walkthrough->steps)
@@ -70,9 +71,12 @@ void Application::draw_conversation()
         draw_chat_header(occupied);
         std::swap(chat, card);
     }
+    if (!intent_in_front)
+        draw_intent();
     draw_chat_card();
     draw_chat_header(occupied);
-    window_headers = std::move(occupied);
+    if (intent_in_front)
+        draw_intent();
 }
 void Application::poll_agent()
 {
@@ -126,6 +130,7 @@ void Application::spawn_agent_window(Vec2 world, lsp::Json context)
     chat->focused = chat->dragging = chat->scrolling = false;
     chat_windows.push_back(std::move(chat));
     chat = std::move(next);
+    intent_in_front = false;
     refresh_agent_context();
     chat->focused = true;
     initial_view = false;

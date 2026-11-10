@@ -24,9 +24,9 @@ struct IntentCanvas {
     std::map<int, std::string> pending;
     std::set<std::string> captured;
     TextInput input;
-    std::string selected, error, token, path, anchor_path;
+    std::string selected, error, token, path;
     int next_id = 1;
-    double scroll = 0, anchor_offset = 0;
+    double scroll = 0;
     bool ready = false, overview = true, editing = false, dragging = false, placed = false;
     bool visible = false, scrolling = false;
     double scroll_grab_fraction = 0;
