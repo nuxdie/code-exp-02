@@ -23,14 +23,30 @@ std::string link_at(const DocumentView& document, Vec2 point)
 } // namespace
 bool Application::intent_button(const XEvent& event, Vec2 pointer)
 {
-    if (!intent || !intent->placed || drag_button || event.xbutton.button == Button2)
+    if (!intent || !intent->placed || drag_button ||
+        (event.xbutton.button == Button2 || event.xbutton.button == Button4 ||
+         event.xbutton.button == Button5))
         return false;
     const auto world = camera.screen_to_world(pointer, viewport());
     if (!intent->visible || !inside(intent->bounds, world))
         return intent_badge_button(event, pointer);
-    if (event.xbutton.button == Button4 || event.xbutton.button == Button5)
-        intent->scroll += (event.xbutton.button == Button4 ? -70 : 70) / camera.zoom;
     if (event.xbutton.button == Button1) {
+        if (inside(intent->scrollbar_track(), world)) {
+            if (XGrabPointer(display, window, False,
+                             ButtonPressMask | ButtonReleaseMask | PointerMotionMask, GrabModeAsync,
+                             GrabModeAsync, None, normal_cursor, CurrentTime) == GrabSuccess) {
+                const auto thumb = intent->scrollbar_thumb();
+                intent->scroll_grab_fraction =
+                    inside(thumb, world) ? (world.y - thumb.origin.y) / thumb.size.y : 0.5;
+                intent->scrolling = true;
+                drag_button = Button1;
+                dragged_panel = -1;
+                last_pointer = pointer;
+                intent->drag_scroll(world);
+            }
+            redraw = true;
+            return true;
+        }
         const Vec2 header{world.x - intent->bounds.origin.x - 24,
                           world.y - intent->bounds.origin.y - 16};
         auto link = link_at(intent->header, header);

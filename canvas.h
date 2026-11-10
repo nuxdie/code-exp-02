@@ -52,3 +52,42 @@ inline Vec2 canvas_size(const std::vector<CanvasRect>& files)
     }
     return size;
 }
+
+// Place an automatically opened window beside its anchor without covering existing windows.
+inline CanvasRect place_canvas_window(CanvasRect bounds, const std::vector<CanvasRect>& occupied,
+                                      double gap = 24)
+{
+    bool moved;
+    do {
+        moved = false;
+        for (const auto& other : occupied)
+            if (bounds.intersects(other)) {
+                bounds.origin.x = other.origin.x + other.size.x + gap;
+                moved = true;
+            }
+    } while (moved);
+    return bounds;
+}
+
+// Shared scrollbar geometry and drag mapping for canvas windows.
+inline CanvasRect canvas_scrollbar_thumb(CanvasRect track, double content, double scroll)
+{
+    if (track.size.y <= 0 || content <= track.size.y)
+        return {track.origin, {track.size.x, 0}};
+    const double size =
+        std::min(track.size.y, std::max(24.0, track.size.y * track.size.y / content));
+    const double fraction = std::clamp(scroll / (content - track.size.y), 0.0, 1.0);
+    return {{track.origin.x, track.origin.y + fraction * (track.size.y - size)},
+            {track.size.x, size}};
+}
+inline double canvas_scrollbar_drag(CanvasRect track, double content, double scroll,
+                                    double pointer_y, double grab_fraction)
+{
+    const auto thumb = canvas_scrollbar_thumb(track, content, scroll);
+    const double travel = track.size.y - thumb.size.y;
+    if (travel <= 0)
+        return scroll;
+    return std::clamp((pointer_y - track.origin.y - grab_fraction * thumb.size.y) / travel, 0.0,
+                      1.0) *
+           std::max(0.0, content - track.size.y);
+}

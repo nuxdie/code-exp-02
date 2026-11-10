@@ -150,7 +150,8 @@ void Application::zoom_wheel(unsigned button, Vec2 pointer)
     remember_view(true);
     const auto view = viewport();
     if (drag_button) {
-        if ((!chat || !chat->scrolling) && !text_selection.dragging)
+        if ((!chat || !chat->scrolling) && (!intent || !intent->scrolling) &&
+            !text_selection.dragging)
             camera.pan({pointer.x - last_pointer.x, pointer.y - last_pointer.y});
         last_pointer = pointer;
     }
@@ -179,6 +180,8 @@ void Application::handle_motion(const XEvent& event)
         drag_moved = drag_moved || std::hypot(delta.x, delta.y) > 1;
         if (chat && chat->scrolling) {
             drag_chat_scroll(camera.screen_to_world(pointer, viewport()));
+        } else if (intent && intent->scrolling) {
+            intent->drag_scroll(camera.screen_to_world(pointer, viewport()));
         } else if (intent && intent->dragging) {
             intent->anchor_path.clear();
             intent->bounds.origin.x += delta.x / camera.zoom;
@@ -231,6 +234,10 @@ void Application::handle_release(const XEvent& event)
         drag_chat_scroll(camera.screen_to_world(
             {static_cast<double>(event.xbutton.x), static_cast<double>(event.xbutton.y)},
             viewport()));
+    if (intent && intent->scrolling)
+        intent->drag_scroll(camera.screen_to_world(
+            {static_cast<double>(event.xbutton.x), static_cast<double>(event.xbutton.y)},
+            viewport()));
     drag_button = 0;
     XUngrabPointer(display, CurrentTime);
     if (dragged_panel >= 0 && !drag_moved) {
@@ -243,8 +250,10 @@ void Application::handle_release(const XEvent& event)
         chat->dragging = false;
         chat->scrolling = false;
     }
-    if (intent)
+    if (intent) {
         intent->dragging = false;
+        intent->scrolling = false;
+    }
     if (!zoom_animation.active(camera))
         finish_view();
     schedule_save();
@@ -256,7 +265,8 @@ bool Application::cancel_pointer_drag(const XEvent& event)
 {
     auto key = event.xkey;
     if (XLookupKeysym(&key, 0) != XK_Escape ||
-        (!text_selection.dragging && (!chat || !chat->scrolling)))
+        (!text_selection.dragging && (!chat || !chat->scrolling) &&
+         (!intent || !intent->scrolling)))
         return false;
     text_selection.moved = true;
     handle_release(event);

@@ -27,6 +27,22 @@ struct IntentCanvas {
     int next_id = 1;
     double scroll = 0, anchor_offset = 0;
     bool ready = false, overview = true, editing = false, dragging = false, placed = false;
-    bool visible = false;
+    bool visible = false, scrolling = false;
+    double scroll_grab_fraction = 0;
+
+    CanvasRect scrollbar_track() const
+    {
+        return {{bounds.origin.x + bounds.size.x - 20, body.origin.y},
+                {16, document.size.y > body.size.y ? body.size.y : 0}};
+    }
+    CanvasRect scrollbar_thumb() const
+    {
+        return canvas_scrollbar_thumb(scrollbar_track(), document.size.y, scroll);
+    }
+    void drag_scroll(Vec2 world)
+    {
+        scroll = canvas_scrollbar_drag(scrollbar_track(), document.size.y, scroll, world.y,
+                                       scroll_grab_fraction);
+    }
     std::chrono::steady_clock::time_point refresh = std::chrono::steady_clock::time_point::max();
 };

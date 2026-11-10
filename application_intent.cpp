@@ -7,15 +7,15 @@ void Application::initialize_intent()
         return;
     intent->bounds.origin = {chat->bounds.origin.x,
                              chat->bounds.origin.y + chat->bounds.size.y + 96};
-    bool overlap = true;
-    while (overlap) {
-        overlap = false;
-        for (const auto& panel : panels)
-            if (intent->bounds.intersects(panel.bounds)) {
-                intent->bounds.origin.x = panel.bounds.origin.x + panel.bounds.size.x + 96;
-                overlap = true;
-            }
-    }
+    std::vector<CanvasRect> occupied;
+    for (const auto& panel : panels)
+        occupied.push_back(panel.bounds);
+    if (chat->visible)
+        occupied.push_back(chat->bounds);
+    for (const auto& card : chat_windows)
+        if (card->visible)
+            occupied.push_back(card->bounds);
+    intent->bounds = place_canvas_window(intent->bounds, occupied, 96);
     if (intent_session.contains("x")) {
         intent->bounds.origin = {intent_session.value("x", 0.0), intent_session.value("y", 0.0)};
         intent->selected = intent_session.value("selected", "");
@@ -128,7 +128,8 @@ void Application::focus_intent()
     for (const auto& panel : panels)
         if (panel.path == intent->anchor_path) {
             const double code_width = panel.bounds.size.x;
-            const double combined = code_width + 24 + intent->bounds.size.x;
+            const double combined =
+                intent->bounds.origin.x + intent->bounds.size.x - panel.bounds.origin.x;
             camera.zoom = std::clamp(std::min(camera.zoom, (width - 64.0) / combined), 0.25, 1.0);
             camera.center.x =
                 panel.bounds.origin.x + panel.bounds.size.x - code_width + combined / 2;

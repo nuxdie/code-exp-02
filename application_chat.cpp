@@ -12,15 +12,13 @@ void Application::initialize_chat()
                                        [](const auto& panel) { return panel.path == "main.cpp"; });
         const auto origin = main == panels.end() ? Vec2{900, 0} : main->bounds.origin;
         chat->bounds.origin = {std::max(0.0, origin.x - chat->bounds.size.x - 96), origin.y};
-        bool overlap = true;
-        while (overlap) {
-            overlap = false;
-            for (const auto& panel : panels)
-                if (chat->bounds.intersects(panel.bounds)) {
-                    chat->bounds.origin.x = panel.bounds.origin.x + panel.bounds.size.x + 96;
-                    overlap = true;
-                }
-        }
+        std::vector<CanvasRect> occupied;
+        for (const auto& panel : panels)
+            occupied.push_back(panel.bounds);
+        for (const auto& card : chat_windows)
+            if (card->visible)
+                occupied.push_back(card->bounds);
+        chat->bounds = place_canvas_window(chat->bounds, occupied, 96);
         chat->placed = true;
     }
     start_agent_windows();

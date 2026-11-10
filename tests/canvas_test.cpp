@@ -14,6 +14,13 @@ void expect(bool condition, const char* message)
 int main()
 {
     expect(arrange_files({}).empty(), "Empty projects must have an empty layout");
+    const std::vector<CanvasRect> occupied = {
+        {{100, 0}, {100, 200}}, {{0, 0}, {100, 200}}, {{224, 0}, {100, 200}}};
+    const auto placed = place_canvas_window({{0, 20}, {80, 100}}, occupied);
+    for (const auto& window : occupied)
+        expect(!placed.intersects(window), "Automatic placement must avoid all windows");
+    expect(placed.origin.y == 20 && placed.size.x == 80,
+           "Placement must preserve the anchor height and window dimensions");
     const auto single = arrange_files({{800, 400}});
     expect(single.size() == 1 && single[0].origin.x == 0 && single[0].origin.y == 0,
            "One file must start at the canvas origin");

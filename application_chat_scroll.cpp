@@ -36,14 +36,9 @@ void Application::begin_chat_scroll(Vec2 world)
 }
 void Application::drag_chat_scroll(Vec2 world)
 {
-    const auto track = chat->scrollbar_track();
-    const auto thumb = chat->scrollbar_thumb();
-    const double travel = track.size.y - thumb.size.y;
-    if (travel <= 0)
-        return;
     const double maximum = std::max(0.0, chat->content_height - chat->body.size.y);
-    const double position = world.y - track.origin.y - chat->scroll_grab_fraction * thumb.size.y;
-    chat->scroll = std::clamp(position / travel, 0.0, 1.0) * maximum;
+    chat->scroll = canvas_scrollbar_drag(chat->scrollbar_track(), chat->content_height,
+                                         chat->scroll, world.y, chat->scroll_grab_fraction);
     chat->follow = chat->scroll >= maximum;
     chat->restore_anchor.clear();
     schedule_save();

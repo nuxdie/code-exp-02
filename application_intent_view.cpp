@@ -49,15 +49,11 @@ void Application::draw_intent()
                    camera.zoom);
     renderer->clear_clip();
     if (intent->document.size.y > intent->body.size.y) {
-        const double thumb =
-            std::max(28.0, intent->body.size.y * intent->body.size.y / intent->document.size.y);
-        const double offset = (intent->body.size.y - thumb) * intent->scroll /
-                              (intent->document.size.y - intent->body.size.y);
-        const auto point = camera.world_to_screen(
-            {intent->bounds.origin.x + intent->bounds.size.x - 10, intent->body.origin.y + offset},
-            viewport());
-        renderer->rectangle({point, {3 * camera.zoom, thumb * camera.zoom}},
-                            {0.5f, 0.54f, 0.6f, 0.65f});
+        const auto thumb = intent->scrollbar_thumb();
+        const auto point = camera.world_to_screen(thumb.origin, viewport());
+        renderer->rectangle(
+            {{point.x + 4 * camera.zoom, point.y}, {8 * camera.zoom, thumb.size.y * camera.zoom}},
+            {0.5f, 0.54f, 0.6f, intent->scrolling ? 0.95f : 0.65f});
     }
     draw_intent_controls();
 }

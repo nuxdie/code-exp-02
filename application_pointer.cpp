@@ -15,7 +15,7 @@ void Application::update_cursor()
         cursor = text_cursor;
     else if (drag_button) {
         if (dragged_panel < 0 && (!chat || (!chat->dragging && !chat->scrolling)) &&
-            (!intent || !intent->dragging))
+            (!intent || (!intent->dragging && !intent->scrolling)))
             cursor = drag_cursor;
     } else if (viewport().contains(mouse_position) && over_text(mouse_position)) {
         cursor = text_link_at(mouse_position).empty() ? text_cursor : link_cursor;

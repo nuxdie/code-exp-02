@@ -75,6 +75,15 @@ void Application::anchor_intent()
         if (panel.path == intent->anchor_path) {
             intent->bounds.origin = {panel.bounds.origin.x + panel.bounds.size.x + 24,
                                      panel.bounds.origin.y + intent->anchor_offset};
+            std::vector<CanvasRect> occupied;
+            for (const auto& source : panels)
+                occupied.push_back(source.bounds);
+            if (chat && chat->visible)
+                occupied.push_back(chat->bounds);
+            for (const auto& card : chat_windows)
+                if (card->visible)
+                    occupied.push_back(card->bounds);
+            intent->bounds = place_canvas_window(intent->bounds, occupied);
             if (intent->visible) {
                 content_size.x =
                     std::max(content_size.x, intent->bounds.origin.x + intent->bounds.size.x);

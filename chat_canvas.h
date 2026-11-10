@@ -93,14 +93,7 @@ struct ChatCanvas {
     }
     CanvasRect scrollbar_thumb() const
     {
-        const auto track = scrollbar_track();
-        if (track.size.y <= 0)
-            return {};
-        const double size =
-            std::min(track.size.y, std::max(24.0, body.size.y * body.size.y / content_height));
-        const double fraction = std::clamp(scroll / (content_height - body.size.y), 0.0, 1.0);
-        return {{track.origin.x, track.origin.y + fraction * (track.size.y - size)},
-                {track.size.x, size}};
+        return canvas_scrollbar_thumb(scrollbar_track(), content_height, scroll);
     }
     bool disabled = false;
     std::chrono::steady_clock::time_point reconnect = std::chrono::steady_clock::time_point::max();

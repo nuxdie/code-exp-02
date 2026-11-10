@@ -62,6 +62,37 @@ struct ApplicationTestAccess {
         const auto badge = app.intent->badge_hits.front().bounds;
         click(app, {badge.origin.x + 16, badge.origin.y + 12});
         app.draw();
+        for (const auto& source : app.panels)
+            expect(!app.intent->bounds.intersects(source.bounds),
+                   "Opening file intents must avoid every source window");
+        const auto pointer = app.camera.world_to_screen(
+            {app.intent->bounds.origin.x + 40, app.intent->bounds.origin.y + 140}, app.viewport());
+        XEvent wheel{};
+        wheel.type = ButtonPress;
+        wheel.xbutton.button = Button4;
+        wheel.xbutton.x = static_cast<int>(pointer.x);
+        wheel.xbutton.y = static_cast<int>(pointer.y);
+        const auto scroll = app.intent->scroll;
+        expect(!app.intent_button(wheel, pointer) && app.intent->scroll == scroll,
+               "Intent windows must pass wheel zoom to the canvas like conversations");
+        app.handle_button(wheel);
+        expect(app.zoom_animation.target > app.camera.zoom && app.intent->scroll == scroll,
+               "A wheel event over intent content must zoom the canvas");
+        app.zoom_animation.cancel(app.camera);
+        wheel.xbutton.button = Button2;
+        expect(!app.intent_button(wheel, pointer),
+               "Intent windows must pass middle-button pan to the canvas");
+        const auto content_height = app.intent->document.size.y;
+        app.intent->document.size.y = app.intent->body.size.y * 3;
+        auto track = app.intent->scrollbar_track();
+        app.intent->scroll_grab_fraction = 0.5;
+        app.intent->drag_scroll({track.origin.x, track.origin.y + track.size.y});
+        expect(app.intent->scroll == app.intent->document.size.y - app.intent->body.size.y,
+               "Dragging to the bottom must reach the end of intent content");
+        app.intent->drag_scroll({track.origin.x, track.origin.y});
+        expect(app.intent->scroll == 0, "Dragging to the top must reach the first intent");
+        app.intent->document.size.y = content_height;
+        app.draw();
         expect(app.intent->visible && app.intent->overview && app.intent->path == "code.cpp" &&
                    app.intent->anchor_path == "code.cpp",
                "Clicking a source label must open that file's concise intent list");
