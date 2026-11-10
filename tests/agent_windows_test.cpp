@@ -179,6 +179,22 @@ struct ApplicationTestAccess {
     }
     static void test_first_submission(Application& app)
     {
+        app.chat->input.set("Launch agent");
+        app.chat_action({ChatHit::Kind::Send, {}}, {});
+        app.draw();
+        expect(app.chat->composing && app.chat->input.text == "Launch agent" &&
+                   app.chat->status.source.find("disabled") != std::string::npos &&
+                   app.chat->bounds.size.y > app.chat->editor.size.y,
+               "Unavailable agents must show the reason in the popup and preserve the draft");
+        app.chat->disabled = false;
+        app.chat->conversation.ready = false;
+        app.chat->conversation.error.clear();
+        app.chat_action({ChatHit::Kind::Send, {}}, {});
+        app.draw();
+        expect(app.chat->status.source.find("connecting") != std::string::npos &&
+                   app.chat->conversation.outgoing().empty(),
+               "Enter during connection must show feedback without submitting the draft");
+        app.chat->input.set("");
         app.chat->conversation.ready = true;
         app.chat_action({ChatHit::Kind::Send, {}}, {});
         expect(app.chat->composing && app.chat->conversation.outgoing().empty(),

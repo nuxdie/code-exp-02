@@ -3071,6 +3071,31 @@
         "kind": "captured_statement",
         "precision": "unbound"
       }
+    },
+    {
+      "id": "decision-agent-popup-enter-feedback",
+      "statement": "why pressing enter in agent popup does nothing? as if app can launch agent",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "context": "User report in current coding session"
+      },
+      "recorded_at": "2026-11-10T21:08:00.944630+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "recorded_live",
+        "summary": "Expose disabled and connecting states and transport errors in the compact agent popup so Enter cannot silently reject a nonempty draft."
+      },
+      "artifacts": [
+        "application_agent_context.cpp",
+        "application_chat_input.cpp",
+        "application_chat_view.cpp",
+        "tests/agent_windows_test.cpp"
+      ]
     }
   ]
 }

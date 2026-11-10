@@ -204,7 +204,13 @@ void Application::prepare_chat_prompt()
         }
         preview_height = std::min(240.0, chat->context_preview.size.y) + 24;
     }
-    chat->bounds.size.y = 90 + preview_height;
+    double feedback_height = 0;
+    if (!chat->conversation.error.empty()) {
+        update_document(chat->status, chat->conversation.error,
+                        static_cast<int>(chat->bounds.size.x - 24), false);
+        feedback_height = chat->status.size.y + 24;
+    }
+    chat->bounds.size.y = 90 + preview_height + feedback_height;
     chat->body = {};
     chat->editor = {{chat->bounds.origin.x, chat->bounds.origin.y + preview_height},
                     {chat->bounds.size.x, 90}};

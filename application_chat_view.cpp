@@ -34,6 +34,12 @@ void Application::draw_chat_card()
                                   chat->context_preview.layout.get()});
         }
         draw_chat_controls();
+        if (!chat->conversation.error.empty()) {
+            const Vec2 point{chat->editor.origin.x + 12,
+                             chat->editor.origin.y + chat->editor.size.y + 12};
+            renderer->draw(chat->status.mesh, camera.world_to_screen(point, viewport()),
+                           camera.zoom);
+        }
         return;
     }
     chat->hits.push_back({ChatHit::Kind::Title, {chat->bounds.origin, {chat->bounds.size.x, 48}}});

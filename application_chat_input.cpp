@@ -79,6 +79,16 @@ void Application::chat_action(const ChatHit& hit, Vec2 world)
     }
     case ChatHit::Kind::Send:
         refresh_agent_context();
+        if (chat->conversation.questions.empty() &&
+            chat->input.text.find_first_not_of(" \t\n") != std::string::npos &&
+            (chat->disabled || !chat->conversation.ready)) {
+            if (chat->disabled)
+                chat->conversation.error =
+                    "Agent connections are disabled. Restart without SOURCE_CANVAS_DISABLE_AGENT.";
+            else if (chat->conversation.error.empty())
+                chat->conversation.error = "Agent is connecting. Press Enter again when connected.";
+            break;
+        }
         if (!chat->conversation.questions.empty() &&
             chat->conversation.questions.front().method == "item/tool/requestUserInput")
             respond_chat_question(chat->input.text);
