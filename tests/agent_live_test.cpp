@@ -17,25 +17,41 @@ bool has_test_reply(const Conversation& model)
         return entry.role == "Agent" && entry.text.find("CANVAS_SEND_OK") != std::string::npos;
     });
 }
+bool handle_send_test_response(const nlohmann::json& message, AgentClient& client,
+                               const Conversation& model)
+{
+    if (message.value("id", nlohmann::json()) == 8999) {
+        if (message.contains("error") ||
+            message.at("result").at("thread").value("name", "") != model.title)
+            throw std::runtime_error("Generated title was not saved by Codex");
+        client.send({{"id", 9000},
+                     {"method", "thread/archive"},
+                     {"params", {{"threadId", model.thread_id}}}});
+        return false;
+    }
+    if (message.value("id", nlohmann::json()) == 9000) {
+        if (message.contains("error"))
+            throw std::runtime_error("Could not archive the isolated test conversation");
+        std::cout << "Fresh contextual message acknowledged, agent replied CANVAS_SEND_OK, "
+                     "automatic title persisted, and isolated test conversation archived.\n";
+        return true;
+    }
+    return false;
+}
 void test_contextual_send(const std::string& root)
 {
     Conversation model(root);
     model.fresh = true;
     model.canvas_context = "Isolated canvas transport test. No project files are involved.";
     AgentClient client(TEST_PYTHON, TEST_BRIDGE);
-    bool submitted = false, acknowledged = false, archiving = false;
+    bool submitted = false, acknowledged = false, checking_title = false;
     const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(60);
     while (std::chrono::steady_clock::now() < deadline) {
         pollfd fd{client.event_fd(), POLLIN, 0};
         poll(&fd, 1, 100);
         for (const auto& message : client.take_messages()) {
-            if (message.value("id", nlohmann::json()) == 9000) {
-                if (message.contains("error"))
-                    throw std::runtime_error("Could not archive the isolated test conversation");
-                std::cout << "Fresh contextual message acknowledged, agent replied CANVAS_SEND_OK, "
-                             "and isolated test conversation archived.\n";
+            if (handle_send_test_response(message, client, model))
                 return;
-            }
             model.receive(message);
         }
         if (!model.error.empty())
@@ -48,11 +64,12 @@ void test_contextual_send(const std::string& root)
         acknowledged = acknowledged || !model.accepted_text.empty();
         for (auto& message : model.outgoing())
             client.send(std::move(message));
-        if (acknowledged && has_test_reply(model) && model.active_turn.empty() && !archiving) {
-            client.send({{"id", 9000},
-                         {"method", "thread/archive"},
+        if (acknowledged && has_test_reply(model) && model.active_turn.empty() &&
+            model.title != "Conversation" && !checking_title) {
+            client.send({{"id", 8999},
+                         {"method", "thread/read"},
                          {"params", {{"threadId", model.thread_id}}}});
-            archiving = true;
+            checking_title = true;
         }
     }
     throw std::runtime_error(

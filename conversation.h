@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <map>
 #include <nlohmann/json.hpp>
 #include <string>
@@ -42,6 +43,17 @@ class Conversation {
 
   private:
     std::string root, submitted;
+    std::string saved_name, title_thread, title_target, title_result, title_turn, model_name;
+    bool title_attempted = false;
+    std::map<int, std::string> title_requests;
+    std::chrono::steady_clock::time_point title_deadline;
+    void start_title(const std::string& prompt);
+    void cancel_title();
+    bool title_message(const Json& message);
+    void title_response(const std::string& stage, const Json& message);
+    void start_title_thread(const Json& config);
+    void title_notification(const Json& message);
+    void title_request(const std::string& stage, const std::string& method, Json params);
     int next_id = 1;
     std::map<int, std::string> pending;
     std::map<std::string, int> sequences;
@@ -51,6 +63,7 @@ class Conversation {
     void request_failed(const std::string& method, const Json& failure);
     void thread_ready(const std::string& method, const Json& result);
     void notification(const std::string& method, const Json& params);
+    void receive_item(const std::string& method, const Json& params);
     void history_page(const Json& result);
     void put_item(const std::string& turn, const Json& item, int sequence = -1);
     void delta(const Json& params, bool output);

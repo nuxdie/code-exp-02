@@ -274,6 +274,117 @@ void test_bridge_error_survives_exit()
                messages.front()["params"]["message"] == "Codex executable not found",
            "Bridge exit must preserve the specific diagnostic without a second generic error");
 }
+void title_user_message(Conversation& model)
+{
+    model.receive({{"method", "item/completed"},
+                   {"params",
+                    {{"threadId", model.thread_id},
+                     {"turnId", "user-turn"},
+                     {"item",
+                      {{"id", "prompt"},
+                       {"type", "userMessage"},
+                       {"content", Json::array({{{"type", "text"},
+                                                 {"text", "Fix Unicode rendering 🌍"}}})}}}}}});
+}
+Json begin_title(Conversation& model)
+{
+    model.thread_id = "original";
+    title_user_message(model);
+    auto request = take_request(model, "config/read");
+    model.receive({{"id", request["id"]},
+                   {"result", {{"config", {{"mcp_servers", {{"example", Json::object()}}}}}}}});
+    request = take_request(model, "thread/start");
+    expect(request["params"]["ephemeral"] == true && request["params"]["sandbox"] == "read-only" &&
+               request["params"]["config"]["mcp_servers"]["example"]["enabled"] == false,
+           "Title generation must use an ephemeral thread with tools disabled");
+    return request;
+}
+Json complete_title(Conversation& model, const Json& start, const std::string& text,
+                    const std::string& next_method = "thread/read")
+{
+    model.receive({{"id", start["id"]}, {"result", {{"thread", {{"id", "hidden"}}}}}});
+    auto request = take_request(model, "turn/start");
+    expect(request["params"]["threadId"] == "hidden" &&
+               request["params"]["outputSchema"]["properties"]["title"]["maxLength"] == 36,
+           "The hidden turn must request a short structured title");
+    model.receive({{"id", request["id"]}, {"result", {{"turn", {{"id", "title-turn"}}}}}});
+    model.receive(
+        {{"method", "item/completed"},
+         {"params",
+          {{"threadId", "hidden"},
+           {"turnId", "title-turn"},
+           {"item", {{"id", "title-answer"}, {"type", "agentMessage"}, {"text", text}}}}}});
+    model.receive(
+        {{"method", "turn/completed"},
+         {"params",
+          {{"threadId", "hidden"}, {"turn", {{"id", "title-turn"}, {"status", "completed"}}}}}});
+    return take_request(model, next_method);
+}
+void test_automatic_titles()
+{
+    Conversation model("/project");
+    const auto start = begin_title(model);
+    title_user_message(model);
+    expect(model.outgoing().empty(), "Repeated input must not duplicate title generation");
+    const auto read = complete_title(model, start, R"({"title":"Fix rendering 🌍"})");
+    expect(model.entries.size() == 1 && model.active_turn.empty() && model.questions.empty(),
+           "Hidden title activity must not affect the visible conversation");
+    model.receive(
+        {{"id", read["id"]}, {"result", {{"thread", {{"id", "original"}, {"name", nullptr}}}}}});
+    const auto save = take_request(model, "thread/name/set");
+    expect(save["params"]["threadId"] == "original" && save["params"]["name"] == "Fix rendering 🌍",
+           "The generated title must be persisted on the originating thread");
+    model.receive({{"id", save["id"]}, {"result", Json::object()}});
+    expect(model.title == "Fix rendering 🌍", "Saving must refresh the canvas header");
+    expect(take_request(model, "thread/unsubscribe")["params"]["threadId"] == "hidden",
+           "Completed hidden threads must be detached");
+    title_user_message(model);
+    expect(model.outgoing().empty(), "Named threads must retain their existing title");
+}
+void test_title_races_and_failure()
+{
+    Conversation model("/project");
+    const auto start = begin_title(model);
+    const auto read = complete_title(model, start, R"({"title":"Automatic title"})");
+    model.receive({{"id", read["id"]},
+                   {"result", {{"thread", {{"id", "original"}, {"name", "Manual title"}}}}}});
+    const auto requests = model.outgoing();
+    expect(requests.size() == 1 && requests.front()["method"] == "thread/unsubscribe",
+           "A saved name discovered before persistence must supersede the generated title");
+
+    Conversation switched("/project");
+    const auto late = begin_title(switched);
+    switched.select_thread("other");
+    switched.outgoing();
+    switched.receive({{"id", late["id"]}, {"result", {{"thread", {{"id", "late-hidden"}}}}}});
+    expect(take_request(switched, "thread/unsubscribe")["params"]["threadId"] == "late-hidden",
+           "Switching threads must detach a hidden thread even if its start response arrives late");
+    expect(switched.thread_id == "other", "Late title responses must not switch conversations");
+
+    Conversation failed("/project");
+    const auto failure = begin_title(failed);
+    failed.receive({{"id", failure["id"]}, {"error", {{"message", "Unavailable"}}}});
+    expect(failed.error.empty() && failed.title == "Conversation",
+           "Title failures must leave normal conversation state alone");
+    for (const auto* invalid : {"not JSON", R"({"title":""})", R"({"title":"line\nbreak"})",
+                                R"({"title":"This title exceeds thirty-six characters"})"}) {
+        Conversation malformed("/project");
+        const auto hidden = begin_title(malformed);
+        complete_title(malformed, hidden, invalid, "thread/unsubscribe");
+        expect(malformed.title == "Conversation" && malformed.error.empty(),
+               "Malformed title output must be ignored without disrupting the user");
+    }
+    Conversation renamed("/project");
+    const auto hidden = begin_title(renamed);
+    const auto pending_read = complete_title(renamed, hidden, R"({"title":"Automatic"})");
+    renamed.receive({{"method", "thread/name/updated"},
+                     {"params", {{"threadId", "original"}, {"threadName", "User title"}}}});
+    renamed.outgoing();
+    renamed.receive({{"id", pending_read["id"]},
+                     {"result", {{"thread", {{"id", "original"}, {"name", nullptr}}}}}});
+    expect(renamed.title == "User title" && renamed.outgoing().empty(),
+           "Renaming during generation must cancel pending automatic results");
+}
 int main()
 {
     try {
@@ -284,6 +395,8 @@ int main()
         test_unsent_thread_recovery();
         test_history_failure_during_send();
         test_thread_titles();
+        test_automatic_titles();
+        test_title_races_and_failure();
         std::cout
             << "Conversation streaming, history, steering, approvals and Unicode input passed.\n";
     } catch (const std::exception& error) {
