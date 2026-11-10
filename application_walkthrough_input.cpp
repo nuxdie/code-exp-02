@@ -50,6 +50,7 @@ bool Application::walkthrough_event(const XEvent& event, Vec2 pointer)
         }
         return true;
     }
+    begin_drag(event, pointer, viewport(), true);
     return true;
 }
 

@@ -2876,6 +2876,39 @@
         "kind": "captured_statement",
         "precision": "unbound"
       }
+    },
+    {
+      "id": "decision-01a1c535-f2cd-7a01-b07c-ed012bfd498c",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c535-f2cd-7a01-b07c-ed012bfd498c",
+        "thread_id": "01a1c507-dfa1-7493-bdf6-fc34ba16385a",
+        "turn_id": "01a1c535-f2b8-7793-9353-d20830860098"
+      },
+      "statement": "ok. several things. i want to pan camera draggin empty parts of explanation canvas",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T11:26:49.563674+00:00",
+      "statement_hash": "0fb23c5012d6d66553dc578243361a303dd200e883b34c977eff3b4035855528",
+      "artifacts": [
+        "application.h",
+        "application_events.cpp",
+        "application_walkthrough_input.cpp",
+        "tests/walkthrough_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Route dragging walkthrough background through the existing camera pan gesture while bypassing underlying source headers and folds. Keep excerpt title dragging and code navigation intact, and verify camera movement without moving excerpts or source cards.",
+        "author_role": "agent",
+        "basis": "implementation_explanation",
+        "recorded_at": "2026-11-10T11:28:16.579557+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
     }
   ]
 }

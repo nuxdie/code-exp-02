@@ -143,6 +143,48 @@ struct ApplicationTestAccess {
         spec["connections"][0]["to"] = "missing";
         rejected(spec);
     }
+    static void test_background_pan(Application& app)
+    {
+        app.show_walkthrough(fixture());
+        const auto& board = *app.walkthrough;
+        const Vec2 blank{board.origin.x + 40, board.origin.y + board.heading.size.y + 16};
+        const auto file_origin = app.panels.front().bounds.origin;
+        // Even if a source header is underneath, the walkthrough background must pan.
+        app.panels.front().bounds.origin = {blank.x - 10, blank.y - 10};
+        app.camera.center = blank;
+        app.camera.zoom = 1;
+        app.zoom_animation.cancel(app.camera);
+        app.draw();
+        const auto camera = app.camera;
+        const auto excerpt_origin = board.steps.front().bounds.origin;
+        const auto pointer = app.viewport().center();
+        XEvent event{};
+        event.type = ButtonPress;
+        event.xbutton.button = Button1;
+        event.xbutton.x = static_cast<int>(pointer.x);
+        event.xbutton.y = static_cast<int>(pointer.y);
+        app.handle_event(event);
+        expect(app.drag_button == Button1 && app.dragged_panel < 0 &&
+                   app.dragged_walkthrough_step < 0,
+               "Dragging walkthrough whitespace must start a camera pan");
+        event.type = MotionNotify;
+        event.xmotion.x = static_cast<int>(pointer.x + 36);
+        event.xmotion.y = static_cast<int>(pointer.y + 24);
+        app.handle_event(event);
+        expect(
+            app.camera.center.x == camera.center.x - 36 &&
+                app.camera.center.y == camera.center.y - 24 &&
+                board.steps.front().bounds.origin.x == excerpt_origin.x &&
+                board.steps.front().bounds.origin.y == excerpt_origin.y &&
+                app.panels.front().bounds.origin.x == blank.x - 10 &&
+                app.panels.front().bounds.origin.y == blank.y - 10,
+            "Background dragging must move the camera while keeping excerpts and source in place");
+        event.type = ButtonRelease;
+        event.xbutton.button = Button1;
+        app.handle_event(event);
+        expect(!app.drag_button, "Releasing the background must end the camera pan");
+        app.panels.front().bounds.origin = file_origin;
+    }
     static void test_interaction_and_restore(Application& app)
     {
         auto spec = fixture();
@@ -257,6 +299,7 @@ struct ApplicationTestAccess {
         app.chat->visible = false;
         test_layout(app);
         test_validation(app);
+        test_background_pan(app);
         test_interaction_and_restore(app);
         test_tool(app, root);
         app.chat->client.reset();

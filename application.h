@@ -430,5 +430,5 @@ class Application {
     void language_references(const lsp::Message& message);
     void language_completion(const lsp::Message& message);
     bool popup_button(const XEvent& event, Vec2 pointer, bool in_popup);
-    void begin_drag(const XEvent& event, Vec2 pointer, const Viewport& view);
+    void begin_drag(const XEvent& event, Vec2 pointer, const Viewport& view, bool pan_only = false);
 };

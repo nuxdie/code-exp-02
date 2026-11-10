@@ -378,16 +378,16 @@ bool Application::popup_button(const XEvent& event, Vec2 pointer, bool in_popup)
     return in_popup && event.xbutton.button == Button1;
 }
 
-void Application::begin_drag(const XEvent& event, Vec2 pointer, const Viewport& view)
+void Application::begin_drag(const XEvent& event, Vec2 pointer, const Viewport& view, bool pan_only)
 {
     int header = -1;
-    if (event.xbutton.button == Button1)
+    if (!pan_only && event.xbutton.button == Button1)
         for (std::size_t i = 0; i < header_hits.size(); ++i)
             if (Viewport{header_hits[i].origin.x, header_hits[i].origin.y, header_hits[i].size.x,
                          header_hits[i].size.y}
                     .contains(pointer))
                 header = static_cast<int>(i);
-    if (header < 0 && event.xbutton.button == Button1) {
+    if (!pan_only && header < 0 && event.xbutton.button == Button1) {
         const auto fold = fold_at(pointer);
         if (fold.panel >= 0) {
             const auto bounds = fold_toggle_bounds(panels[fold.panel], fold.line);
