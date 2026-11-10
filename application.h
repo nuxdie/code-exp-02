@@ -362,6 +362,7 @@ class Application {
     void respond_chat_question(const std::string& text);
     bool chat_button(const XEvent& event, Vec2 pointer);
     void chat_action(const ChatHit& hit, Vec2 world);
+    void chat_message_action(const ChatHit& hit, Vec2 world);
     bool chat_key(const XEvent& event);
     bool chat_shortcut(KeySym key, unsigned state, const XEvent& event);
     void chat_selection(const XEvent& event);

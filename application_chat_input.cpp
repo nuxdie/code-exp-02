@@ -114,25 +114,9 @@ void Application::chat_action(const ChatHit& hit, Vec2 world)
             chat->follow = true;
         }
         break;
-    case ChatHit::Kind::Message: {
-        if (!contains(chat->body, world))
-            break;
-        auto& entry = chat->conversation.entries[hit.index];
-        if (entry.activity)
-            entry.expanded = !entry.expanded;
-        else {
-            const auto found = chat->messages.find(entry.id);
-            if (found != chat->messages.end()) {
-                const auto before = camera;
-                if (open_chat_link(found->second, {world.x - hit.bounds.origin.x,
-                                                   world.y - hit.bounds.origin.y})) {
-                    chat->follow_camera(before, camera, viewport());
-                    schedule_save();
-                }
-            }
-        }
+    case ChatHit::Kind::Message:
+        chat_message_action(hit, world);
         break;
-    }
     case ChatHit::Kind::Accept:
         chat->conversation.answer(0, true, chat->input.text);
         break;
@@ -147,6 +131,26 @@ void Application::chat_action(const ChatHit& hit, Vec2 world)
     }
     }
     flush_agent();
+}
+
+void Application::chat_message_action(const ChatHit& hit, Vec2 world)
+{
+    if (!contains(chat->body, world))
+        return;
+    auto& entry = chat->conversation.entries[hit.index];
+    if (entry.activity) {
+        entry.expanded = !entry.expanded;
+        return;
+    }
+    const auto found = chat->messages.find(entry.id);
+    if (found == chat->messages.end())
+        return;
+    const auto before = camera;
+    if (open_chat_link(found->second,
+                       {world.x - hit.bounds.origin.x, world.y - hit.bounds.origin.y})) {
+        chat->follow_camera(before, camera, viewport());
+        schedule_save();
+    }
 }
 
 bool Application::chat_key(const XEvent& event)
