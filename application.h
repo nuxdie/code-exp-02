@@ -284,6 +284,8 @@ class Application {
     void draw_intent();
     void draw_intent_controls();
     bool intent_button(const XEvent& event, Vec2 pointer);
+    bool begin_intent_drag(Vec2 pointer, Vec2 world);
+    void activate_intent_at(Vec2 pointer, Vec2 world);
     bool intent_key(const XEvent& event);
     void intent_action(const std::string& action);
     void open_intent_conversation(const std::string& id);

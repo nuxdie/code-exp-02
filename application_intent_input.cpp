@@ -34,57 +34,65 @@ bool Application::intent_button(const XEvent& event, Vec2 pointer)
         (!inside(intent->bounds, world) && !inside(intent->header_bounds, pointer)))
         return intent_badge_button(event, pointer);
     if (event.xbutton.button == Button1) {
-        if (inside(intent->header_bounds, pointer)) {
-            if (begin_window_drag(intent->bounds.origin, pointer)) {
-                intent->dragging = true;
-            }
-            chat->focused = false;
+        if (begin_intent_drag(pointer, world))
             return true;
-        }
-        if (inside(intent->scrollbar_track(), world)) {
-            if (XGrabPointer(display, window, False,
-                             ButtonPressMask | ButtonReleaseMask | PointerMotionMask, GrabModeAsync,
-                             GrabModeAsync, None, normal_cursor, CurrentTime) == GrabSuccess) {
-                const auto thumb = intent->scrollbar_thumb();
-                intent->scroll_grab_fraction =
-                    inside(thumb, world) ? (world.y - thumb.origin.y) / thumb.size.y : 0.5;
-                intent->scrolling = true;
-                drag_button = Button1;
-                dragged_panel = -1;
-                last_pointer = pointer;
-                intent->drag_scroll(world);
-            }
-            redraw = true;
-            return true;
-        }
-        const Vec2 header{world.x - intent->bounds.origin.x - 24,
-                          world.y - intent->bounds.origin.y - 48};
-        auto link = inside(intent->header_bounds, pointer) ? std::string{}
-                                                           : link_at(intent->header, header);
-        if (world.y > intent->bounds.origin.y + intent->bounds.size.y - 86)
-            link = link_at(intent->controls, {header.x, world.y - intent->bounds.origin.y -
-                                                            intent->bounds.size.y + 86});
-        if (inside(intent->body, world) && !intent->editing) {
-            const Vec2 point{world.x - intent->body.origin.x,
-                             world.y - intent->body.origin.y + intent->scroll};
-            link = link_at(intent->document, point);
-            if (!link.empty() && link.compare(0, 7, "intent:") != 0 &&
-                link.compare(0, 7, "commit:") != 0 && link.compare(0, 5, "chat:") != 0)
-                open_chat_link(intent->document, point);
-        }
-        if (!link.empty())
-            intent_action(link);
-        else if ((inside(intent->header_bounds, pointer) ||
-                  world.y < intent->bounds.origin.y + 32) &&
-                 begin_window_drag(intent->bounds.origin, pointer)) {
-            intent->dragging = true;
-        }
+        activate_intent_at(pointer, world);
         chat->focused = false;
     }
     redraw = true;
     schedule_save();
     return true;
 }
+
+bool Application::begin_intent_drag(Vec2 pointer, Vec2 world)
+{
+    if (inside(intent->header_bounds, pointer)) {
+        if (begin_window_drag(intent->bounds.origin, pointer))
+            intent->dragging = true;
+        chat->focused = false;
+        return true;
+    }
+    if (!inside(intent->scrollbar_track(), world))
+        return false;
+    if (XGrabPointer(display, window, False,
+                     ButtonPressMask | ButtonReleaseMask | PointerMotionMask, GrabModeAsync,
+                     GrabModeAsync, None, normal_cursor, CurrentTime) == GrabSuccess) {
+        const auto thumb = intent->scrollbar_thumb();
+        intent->scroll_grab_fraction =
+            inside(thumb, world) ? (world.y - thumb.origin.y) / thumb.size.y : 0.5;
+        intent->scrolling = true;
+        drag_button = Button1;
+        dragged_panel = -1;
+        last_pointer = pointer;
+        intent->drag_scroll(world);
+    }
+    redraw = true;
+    return true;
+}
+
+void Application::activate_intent_at(Vec2 pointer, Vec2 world)
+{
+    const Vec2 header{world.x - intent->bounds.origin.x - 24,
+                      world.y - intent->bounds.origin.y - 48};
+    auto link = link_at(intent->header, header);
+    if (world.y > intent->bounds.origin.y + intent->bounds.size.y - 86)
+        link = link_at(intent->controls,
+                       {header.x, world.y - intent->bounds.origin.y - intent->bounds.size.y + 86});
+    if (inside(intent->body, world) && !intent->editing) {
+        const Vec2 point{world.x - intent->body.origin.x,
+                         world.y - intent->body.origin.y + intent->scroll};
+        link = link_at(intent->document, point);
+        if (!link.empty() && link.compare(0, 7, "intent:") != 0 &&
+            link.compare(0, 7, "commit:") != 0 && link.compare(0, 5, "chat:") != 0)
+            open_chat_link(intent->document, point);
+    }
+    if (!link.empty())
+        intent_action(link);
+    else if (world.y < intent->bounds.origin.y + 32 &&
+             begin_window_drag(intent->bounds.origin, pointer))
+        intent->dragging = true;
+}
+
 void Application::intent_action(const std::string& action)
 {
     if (action == "all:") {
