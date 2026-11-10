@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <optional>
@@ -14,6 +15,13 @@ struct ProjectChange {
 
 bool project_image(const std::string& path);
 bool project_source(const std::string& path);
+struct ProjectFile {
+    std::string path;
+    std::uintmax_t bytes;
+};
+
+std::vector<ProjectFile> list_project_files(const std::string& root);
+std::optional<std::string> read_project_file(const std::string& root, const std::string& path);
 ProjectSnapshot read_project(const std::string& root);
 std::vector<ProjectChange> project_changes(const ProjectSnapshot& before,
                                            const ProjectSnapshot& after);

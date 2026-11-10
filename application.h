@@ -81,14 +81,24 @@ class Application {
         GraphLayout graph;
         std::unique_ptr<ProjectWatcher> watcher;
     };
+    struct WorkspaceFile {
+        std::optional<std::string> source;
+        std::optional<ImagePreview> image;
+    };
     struct WorkspaceLoad {
-        std::future<ProjectSnapshot> reading;
+        std::future<std::vector<ProjectFile>> reading;
+        std::future<WorkspaceFile> detail;
         ProjectSnapshot snapshot;
-        std::vector<std::string> paths;
-        std::size_t next = 0;
-        std::future<ImagePreview> image;
+        std::vector<GraphFile> files;
+        FileIndex index;
+        std::vector<Dependency> edges;
+        GraphLayout preview;
+        std::vector<GpuMesh> titles;
+        std::vector<std::size_t> panel_indices;
+        std::size_t next = 0, preview_next = 0;
+        Clock::time_point preview_due{};
         std::future<WorkspaceLayout> layout;
-        GpuMesh label;
+        GpuMesh label, connections;
     };
     std::optional<WorkspaceLoad> workspace_load;
     int screen = 0;
@@ -252,6 +262,9 @@ class Application {
     void begin_workspace_load();
     void advance_workspace_load();
     bool add_workspace_panel();
+    void start_workspace_file();
+    void prepare_workspace_preview(std::vector<ProjectFile> files);
+    void draw_workspace_preview(const Viewport& view);
     void finish_workspace_load();
     void restore_file_layouts(const lsp::Json& files);
     void open_directory_picker();

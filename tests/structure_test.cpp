@@ -12,9 +12,26 @@ void expect(bool condition, const char* message)
         throw std::runtime_error(message);
 }
 
+void check_folder_layout()
+{
+    std::vector<GraphFile> files;
+    for (const char* directory : {"a", "b", "c", "d", "e", "f"})
+        files.push_back({std::string(directory) + "/file.h", "", {320, 160}});
+    const auto initial = folder_layout(files, {});
+    const auto refined = folder_layout(files, {{0, 5, 0}});
+    expect(initial.files[0].origin.x != refined.files[0].origin.x ||
+               initial.files[0].origin.y != refined.files[0].origin.y,
+           "New dependencies must influence the placement of folders");
+    for (std::size_t i = 0; i < refined.files.size(); ++i)
+        for (std::size_t j = i + 1; j < refined.files.size(); ++j)
+            expect(!refined.files[i].intersects(refined.files[j]),
+                   "Refining the folder layout must keep cards separate");
+}
+
 int main()
 {
     try {
+        check_folder_layout();
         std::vector<FoldBlock> folds{{1, 8, true}, {3, 5, true}, {10, 13, false}};
         const auto view = fold_view(15, folds);
         expect(view.source_lines == std::vector<int>({0, 1, 9, 10, 11, 12, 13, 14}),

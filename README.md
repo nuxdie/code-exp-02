@@ -177,7 +177,7 @@ Session state normally lives in `.cache/canvas-session.json` and preserves the c
 
 ## Under the hood
 
-The interface is built directly on X11 and OpenGL. Pango/Cairo shape text, an OpenGL renderer draws the canvas, and Graphviz lays out the source graph. Language servers and the agent bridge communicate asynchronously with the application.
+The interface is built directly on X11 and OpenGL. Pango/Cairo shape text, an OpenGL renderer draws the canvas, and the startup layout groups files by folder and refines their positions as dependencies are discovered. Graphviz handles explicit graph relayouts. Language servers and the agent bridge communicate asynchronously with the application.
 
 | Area | Start reading here |
 | --- | --- |

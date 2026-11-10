@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <map>
+#include <numeric>
 #include <set>
 #include <spawn.h>
 #include <sstream>
@@ -15,7 +16,6 @@
 extern char** environ;
 
 namespace {
-using FileIndex = std::map<std::string, int>;
 std::string include_name(const std::string& line, bool& comment)
 {
     auto first = line.find_first_not_of(" \t");
@@ -70,13 +70,14 @@ std::vector<int> build_targets(const std::string& line, const FileIndex& paths)
     return targets;
 }
 } // namespace
-namespace {
+
 std::vector<Dependency> scan_dependencies(const std::vector<GraphFile>& files,
-                                          const FileIndex& paths, int source)
+                                          const FileIndex& paths, int source,
+                                          const std::string& content)
 {
     std::vector<Dependency> result;
     std::set<int> seen;
-    std::istringstream stream(files[source].source);
+    std::istringstream stream(content);
     std::string line;
     bool comment = false;
     int number = -1;
@@ -97,7 +98,6 @@ std::vector<Dependency> scan_dependencies(const std::vector<GraphFile>& files,
     }
     return result;
 }
-} // namespace
 
 std::vector<Dependency> file_dependencies(const std::vector<GraphFile>& files)
 {
@@ -106,9 +106,95 @@ std::vector<Dependency> file_dependencies(const std::vector<GraphFile>& files)
         paths[files[i].path] = static_cast<int>(i);
     std::vector<Dependency> result;
     for (std::size_t i = 0; i < files.size(); ++i) {
-        const auto edges = scan_dependencies(files, paths, static_cast<int>(i));
+        const auto edges = scan_dependencies(files, paths, static_cast<int>(i), files[i].source);
         result.insert(result.end(), edges.begin(), edges.end());
     }
+    return result;
+}
+
+namespace {
+// Pull connected items together while anchoring each to its original order.
+std::vector<double> relax_order(std::vector<double> rank, const std::vector<Dependency>& edges)
+{
+    if (edges.empty())
+        return rank;
+    const auto anchor = rank;
+    for (int step = 0; step < 4; ++step) {
+        auto sum = anchor;
+        std::vector<double> weight(rank.size(), 1);
+        for (const auto& edge : edges) {
+            const double strength = edge.build ? 0.15 : 1;
+            sum[edge.source] += strength * rank[edge.target];
+            sum[edge.target] += strength * rank[edge.source];
+            weight[edge.source] += strength;
+            weight[edge.target] += strength;
+        }
+        for (std::size_t i = 0; i < rank.size(); ++i)
+            rank[i] = sum[i] / weight[i];
+    }
+    return rank;
+}
+} // namespace
+
+GraphLayout folder_layout(const std::vector<GraphFile>& files, const std::vector<Dependency>& edges)
+{
+    std::map<std::filesystem::path, std::vector<std::size_t>> folders;
+    for (std::size_t i = 0; i < files.size(); ++i)
+        if (files[i].size.x > 0)
+            folders[std::filesystem::path(files[i].path).parent_path()].push_back(i);
+
+    std::vector<std::vector<std::size_t>> groups;
+    std::vector<int> group_for(files.size(), -1);
+    std::vector<double> file_order(files.size()), group_order;
+    for (auto& [path, members] : folders) {
+        const auto group = static_cast<int>(groups.size());
+        for (std::size_t i = 0; i < members.size(); ++i) {
+            group_for[members[i]] = group;
+            file_order[members[i]] = static_cast<double>(i);
+        }
+        group_order.push_back(group);
+        groups.push_back(std::move(members));
+    }
+
+    std::vector<Dependency> within_folder, between_folders;
+    for (const auto& edge : edges) {
+        const int from = group_for[edge.source], to = group_for[edge.target];
+        if (from < 0 || to < 0)
+            continue;
+        if (from == to)
+            within_folder.push_back(edge);
+        else
+            between_folders.push_back({from, to, 0, edge.build});
+    }
+    file_order = relax_order(std::move(file_order), within_folder);
+    group_order = relax_order(std::move(group_order), between_folders);
+
+    GraphLayout result;
+    result.files.resize(files.size());
+    std::vector<std::size_t> order(groups.size());
+    std::iota(order.begin(), order.end(), 0);
+    std::stable_sort(order.begin(), order.end(),
+                     [&](auto a, auto b) { return group_order[a] < group_order[b]; });
+    std::vector<Vec2> group_sizes;
+    for (const auto group : order) {
+        auto& members = groups[group];
+        std::stable_sort(members.begin(), members.end(),
+                         [&](auto a, auto b) { return file_order[a] < file_order[b]; });
+        std::vector<Vec2> sizes;
+        for (const auto index : members)
+            sizes.push_back(files[index].size);
+        const auto packed = arrange_files(sizes);
+        group_sizes.push_back(canvas_size(packed));
+        for (std::size_t i = 0; i < members.size(); ++i)
+            result.files[members[i]] = packed[i];
+    }
+    const auto packed_groups = arrange_files(group_sizes, 3, 192);
+    for (std::size_t i = 0; i < order.size(); ++i)
+        for (const auto index : groups[order[i]]) {
+            result.files[index].origin.x += packed_groups[i].origin.x;
+            result.files[index].origin.y += packed_groups[i].origin.y;
+        }
+    result.size = canvas_size(result.files);
     return result;
 }
 

@@ -2,6 +2,7 @@
 
 #include "canvas.h"
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -23,6 +24,12 @@ struct GraphLayout {
     Vec2 size;
 };
 
+using FileIndex = std::map<std::string, int>;
+std::vector<Dependency> scan_dependencies(const std::vector<GraphFile>& files,
+                                          const FileIndex& paths, int source,
+                                          const std::string& content);
+GraphLayout folder_layout(const std::vector<GraphFile>& files,
+                          const std::vector<Dependency>& edges);
 std::vector<Dependency> file_dependencies(const std::vector<GraphFile>& files);
 std::string graph_dot(const std::vector<GraphFile>& files, const std::vector<Dependency>& edges);
 GraphLayout graph_layout(const std::vector<GraphFile>& files, const std::vector<Dependency>& edges,

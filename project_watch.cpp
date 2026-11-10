@@ -81,18 +81,40 @@ bool project_source(const std::string& path)
            name == ".clang-tidy" || name == ".cmake-format.json" ||
            extensions.count(file.extension().string()) != 0;
 }
+std::vector<ProjectFile> list_project_files(const std::string& root)
+{
+    std::vector<ProjectFile> files;
+    for (const auto& relative : project_paths(root, false)) {
+        auto path = relative.string();
+        if (!project_source(path))
+            continue;
+        std::error_code error;
+        const auto bytes =
+            std::filesystem::file_size(std::filesystem::path(root) / relative, error);
+        files.push_back({std::move(path), error ? 0 : bytes});
+    }
+    return files;
+}
+
+std::optional<std::string> read_project_file(const std::string& root, const std::string& path)
+{
+    std::ifstream file(std::filesystem::path(root) / path, std::ios::binary);
+    if (!file)
+        return std::nullopt;
+    std::string text{std::istreambuf_iterator<char>(file), {}};
+    if (project_image(path) || text.find('\0') == std::string::npos)
+        return text;
+    return std::nullopt;
+}
+
 ProjectSnapshot read_project(const std::string& root)
 {
     ProjectSnapshot snapshot;
-    for (const auto& path : project_paths(root, false)) {
-        if (!project_source(path.string()))
-            continue;
-        std::ifstream file(std::filesystem::path(root) / path, std::ios::binary);
-        if (file) {
-            std::string text{std::istreambuf_iterator<char>(file), {}};
-            if (project_image(path.string()) || text.find('\0') == std::string::npos)
-                snapshot.emplace(path.string(), std::move(text));
-        }
+    for (const auto& relative : project_paths(root, false)) {
+        auto path = relative.string();
+        if (project_source(path))
+            if (auto text = read_project_file(root, path))
+                snapshot.emplace(std::move(path), std::move(*text));
     }
     return snapshot;
 }

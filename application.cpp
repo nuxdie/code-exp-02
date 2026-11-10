@@ -19,7 +19,7 @@ bool Application::initialize()
     begin_workspace_load();
     while (workspace_load) {
         advance_workspace_load();
-        if (workspace_load && (workspace_load->reading.valid() || workspace_load->image.valid() ||
+        if (workspace_load && (workspace_load->reading.valid() || workspace_load->detail.valid() ||
                                workspace_load->layout.valid()))
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }

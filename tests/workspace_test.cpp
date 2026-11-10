@@ -11,7 +11,12 @@ void expect(bool condition, const char* message)
 struct ApplicationTestAccess {
     static void check_progressive_load(const std::filesystem::path& root)
     {
-        Application app(root.string());
+        const auto fixture = root / "other/build/progressive";
+        std::filesystem::create_directories(fixture / "include");
+        std::ofstream(fixture / "main.cpp") << "#include \"include/api.h\"\n";
+        std::ofstream(fixture / "include/api.h")
+            << "#pragma once\n// " << std::string(1200, 'x') << '\n';
+        Application app(fixture.string());
         expect(app.initialize_window(), "Window must initialize before loading the project");
         XMapWindow(app.display, app.window);
         XSync(app.display, False);
@@ -22,8 +27,19 @@ struct ApplicationTestAccess {
         app.begin_workspace_load();
         app.workspace_load->reading.wait();
         app.advance_workspace_load();
+        expect(app.panels.empty() && app.workspace_load->preview.files.size() == 2,
+               "Filesystem metadata must lay out cards before reading their contents");
+        const auto& estimates = app.workspace_load->preview.files;
+        expect(estimates[1].size.y > estimates[0].size.y,
+               "Larger files must receive taller placeholder cards");
+        app.draw();
+        app.workspace_load->detail.wait();
+        app.advance_workspace_load();
         expect(app.workspace_load && app.panels.size() == 1 && !app.chat,
                "The first file card must be ready before the complete workspace");
+        const auto& edges = app.workspace_load->edges;
+        expect(edges.size() == 1 && edges.front().source == 0 && edges.front().target == 1,
+               "A loaded file must expose its dependency on a placeholder");
         app.draw();
         XEvent close{};
         close.xclient.type = ClientMessage;
@@ -112,6 +128,10 @@ struct ApplicationTestAccess {
         app.workspace_load = Application::WorkspaceLoad{};
         app.begin_workspace_load();
         app.workspace_load->reading.wait();
+        app.advance_workspace_load();
+        expect(app.panels.empty() && !app.workspace_load->preview.files.empty(),
+               "Filesystem metadata must lay out cards before reading their contents");
+        app.workspace_load->detail.wait();
         app.advance_workspace_load();
         expect(app.workspace_root == std::filesystem::canonical(project_root).string(),
                "Without a directory argument the viewer must open its own source tree");
