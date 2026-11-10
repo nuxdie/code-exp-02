@@ -3,6 +3,7 @@
 #include "canvas_selection.h"
 #include "chat_canvas.h"
 #include "conversation.h"
+#include "directory_picker.h"
 #include "document_view.h"
 #include "intent_canvas.h"
 #include "live_build.h"
@@ -44,6 +45,8 @@ class Application {
 
   public:
     static constexpr int reload_exit_code = 75;
+    explicit Application(const std::string& directory = "") : launch_directory(directory) {}
+    const std::string& directory() const { return launch_directory; }
     int run();
     ~Application();
 
@@ -59,6 +62,8 @@ class Application {
     bool benchmark = false;
     Display* display = nullptr;
     std::filesystem::path executable;
+    std::string launch_directory;
+    std::unique_ptr<DirectoryPicker> directory_picker;
     std::string workspace_root;
     std::string workspace_build;
     std::unique_ptr<ProjectWatcher> project_watcher;
@@ -186,6 +191,8 @@ class Application {
 
     bool initialize();
     void initialize_workspace();
+    void open_directory_picker();
+    void poll_directory_picker();
     void initialize_cmake();
     lsp::LanguageServer* server_for(const SourcePanel& panel);
     bool open_document_link(Vec2 pointer);

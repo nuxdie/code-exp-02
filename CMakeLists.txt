@@ -196,6 +196,8 @@ target_link_libraries(
 add_library(
     application_core
     application.cpp
+    application_workspace.cpp
+    directory_picker.cpp
     application_model.cpp
     application_popups.cpp
     application_search.cpp

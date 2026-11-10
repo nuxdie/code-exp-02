@@ -209,6 +209,7 @@ int Application::run()
 
 Application::~Application()
 {
+    directory_picker.reset();
     if (!display)
         return;
     save_session();
@@ -259,6 +260,7 @@ Application::~Application()
 
 void Application::update_timers(Clock::time_point now)
 {
+    poll_directory_picker();
     if (chat_animation_due <= now) {
         chat_animation_due = Clock::time_point::max();
         redraw = true;
@@ -337,6 +339,7 @@ void Application::wait_for_work(Clock::time_point next_frame)
         {wake_fd(live_build), POLLIN, 0},
         {intent && intent->client ? intent->client->event_fd() : -1, POLLIN, 0},
         {wake_fd(system_theme), POLLIN, 0},
+        {wake_fd(directory_picker), POLLIN, 0},
         {wake_fd(cmake_server), POLLIN, 0}};
     for (const auto& card : chat_windows)
         connections.push_back({card->client ? card->client->event_fd() : -1, POLLIN, 0});

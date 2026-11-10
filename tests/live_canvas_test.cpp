@@ -294,7 +294,7 @@ int main()
         setenv("SOURCE_CANVAS_DISABLE_AGENT", "1", 1);
         setenv("SOURCE_CANVAS_AUTO_BUILD", "0", 1);
         {
-            Application app;
+            Application app(root.string());
             ApplicationTestAccess::run(app, root);
         }
         std::filesystem::current_path(launch_directory);

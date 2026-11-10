@@ -6,6 +6,7 @@ void Application::show_shortcuts()
     hide_popup();
     show_popup("# Shortcuts\n\n"
                "## Search and help\n"
+               "`Ctrl+O` — choose a project directory\n"
                "`/` — search file names and text across the project\n"
                "`?` or `F1` — this guide\n"
                "`↑ / ↓` or `Shift+Tab / Tab` — choose a search result\n"
@@ -97,9 +98,15 @@ bool Application::shortcuts_key(KeySym key)
 }
 bool Application::canvas_shortcut_key(const XEvent& event)
 {
+    auto key_event = event.xkey;
+    const auto symbol = XLookupKeysym(&key_event, 0);
+    if ((event.xkey.state & ControlMask) && !(event.xkey.state & Mod1Mask) &&
+        (symbol == XK_o || symbol == XK_O)) {
+        open_directory_picker();
+        return true;
+    }
     if (search.active)
         return search_key(event);
-    auto key_event = event.xkey;
     KeySym key;
     char text[8]{};
     const auto length = XLookupString(&key_event, text, sizeof(text), &key, nullptr);

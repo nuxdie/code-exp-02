@@ -78,7 +78,7 @@ sudo apt-get install -y \
   libx11-dev libpango1.0-dev libfontconfig1-dev librsvg2-dev \
   libepoxy-dev nlohmann-json3-dev graphviz \
   texlive-latex-base dvisvgm \
-  xvfb xauth libgl1-mesa-dri libglx-mesa0
+  xvfb xauth libgl1-mesa-dri libglx-mesa0 zenity
 ```
 
 Install the pinned CMake language server; the installer verifies the release archive's SHA-256 checksum:
@@ -97,12 +97,14 @@ cmake --build build --parallel 2
 ./build/white_window
 ```
 
-The viewer opens your current working directory. To browse another project, launch the executable from that project's directory:
+The viewer opens its own source tree by default, regardless of your current directory. To browse another project, pass its directory as an argument (absolute or relative):
 
 ```bash
-cd /path/to/your/project
-/path/to/code-exp-02/build/white_window
+./build/white_window /path/to/your/project
+./build/white_window .
 ```
+
+Press **Ctrl+O** to choose a project directory in a native folder picker (provided by Zenity). Selecting a different directory saves the current session and reopens the viewer on that project; canceling keeps the current workspace. Explicit directory arguments are preserved across automatic viewer reloads.
 
 Bundled fonts and icons are copied into `build/`; keep them beside the executable. Each project keeps its own session and decisions. Automatic viewer rebuilds run only when browsing the viewer's own source tree.
 
@@ -128,6 +130,7 @@ Start with **`/`** to find a file, **`F`** to see the whole canvas, and **`F1`**
 
 | Action | Control |
 | --- | --- |
+| Open a project directory | `Ctrl+O` |
 | Zoom around the pointer | Mouse wheel |
 | Pan | Drag blank space, middle-drag on source or blank canvas, or arrow keys |
 | Move a card | Drag its title |
@@ -153,7 +156,7 @@ Session state normally lives in `.cache/canvas-session.json` and preserves the c
 
 | Environment variable | Effect |
 | --- | --- |
-| `SOURCE_CANVAS_PROJECT_ROOT=/absolute/path` | Override the launch directory (relative paths also work). Language tools use this project's compilation database in its root or `build/`, with `.cache/source-canvas/` as a fallback for generated files. |
+| `SOURCE_CANVAS_PROJECT_ROOT=/absolute/path` | Select a project when no directory argument is passed (relative paths also work). A directory argument takes precedence. Language tools use this project's compilation database in its root or `build/`, with `.cache/source-canvas/` as a fallback for generated files. |
 | `SOURCE_CANVAS_DISABLE_AGENT=1` | Disable agent connections, automatic viewer rebuilds, and session saving. |
 | `SOURCE_CANVAS_AUTO_BUILD=0` | Keep agent connections but disable automatic viewer rebuilds and reloads. |
 | `SOURCE_CANVAS_STATE_FILE=/absolute/path.json` | Use a separate canvas session file. |

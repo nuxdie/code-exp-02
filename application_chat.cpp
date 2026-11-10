@@ -2,34 +2,6 @@
 
 #include <clocale>
 
-void Application::initialize_workspace()
-{
-    const auto* root = std::getenv("SOURCE_CANVAS_PROJECT_ROOT");
-    workspace_root = std::filesystem::canonical(root && *root ? root : ".").string();
-    workspace_build = project_build;
-    if (workspace_root != std::filesystem::weakly_canonical(project_root).string()) {
-        const auto directory = std::filesystem::path(workspace_root);
-        workspace_build = (directory / ".cache/source-canvas").string();
-        for (const auto& candidate : {directory / "build", directory})
-            if (std::filesystem::is_regular_file(candidate / "compile_commands.json"))
-                workspace_build = candidate.string();
-        std::filesystem::create_directories(workspace_build);
-    }
-    load_project();
-    relayout();
-    if (!benchmark) {
-        try {
-            language_server = std::make_unique<lsp::LanguageServer>(
-                clangd_executable, workspace_root, workspace_build, std::move(documents));
-        } catch (const std::exception& error) {
-            language_failure = error.what();
-        }
-    }
-    initialize_cmake();
-    camera.reset(viewport());
-    initialize_chat();
-}
-
 void Application::initialize_chat()
 {
     chat = std::make_unique<ChatCanvas>(workspace_root);

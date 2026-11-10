@@ -2576,6 +2576,74 @@
         "kind": "explicit_artifact_binding",
         "precision": "file"
       }
+    },
+    {
+      "id": "decision-5c9bcb81-98aa-4263-ad65-ebdd381aab81",
+      "origin": {
+        "kind": "conversation"
+      },
+      "statement": "i want the app to open dir code only if it was launched with dir as a parameter. and open its own code normally",
+      "artifacts": [
+        "CMakeLists.txt",
+        "README.md",
+        "application.h",
+        "application_chat.cpp",
+        "application_workspace.cpp",
+        "main.cpp",
+        "tests/live_canvas_test.cpp",
+        "tests/workspace_test.cpp"
+      ],
+      "rationale": {
+        "summary": "Default to the viewer source tree independently of the working directory, accept an explicit directory argument ahead of the existing environment override, and preserve that argument across reloads. Update project startup documentation and regression coverage.",
+        "author_role": "agent",
+        "basis": "human_statement"
+      },
+      "association": {
+        "kind": "explicit_artifact_binding",
+        "precision": "file"
+      },
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T00:01:28.337652+00:00",
+      "statement_hash": "bb8d3efab483a34b22a2bc86e825ed8565405b4b71747d610bdc451158866a7e",
+      "relations": []
+    },
+    {
+      "id": "decision-a65e123a-736a-4663-8d16-138eb9e4f4b3",
+      "origin": {
+        "kind": "conversation"
+      },
+      "statement": "also ctrl-o opens a dir picker",
+      "artifacts": [
+        "CMakeLists.txt",
+        "README.md",
+        "application.cpp",
+        "application.h",
+        "application_shortcuts.cpp",
+        "application_workspace.cpp",
+        "directory_picker.cpp",
+        "directory_picker.h",
+        "main.cpp",
+        "tests/workspace_test.cpp"
+      ],
+      "rationale": {
+        "summary": "Open an attached native Zenity directory picker with Ctrl+O from canvas, search, and editors without blocking the event loop. Preserve the current session during a workspace restart, handle cancellation and invalid selections, and release the picker process when closing the viewer.",
+        "author_role": "agent",
+        "basis": "human_statement"
+      },
+      "association": {
+        "kind": "explicit_artifact_binding",
+        "precision": "file"
+      },
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T00:01:28.340544+00:00",
+      "statement_hash": "4f82e9ff6bafd4340e2c43ffe45d2f9d57b60593a923e05ef443c30738d9855d",
+      "relations": []
     }
   ]
 }

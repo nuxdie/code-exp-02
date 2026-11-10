@@ -10,12 +10,12 @@ void expect(bool condition, const char* message)
 
 struct ApplicationTestAccess {
     static void check(const std::filesystem::path& root, const std::filesystem::path& build,
-                      const std::string& file)
+                      const std::string& file, const std::string& argument)
     {
-        Application app;
+        Application app(argument);
         expect(app.initialize(), "Workspace application must initialize");
         expect(app.workspace_root == std::filesystem::canonical(root).string(),
-               "Workspace must resolve the launch directory or explicit override");
+               "Workspace must resolve the explicit directory or environment override");
         expect(app.workspace_build == build.string(),
                "Language tools and generated files must use the selected project");
         expect(app.panels.size() == (file.empty() ? 0 : 1),
@@ -34,6 +34,77 @@ struct ApplicationTestAccess {
         expect(!app.auto_build && !app.live_build,
                "Editing another project must never rebuild or reload the viewer");
         app.chat->disabled = true;
+    }
+
+    static void check_default()
+    {
+        Application app;
+        expect(app.initialize(), "Default application must initialize from any working directory");
+        expect(app.workspace_root == std::filesystem::canonical(project_root).string(),
+               "Without a directory argument the viewer must open its own source tree");
+        expect(app.workspace_build == project_build, "Own source must use the viewer build");
+        expect(std::any_of(app.panels.begin(), app.panels.end(),
+                           [](const auto& panel) { return panel.path == "main.cpp"; }),
+               "The default canvas must include the app's main.cpp");
+    }
+
+    static void choose(Application& app)
+    {
+        XEvent key{};
+        key.xkey.display = app.display;
+        key.xkey.keycode = XKeysymToKeycode(app.display, XK_o);
+        key.xkey.state = ControlMask;
+        app.handle_key(key);
+        expect(app.directory_picker != nullptr, "Ctrl+O must open a directory picker");
+        const auto* picker = app.directory_picker.get();
+        app.handle_key(key);
+        expect(app.directory_picker.get() == picker, "Repeated Ctrl+O must reuse the picker");
+        pollfd fd{picker->event_fd(), POLLIN, 0};
+        expect(poll(&fd, 1, 5000) == 1, "Directory picker must wake the application on completion");
+        app.poll_directory_picker();
+        expect(!app.directory_picker, "Finished picker must be released");
+    }
+
+    static void check_picker(const std::filesystem::path& root)
+    {
+        Application app(root.string());
+        expect(app.initialize(), "Picker application must initialize");
+        const auto* environment_path = std::getenv("PATH");
+        const std::string path = environment_path ? environment_path : "";
+        setenv("PATH", (root / "empty").c_str(), 1);
+        app.open_directory_picker();
+        expect(!app.directory_picker && app.popup_text.find("zenity") != std::string::npos,
+               "A missing picker must explain which dependency to install");
+        setenv("PATH", path.c_str(), 1);
+        setenv("PICKER_WAIT", "1", 1);
+        const auto start = Application::Clock::now();
+        app.open_directory_picker();
+        app.directory_picker.reset();
+        expect(Application::Clock::now() - start < std::chrono::seconds(2),
+               "Closing an active picker must terminate its process without waiting for input");
+        unsetenv("PICKER_WAIT");
+        app.open_search();
+        setenv("PICKER_CANCEL", "1", 1);
+        choose(app);
+        expect(app.running && !app.reload_requested && app.search.active,
+               "Canceling the picker from search must preserve the workspace");
+        unsetenv("PICKER_CANCEL");
+        setenv("PICKER_DIRECTORY", (root / "missing").c_str(), 1);
+        choose(app);
+        expect(app.running && !app.reload_requested && !app.popup_text.empty(),
+               "An invalid selection must show an error without leaving the project");
+        setenv("PICKER_DIRECTORY", root.c_str(), 1);
+        choose(app);
+        expect(app.running && !app.reload_requested,
+               "Choosing the current directory must stay open");
+        setenv("PICKER_DIRECTORY", (root / "other").c_str(), 1);
+        app.chat->focused = true;
+        choose(app);
+        expect(app.reload_requested && !app.running &&
+                   app.directory() == std::filesystem::canonical(root / "other").string(),
+               "Ctrl+O from an editor must reopen on the chosen directory");
+        expect(app.workspace_root == std::filesystem::canonical(root).string(),
+               "The old workspace must remain intact while its session and services shut down");
     }
 };
 
@@ -56,20 +127,36 @@ int main()
         setenv("SOURCE_CANVAS_DISABLE_AGENT", "1", 1);
         setenv("SOURCE_CANVAS_DISABLE_SESSION", "1", 1);
         setenv("SOURCE_CANVAS_DISABLE_INTENT", "1", 1);
-        ApplicationTestAccess::check(root, root / ".cache/source-canvas", "hello.py");
+        ApplicationTestAccess::check_default();
         setenv("SOURCE_CANVAS_PROJECT_ROOT", "", 1);
-        ApplicationTestAccess::check(root, root / ".cache/source-canvas", "hello.py");
+        ApplicationTestAccess::check_default();
+        ApplicationTestAccess::check(root, root / ".cache/source-canvas", "hello.py", ".");
         std::ofstream(root / "other/override.cpp") << "int override_value = 42;\n";
         setenv("SOURCE_CANVAS_PROJECT_ROOT", "other/../other", 1);
-        ApplicationTestAccess::check(root / "other", root / "other/build", "override.cpp");
+        ApplicationTestAccess::check(root / "other", root / "other/build", "override.cpp", "");
+        ApplicationTestAccess::check(root / "empty", root / "empty/.cache/source-canvas", "",
+                                     (root / "empty").string());
         std::ofstream(root / "other/compile_commands.json") << "[]\n";
         setenv("SOURCE_CANVAS_PROJECT_ROOT", (root / "other").c_str(), 1);
-        ApplicationTestAccess::check(root / "other", root / "other", "override.cpp");
+        ApplicationTestAccess::check(root / "other", root / "other", "override.cpp",
+                                     "other/../other");
         std::filesystem::current_path(root / "empty");
         unsetenv("SOURCE_CANVAS_PROJECT_ROOT");
-        ApplicationTestAccess::check(root / "empty", root / "empty/.cache/source-canvas", "");
-        std::cout
-            << "Launch directory, overrides, compilation databases and empty workspace passed.\n";
+        ApplicationTestAccess::check(root / "empty", root / "empty/.cache/source-canvas", "", ".");
+        std::filesystem::create_directories(root / "bin");
+        const auto picker = root / "bin/zenity";
+        std::ofstream(picker) << "#!/bin/sh\n"
+                                 "[ \"$PICKER_CANCEL\" = 1 ] && exit 1\n"
+                                 "[ \"$PICKER_WAIT\" = 1 ] && exec /bin/sleep 30\n"
+                                 "printf '%s\\n' \"$PICKER_DIRECTORY\"\n";
+        std::filesystem::permissions(picker, std::filesystem::perms::owner_all);
+        const auto* environment_path = std::getenv("PATH");
+        const auto path =
+            (root / "bin").string() + ":" + (environment_path ? environment_path : "");
+        setenv("PATH", path.c_str(), 1);
+        ApplicationTestAccess::check_picker(root);
+        std::cout << "Own source default, directory arguments, overrides, compilation databases, "
+                     "empty workspace and Ctrl+O picker passed.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
         result = 1;
