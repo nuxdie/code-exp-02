@@ -2717,6 +2717,46 @@
         "kind": "captured_statement",
         "precision": "unbound"
       }
+    },
+    {
+      "id": "decision-01a1c505-bac8-7813-88d4-4bbb382d8198",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c505-bac8-7813-88d4-4bbb382d8198",
+        "thread_id": "01a1c505-b597-70a1-a9f5-31acce085e10",
+        "turn_id": "01a1c505-b5b2-7f80-b2ad-03e2624021a4"
+      },
+      "statement": "you know gourse? how users fly around and \"touch\" the files changed. i want similar thing here. with each agent changing the lines, i want to see that",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T10:34:09.488536+00:00",
+      "statement_hash": "eeef4bd2fa2e58cc3edee0b852c2c4ac9a5ffee903e19bd6e1efd2c63c1357ea",
+      "artifacts": [
+        "CMakeLists.txt",
+        "README.md",
+        "agent_activity.cpp",
+        "agent_activity.h",
+        "application.cpp",
+        "application.h",
+        "application_agent_activity.cpp",
+        "application_chat.cpp",
+        "application_live.cpp",
+        "application_view.cpp",
+        "tests/agent_activity_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "author_role": "agent",
+        "basis": "recorded_live",
+        "summary": "Visualize successful live agent file changes with a stable colored actor per conversation, smooth travel between changed line ranges, touch beams and fading highlights. Parse exact patch ranges, follow folded rows and moved files, bound queued activity, ignore history and duplicate events, and stop frame scheduling when idle.",
+        "recorded_at": "2026-11-10T10:45:01.890972+00:00"
+      },
+      "association": {
+        "kind": "reviewed_checkpoint",
+        "precision": "selected_diff"
+      }
     }
   ]
 }

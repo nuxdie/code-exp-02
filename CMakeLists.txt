@@ -195,6 +195,8 @@ target_link_libraries(
 
 add_library(
     application_core
+    agent_activity.cpp
+    application_agent_activity.cpp
     application.cpp
     application_workspace.cpp
     directory_picker.cpp
@@ -260,6 +262,18 @@ target_link_libraries(white_window PRIVATE application_core)
 
 include(CTest)
 if(BUILD_TESTING)
+    find_program(XVFB_RUN_EXECUTABLE xvfb-run)
+    add_executable(agent_activity_tests tests/agent_activity_test.cpp)
+    target_link_libraries(agent_activity_tests PRIVATE application_core)
+    if(XVFB_RUN_EXECUTABLE)
+        add_test(NAME agent_activity
+                 COMMAND "${XVFB_RUN_EXECUTABLE}" -a
+                         $<TARGET_FILE:agent_activity_tests>
+        )
+    else()
+        add_test(NAME agent_activity COMMAND agent_activity_tests)
+    endif()
+    set_tests_properties(agent_activity PROPERTIES TIMEOUT 30)
     add_executable(
         system_theme_tests tests/system_theme_test.cpp system_theme.cpp
     )
@@ -337,7 +351,6 @@ if(BUILD_TESTING)
     set_tests_properties(math PROPERTIES TIMEOUT 20)
     add_executable(selection_tests tests/selection_test.cpp)
     target_link_libraries(selection_tests PRIVATE application_core)
-    find_program(XVFB_RUN_EXECUTABLE xvfb-run)
     if(XVFB_RUN_EXECUTABLE)
         add_test(NAME selection COMMAND "${XVFB_RUN_EXECUTABLE}" -a
                                         $<TARGET_FILE:selection_tests>
@@ -451,6 +464,7 @@ add_custom_target(
 if(BUILD_TESTING)
     add_dependencies(
         quality
+        agent_activity_tests
         selection_tests
         agent_windows_tests
         search_tests

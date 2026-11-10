@@ -78,6 +78,7 @@ void Application::poll_agent_window()
         for (const auto& message : chat->client->take_messages()) {
             const auto title = chat->conversation.title;
             chat->conversation.receive(message);
+            receive_agent_activity(message);
             if (chat->conversation.title != title)
                 schedule_save();
             if (message.value("method", "") == "canvas/disconnected")

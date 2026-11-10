@@ -28,6 +28,8 @@ Source Canvas is an experimental native Linux workspace that turns a source tree
 
 The repository is named `code-exp-02`; the executable is currently called `white_window`.
 
+Live agent edits appear on the canvas as colored figures that fly from their conversation cards to the changed lines. Each conversation keeps a stable color; a brief beam and fading line highlight show each touch, including edits inside folded code. This uses successful live file-change events; shell-only writes without file-change events have no attributed figure. Animations fade out and stop when idle.
+
 ## See it in motion
 
 ### From the project to the details

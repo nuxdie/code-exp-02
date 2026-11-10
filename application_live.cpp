@@ -97,6 +97,7 @@ void Application::apply_project_change(const ProjectChange& change)
     if (!change.source) {
         if (found == panels.end())
             return;
+        activity_deleted[change.path] = {found->bounds, Clock::now()};
         auto* server = server_for(*found);
         if (server && opened_documents.erase(found->uri))
             server->close(found->uri);

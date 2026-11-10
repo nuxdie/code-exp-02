@@ -52,11 +52,14 @@ void Application::draw()
         initial_view = false;
     }
     renderer->begin(width, height);
+    advance_agent_activity();
     draw_connections(view);
+    draw_activity_highlights();
     draw_files(view);
 
     draw_headers(view);
     draw_fold_toggle();
+    draw_agent_activity();
     draw_conversation();
     draw_intent();
     draw_popup();

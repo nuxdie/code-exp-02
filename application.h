@@ -1,4 +1,5 @@
 #pragma once
+#include "agent_activity.h"
 #include "agent_client.h"
 #include "canvas_selection.h"
 #include "chat_canvas.h"
@@ -133,6 +134,11 @@ class Application {
     Vec2 mouse_position;
     bool redraw = true;
     Clock::time_point chat_animation_due = Clock::time_point::max();
+    AgentActivity agent_activity;
+    std::map<std::string, DocumentView> activity_labels;
+    std::map<std::string, std::pair<CanvasRect, Clock::time_point>> activity_deleted;
+    Clock::time_point activity_animation_due = Clock::time_point::max();
+    GpuMesh activity_mesh;
     Clock::time_point hover_due = Clock::time_point::max();
     Clock::time_point popup_dismiss_due = Clock::time_point::max();
     int hover_request = 0;
@@ -194,6 +200,11 @@ class Application {
     Clock::time_point binary_check_due = Clock::time_point::max();
 
     bool initialize();
+    void receive_agent_activity(const lsp::Json& message);
+    std::optional<CanvasRect> activity_bounds(const ActivityTouch& touch);
+    void advance_agent_activity();
+    void draw_activity_highlights();
+    void draw_agent_activity();
     void initialize_workspace();
     void open_directory_picker();
     void poll_directory_picker();

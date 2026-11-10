@@ -265,6 +265,10 @@ void Application::update_timers(Clock::time_point now)
         chat_animation_due = Clock::time_point::max();
         redraw = true;
     }
+    if (activity_animation_due <= now) {
+        activity_animation_due = Clock::time_point::max();
+        redraw = true;
+    }
     poll_project();
     poll_agent();
     poll_intent();
@@ -321,7 +325,7 @@ void Application::wait_for_work(Clock::time_point next_frame)
         timeout = timeout < 0 ? dismiss_wait : std::min(timeout, dismiss_wait);
     }
     const auto pending =
-        std::min({save_due, agent_reconnect_due(), chat_animation_due,
+        std::min({save_due, agent_reconnect_due(), chat_animation_due, activity_animation_due,
                   build_running ? Clock::time_point::max() : rebuild_due, binary_check_due,
                   intent ? intent->refresh : Clock::time_point::max()});
     if (pending != Clock::time_point::max()) {
