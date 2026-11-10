@@ -68,6 +68,40 @@ void test_theme(GpuRenderer& renderer)
     cairo_surface_destroy(surface);
 }
 
+void test_image_texture(GpuRenderer& renderer)
+{
+    auto* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1200, 2);
+    auto* cr = cairo_create(surface);
+    cairo_set_source_rgba(cr, 1, 0, 0, 0.5);
+    cairo_paint(cr);
+    GpuMesh picture, icon;
+    renderer.upload_image(picture, surface, {{20, 20}, {100, 40}});
+    cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
+    cairo_set_source_rgb(cr, 0, 0, 1);
+    cairo_paint(cr);
+    auto* icon_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 8, 8);
+    auto* icon_cr = cairo_create(icon_surface);
+    cairo_set_source_rgb(icon_cr, 0, 0, 1);
+    cairo_paint(icon_cr);
+    renderer.upload(icon, {}, {{renderer.image(icon_surface), {{150, 20}, {100, 40}}}});
+    renderer.begin(320, 240);
+    renderer.draw(picture, {}, 1);
+    renderer.draw(icon, {}, 1);
+    renderer.finish();
+    std::array<unsigned char, 4> red{}, blue{};
+    glReadPixels(40, 209, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, red.data());
+    glReadPixels(170, 209, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, blue.data());
+    expect(red[0] > 250 && red[1] > 120 && red[1] < 135 && blue[2] > 250 && blue[0] < 5,
+           "Standalone image textures must preserve alpha and restore icon atlas bindings");
+    renderer.release(picture);
+    expect(!picture.texture && !picture.buffer, "Releasing image meshes must release textures");
+    renderer.release(icon);
+    cairo_destroy(icon_cr);
+    cairo_surface_destroy(icon_surface);
+    cairo_destroy(cr);
+    cairo_surface_destroy(surface);
+}
+
 int main()
 {
     Display* display = XOpenDisplay(nullptr);
@@ -146,6 +180,7 @@ int main()
                    "The renderer must use Pango's ligature glyphs rather than rendering separate "
                    "characters");
             test_clip(renderer);
+            test_image_texture(renderer);
             test_theme(renderer);
             std::cout << "GPU atlas, color, ligature and cache reuse checks passed on "
                       << renderer.device() << '\n';

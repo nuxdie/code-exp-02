@@ -26,6 +26,8 @@
 
 Source Canvas is an experimental native Linux workspace that turns a source tree into a zoomable canvas. Files become movable cards, dependencies become visible connections, and agent conversations live next to the code they discuss. A separate intent view connects human decisions to Git changes and line history.
 
+Image files appear as preview cards alongside source, including images in `assets/`. PNG, JPEG, SVG, GIF, BMP, TIFF, ICO and WebP extensions are recognized; decoding depends on installed GdkPixbuf loaders. Previews preserve transparency and aspect ratio, fit within 640 canvas units, and reload when edited. Animated images show a still frame. Invalid or unsupported images show an error card.
+
 The repository is named `code-exp-02`; the executable is currently called `white_window`.
 
 Live agent edits appear on the canvas as colored figures that fly from their conversation cards to the changed lines. Each conversation keeps a stable color; a brief beam and fading line highlight show each touch, including edits inside folded code. This uses successful live file-change events; shell-only writes without file-change events have no attributed figure. Animations fade out and stop when idle.

@@ -14,6 +14,7 @@
 struct GpuMesh {
     unsigned buffer = 0;
     int vertices = 0;
+    unsigned texture = 0;
 };
 
 struct GpuImage {
@@ -49,6 +50,7 @@ class GpuRenderer {
     void upload(GpuMesh& mesh, const std::vector<PlacedText>& text,
                 const std::vector<PlacedImage>& images = {});
     void release(GpuMesh& mesh);
+    void upload_image(GpuMesh& mesh, cairo_surface_t* surface, CanvasRect bounds);
     void paths(GpuMesh& mesh, const std::vector<GpuPath>& paths);
     void set_dark_theme(bool dark);
     void begin(int width, int height);

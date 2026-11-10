@@ -12,6 +12,7 @@ pkg_check_modules(
     fontconfig
     librsvg-2.0
     gio-2.0
+    gdk-pixbuf-2.0
 )
 pkg_check_modules(GPU REQUIRED IMPORTED_TARGET epoxy)
 find_package(nlohmann_json 3.10 REQUIRED)
@@ -204,6 +205,7 @@ add_library(
     application_workspace.cpp
     directory_picker.cpp
     application_model.cpp
+    application_image.cpp
     application_navigation.cpp
     application_popups.cpp
     application_search.cpp

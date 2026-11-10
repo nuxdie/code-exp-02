@@ -12,6 +12,7 @@ struct ProjectChange {
     std::optional<std::string> source;
 };
 
+bool project_image(const std::string& path);
 bool project_source(const std::string& path);
 ProjectSnapshot read_project(const std::string& root);
 std::vector<ProjectChange> project_changes(const ProjectSnapshot& before,

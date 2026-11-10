@@ -77,7 +77,10 @@ void Application::replace_source(int index, const std::string& source)
     }
     updated.bounds.origin = old.bounds.origin;
     updated.bounds.size.x += 32;
-    updated.mesh = old.mesh;
+    if (old.image || updated.image)
+        renderer->release(old.mesh);
+    else
+        updated.mesh = old.mesh;
     updated.header_mesh = old.header_mesh;
     updated.version = old.version;
     auto* server = server_for(old);
@@ -110,7 +113,7 @@ void Application::apply_project_change(const ProjectChange& change)
         update_mesh(panel);
         panel.bounds.origin = {content_size.x + 96, 0};
         panels.push_back(std::move(panel));
-    } else if (found->source != *change.source) {
+    } else if (found->image || found->source != *change.source) {
         replace_source(static_cast<int>(found - panels.begin()), *change.source);
     }
 }

@@ -4,7 +4,8 @@ SourcePanel Application::make_panel(const std::string& path, const std::string& 
 {
     SourcePanel panel;
     panel.path = path;
-    panel.source = text;
+    panel.image = project_image(path);
+    panel.source = panel.image ? std::string{} : text;
     panel.uri = lsp::file_uri((std::filesystem::path(workspace_root) / path).string());
     const auto extension = std::filesystem::path(path).extension().string();
     panel.cpp = extension == ".cpp" || extension == ".cc" || extension == ".cxx" ||
@@ -19,6 +20,10 @@ SourcePanel Application::make_panel(const std::string& path, const std::string& 
     text_width += 32;
     panel.cmake =
         std::filesystem::path(path).filename() == "CMakeLists.txt" || extension == ".cmake";
+    if (panel.image) {
+        load_image_panel(panel, text, text_width);
+        return panel;
+    }
     HighlightState highlight_state;
     std::vector<int> brace_stack;
     std::istringstream source(text);
@@ -74,12 +79,14 @@ void Application::update_mesh(SourcePanel& panel)
             }
         }
     }
-    panel.bounds.size.y = header_height + panel.folded.source_lines.size() * line_height;
+    if (!panel.image)
+        panel.bounds.size.y = header_height + panel.folded.source_lines.size() * line_height;
     panel.bounds.size.x += panel.mesh.buffer ? 0 : 32;
     std::vector<PlacedImage> images;
     if (panel.icon)
         images.push_back({panel.gpu_icon, {{0, 0}, {24, 24}}});
-    renderer->upload(panel.mesh, text);
+    if (!panel.image)
+        renderer->upload(panel.mesh, text);
     if (!panel.header_mesh.buffer)
         renderer->upload(panel.header_mesh, {{panel.title, {32, 0}}}, images);
 }

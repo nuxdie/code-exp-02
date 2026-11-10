@@ -34,6 +34,14 @@ int main()
         std::filesystem::create_directories(root / "build");
         std::ofstream(root / "main.cpp") << "int one;\n";
         std::ofstream(root / "build/generated.cpp") << "excluded";
+        std::filesystem::create_directories(root / "assets");
+        const std::string binary_image("PNG\0pixels", 10);
+        std::ofstream(root / "assets/photo.PNG", std::ios::binary)
+            .write(binary_image.data(), binary_image.size());
+        const auto images = read_project(root.string());
+        expect(images.at("assets/photo.PNG") == binary_image && project_image("photo.PNG"),
+               "Image discovery must preserve binary bytes and accept uppercase extensions");
+        std::filesystem::remove_all(root / "assets");
         const auto initial = read_project(root.string());
         expect(initial.size() == 1 && project_source("notes.tex") &&
                    project_source("docs/notes.md"),

@@ -125,6 +125,7 @@ struct GpuRenderer::Impl {
     bool owns_window = true;
     GLuint program = 0, vao = 0, atlas = 0, images = 0, scratch = 0;
     GLint screen_uniform = 0, origin_uniform = 0, zoom_uniform = 0;
+    std::set<GLuint> image_textures;
     int atlas_x = 0, atlas_y = 0, atlas_row = 0, image_x = 0, image_y = 0, image_row = 0;
     std::set<GLuint> buffers;
     std::set<cairo_scaled_font_t*> fonts;
@@ -428,6 +429,8 @@ void main() {
             glDeleteVertexArrays(1, &vao);
             glDeleteTextures(1, &atlas);
             glDeleteTextures(1, &images);
+            for (const auto texture : image_textures)
+                glDeleteTextures(1, &texture);
             glDeleteProgram(program);
             glXMakeCurrent(display, None, nullptr);
             glXDestroyContext(display, context);
@@ -509,8 +512,32 @@ void GpuRenderer::upload(GpuMesh& mesh, const std::vector<PlacedText>& text,
     mesh.vertices = static_cast<int>(vertices.size());
 }
 
+void GpuRenderer::upload_image(GpuMesh& mesh, cairo_surface_t* surface, CanvasRect bounds)
+{
+    release(mesh);
+    upload(mesh, {}, {{{0, 0, 1, 1}, bounds}});
+    glGenTextures(1, &mesh.texture);
+    impl->image_textures.insert(mesh.texture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, mesh.texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    cairo_surface_flush(surface);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, cairo_image_surface_get_stride(surface) / 4);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, cairo_image_surface_get_width(surface),
+                 cairo_image_surface_get_height(surface), 0, GL_BGRA, GL_UNSIGNED_BYTE,
+                 cairo_image_surface_get_data(surface));
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+}
+
 void GpuRenderer::release(GpuMesh& mesh)
 {
+    if (mesh.texture) {
+        glDeleteTextures(1, &mesh.texture);
+        impl->image_textures.erase(mesh.texture);
+    }
     if (mesh.buffer) {
         glDeleteBuffers(1, &mesh.buffer);
         impl->buffers.erase(mesh.buffer);
@@ -595,6 +622,8 @@ void GpuRenderer::draw(const GpuMesh& mesh, Vec2 origin, double zoom)
         return;
     glUniform2f(impl->origin_uniform, static_cast<float>(origin.x), static_cast<float>(origin.y));
     glUniform1f(impl->zoom_uniform, static_cast<float>(zoom));
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, mesh.texture ? mesh.texture : impl->images);
     impl->bind(mesh.buffer);
     glDrawArrays(GL_TRIANGLES, 0, mesh.vertices);
 }

@@ -36,6 +36,50 @@ struct ApplicationTestAccess {
         app.chat->disabled = true;
     }
 
+    static void check_images(const std::filesystem::path& root)
+    {
+        std::filesystem::create_directories(root / "assets");
+        auto* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1200, 600);
+        auto* cr = cairo_create(surface);
+        cairo_set_source_rgba(cr, 1, 0, 0, 0.5);
+        cairo_paint(cr);
+        cairo_surface_write_to_png(surface, (root / "assets/photo.PNG").c_str());
+        cairo_destroy(cr);
+        cairo_surface_destroy(surface);
+        std::ofstream(root / "assets/vector.svg")
+            << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"80\" height=\"40\">"
+               "<rect width=\"80\" height=\"40\" fill=\"blue\"/></svg>";
+        std::ofstream(root / "broken.jpg") << "invalid image";
+        Application app(root.string());
+        expect(app.initialize(), "Image workspace must initialize");
+        auto found = std::find_if(app.panels.begin(), app.panels.end(), [](const auto& panel) {
+            return panel.path == "assets/photo.PNG";
+        });
+        expect(found != app.panels.end() && found->image && found->mesh.texture &&
+                   found->image_size.x == 640 && found->image_size.y == 320 &&
+                   found->source.empty() && found->lines.empty(),
+               "Binary images in assets must render with aspect ratio and no text content");
+        const auto vector =
+            std::find_if(app.panels.begin(), app.panels.end(),
+                         [](const auto& panel) { return panel.path == "assets/vector.svg"; });
+        expect(vector != app.panels.end() && vector->mesh.texture && vector->image_size.x == 80,
+               "SVG files must render as images instead of XML text");
+        app.draw();
+        const auto height = found->bounds.size.y;
+        app.replace_source(static_cast<int>(found - app.panels.begin()),
+                           read_project(root.string()).at("assets/photo.PNG"));
+        expect(found->mesh.texture && found->bounds.size.y == height,
+               "Live image replacement must retain image geometry");
+        const auto broken =
+            std::find_if(app.panels.begin(), app.panels.end(),
+                         [](const auto& panel) { return panel.path == "broken.jpg"; });
+        expect(broken != app.panels.end() && broken->image && !broken->mesh.texture &&
+                   broken->mesh.vertices > 0,
+               "Corrupt images must show an error card without failing workspace loading");
+        std::filesystem::remove_all(root / "assets");
+        std::filesystem::remove(root / "broken.jpg");
+    }
+
     static void check_default()
     {
         Application app;
@@ -155,6 +199,7 @@ int main()
             (root / "bin").string() + ":" + (environment_path ? environment_path : "");
         setenv("PATH", path.c_str(), 1);
         ApplicationTestAccess::check_picker(root);
+        ApplicationTestAccess::check_images(root);
         std::cout << "Own source default, directory arguments, overrides, compilation databases, "
                      "empty workspace and Ctrl+O picker passed.\n";
     } catch (const std::exception& error) {

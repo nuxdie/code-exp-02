@@ -353,6 +353,7 @@ class Application {
     PangoLayout* make_line(const std::string& line, const std::vector<Token>& tokens);
     SourcePanel make_panel(const std::string& path, const std::string& text);
     void update_mesh(SourcePanel& panel);
+    void load_image_panel(SourcePanel& panel, const std::string& bytes, int title_width);
     void relayout();
     void load_project();
     void poll_project();

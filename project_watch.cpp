@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cctype>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -20,8 +21,8 @@ bool excluded_directory(const std::filesystem::path& path)
 {
     for (const auto& part : path) {
         const auto name = part.string();
-        if (name == ".git" || name == ".cache" || name == "assets" || name == "fonts" ||
-            name == "__pycache__" || name.compare(0, 5, "build") == 0)
+        if (name == ".git" || name == ".cache" || name == "fonts" || name == "__pycache__" ||
+            name.compare(0, 5, "build") == 0)
             return true;
     }
     return false;
@@ -58,6 +59,15 @@ void drain_fd(int fd)
 }
 } // namespace
 
+bool project_image(const std::string& path)
+{
+    auto extension = std::filesystem::path(path).extension().string();
+    std::transform(extension.begin(), extension.end(), extension.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    static const std::set<std::string> images{".png",  ".jpg", ".jpeg", ".gif",  ".bmp",
+                                              ".webp", ".svg", ".tif",  ".tiff", ".ico"};
+    return images.count(extension) != 0;
+}
 bool project_source(const std::string& path)
 {
     if (excluded_directory(path))
@@ -67,8 +77,9 @@ bool project_source(const std::string& path)
     static const std::set<std::string> extensions{".cpp",  ".h",  ".hpp",   ".cc", ".cxx",
                                                   ".c",    ".in", ".cmake", ".py", ".yml",
                                                   ".yaml", ".md", ".tex"};
-    return name == "CMakeLists.txt" || name == ".clang-format" || name == ".clang-tidy" ||
-           name == ".cmake-format.json" || extensions.count(file.extension().string()) != 0;
+    return project_image(path) || name == "CMakeLists.txt" || name == ".clang-format" ||
+           name == ".clang-tidy" || name == ".cmake-format.json" ||
+           extensions.count(file.extension().string()) != 0;
 }
 ProjectSnapshot read_project(const std::string& root)
 {
@@ -79,7 +90,7 @@ ProjectSnapshot read_project(const std::string& root)
         std::ifstream file(std::filesystem::path(root) / path, std::ios::binary);
         if (file) {
             std::string text{std::istreambuf_iterator<char>(file), {}};
-            if (text.find('\0') == std::string::npos)
+            if (project_image(path.string()) || text.find('\0') == std::string::npos)
                 snapshot.emplace(path.string(), std::move(text));
         }
     }
