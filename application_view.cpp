@@ -60,6 +60,7 @@ void Application::draw()
     draw_headers(view);
     draw_intent_badges();
     draw_fold_toggle();
+    draw_walkthrough();
     draw_agent_activity();
     draw_conversation();
     draw_intent();

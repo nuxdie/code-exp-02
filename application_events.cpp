@@ -27,7 +27,9 @@ void Application::handle_event(const XEvent& event)
         handle_button(event);
         break;
     case MotionNotify:
-        handle_motion(event);
+        if (!walkthrough_event(event, {static_cast<double>(event.xmotion.x),
+                                       static_cast<double>(event.xmotion.y)}))
+            handle_motion(event);
         break;
     case ButtonRelease:
         if (event.xbutton.button == drag_button)
@@ -65,6 +67,8 @@ void Application::handle_button(const XEvent& event)
     const auto view = viewport();
     mouse_position = pointer;
     redraw = true;
+    if (walkthrough_event(event, pointer))
+        return;
     if (navigation_button(event.xbutton.button))
         return;
     if (close_window_button(event, pointer)) {
@@ -232,6 +236,7 @@ void Application::handle_release(const XEvent& event)
         show_outline(dragged_panel);
     }
     dragged_panel = -1;
+    dragged_walkthrough_step = -1;
     if (chat) {
         chat->dragging = false;
         chat->scrolling = false;

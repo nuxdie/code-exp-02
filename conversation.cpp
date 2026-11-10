@@ -1,4 +1,5 @@
 #include "conversation.h"
+#include "canvas_tools.h"
 
 #include <algorithm>
 
@@ -312,8 +313,10 @@ bool Conversation::submit(const std::string& text)
     error.clear();
     submitted = text;
     if (thread_id.empty())
-        request("thread/start",
-                {{"cwd", root}, {"approvalPolicy", "never"}, {"sandbox", "danger-full-access"}});
+        request("thread/start", {{"cwd", root},
+                                 {"approvalPolicy", "never"},
+                                 {"sandbox", "danger-full-access"},
+                                 {"dynamicTools", canvas_tools()}});
     else
         send_prompt();
     return true;

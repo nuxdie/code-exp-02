@@ -2830,6 +2830,52 @@
         "kind": "reviewed_checkpoint",
         "precision": "selected_diff"
       }
+    },
+    {
+      "id": "decision-01a1c507-e50c-75a3-b0fe-a58aeed944fe",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c507-e50c-75a3-b0fe-a58aeed944fe",
+        "thread_id": "01a1c507-dfa1-7493-bdf6-fc34ba16385a",
+        "turn_id": "01a1c507-dfc2-7d71-8660-d384f5e256bd"
+      },
+      "statement": "i want for agent to be able to show me bits and pieces together close. to for example if i ask it to show me how something is wired, it woulbe be able to command the layout and string together several pieces of code on screen so its clear to me what flows where and why and how",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T10:36:31.388180+00:00",
+      "statement_hash": "2676974b554a8c4fa9c8765ae471b014e36f5958d5b0094a196340f9df6d992b",
+      "artifacts": [
+        "CMakeLists.txt",
+        "README.md",
+        "application.cpp",
+        "application.h",
+        "application_chat.cpp",
+        "application_events.cpp",
+        "application_session.cpp",
+        "application_view.cpp",
+        "application_walkthrough.cpp",
+        "application_walkthrough_input.cpp",
+        "application_walkthrough_view.cpp",
+        "canvas_tools.cpp",
+        "canvas_tools.h",
+        "code_walkthrough.h",
+        "conversation.cpp",
+        "tests/conversation_test.cpp",
+        "tests/walkthrough_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Expose a native canvas walkthrough tool so agents can assemble live source excerpts with numbered explanations, explicit layouts and labeled flow arrows. Keep original source cards intact and support navigation, dragging, validation and session restore.",
+        "author_role": "agent",
+        "basis": "implementation_explanation",
+        "recorded_at": "2026-11-10T10:49:44.870292+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
     }
   ]
 }

@@ -76,6 +76,8 @@ void Application::poll_agent_window()
         return;
     if (chat->client) {
         for (const auto& message : chat->client->take_messages()) {
+            if (handle_canvas_tool(message))
+                continue;
             const auto title = chat->conversation.title;
             chat->conversation.receive(message);
             receive_agent_activity(message);

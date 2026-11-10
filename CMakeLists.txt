@@ -151,7 +151,10 @@ foreach(source_path IN LISTS VIEWER_SOURCES)
     )
 endforeach()
 
-add_library(agent_connection agent_client.cpp conversation.cpp text_input.cpp)
+add_library(
+    agent_connection agent_client.cpp conversation.cpp text_input.cpp
+                     canvas_tools.cpp
+)
 target_compile_features(agent_connection PUBLIC cxx_std_17)
 target_include_directories(
     agent_connection PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -207,6 +210,9 @@ add_library(
     application_search_input.cpp
     application_search_view.cpp
     application_shortcuts.cpp
+    application_walkthrough.cpp
+    application_walkthrough_view.cpp
+    application_walkthrough_input.cpp
     application_agent_windows.cpp
     application_agent_context.cpp
     application_agent_menu.cpp
@@ -360,6 +366,10 @@ if(BUILD_TESTING)
         add_test(NAME selection COMMAND selection_tests)
     endif()
     set_tests_properties(selection PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30)
+    add_executable(walkthrough_tests tests/walkthrough_test.cpp)
+    target_link_libraries(walkthrough_tests PRIVATE application_core)
+    add_test(NAME walkthrough COMMAND walkthrough_tests)
+    set_tests_properties(walkthrough PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30)
     add_executable(agent_windows_tests tests/agent_windows_test.cpp)
     add_executable(search_tests tests/search_test.cpp)
     target_link_libraries(search_tests PRIVATE application_core)
@@ -468,6 +478,7 @@ if(BUILD_TESTING)
         agent_activity_tests
         selection_tests
         agent_windows_tests
+        walkthrough_tests
         search_tests
         navigation_tests
         cmake_canvas_tests

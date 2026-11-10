@@ -120,6 +120,10 @@ The agent bridge expects an authenticated local Codex installation available as 
 
 New canvas threads currently run with full filesystem access and no approval prompts.
 
+Ask a new canvas conversation to **“show me how this is wired”**. Its `canvas_walkthrough` tool can arrange up to twelve focused source excerpts together, including multiple ranges from one file, with numbered steps, explanations, and labeled arrows. It controls horizontal, vertical, grid, or explicit positions and can focus or clear the walkthrough. Drag excerpt titles to adjust the layout, click code to open its original source line, or middle-click the walkthrough to dismiss it. Excerpts show live source at the specified line ranges, and the walkthrough survives session reloads. Ranges follow line numbers; review them after edits that move code.
+
+The tool is registered when a thread is created and retained when that thread resumes, using the [Codex app-server dynamic tool protocol](https://learn.chatgpt.com/docs/app-server#dynamic-tool-calls-experimental). Conversations created before this feature need a new thread to use it.
+
 To browse the source with agent connections disabled:
 
 ```bash

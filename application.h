@@ -3,6 +3,7 @@
 #include "agent_client.h"
 #include "canvas_selection.h"
 #include "chat_canvas.h"
+#include "code_walkthrough.h"
 #include "conversation.h"
 #include "directory_picker.h"
 #include "document_view.h"
@@ -72,6 +73,8 @@ class Application {
     std::unique_ptr<ChatCanvas> chat;
     std::vector<std::unique_ptr<ChatCanvas>> chat_windows;
     std::unique_ptr<IntentCanvas> intent;
+    std::unique_ptr<CodeWalkthrough> walkthrough;
+    int dragged_walkthrough_step = -1;
     lsp::Json intent_session = lsp::Json::object();
     std::unique_ptr<SystemTheme> system_theme;
     XIM input_method = nullptr;
@@ -257,6 +260,16 @@ class Application {
     bool canvas_shortcut_key(const XEvent& event);
     void show_shortcuts();
     bool shortcuts_key(KeySym key);
+    bool handle_canvas_tool(const lsp::Json& message);
+    void show_walkthrough(const lsp::Json& specification, bool restoring = false);
+    void release_walkthrough();
+    void focus_walkthrough();
+    void prepare_walkthrough(bool arrange);
+    void prepare_walkthrough_step(WalkthroughStep& step, std::size_t index);
+    void draw_walkthrough();
+    bool walkthrough_event(const XEvent& event, Vec2 pointer);
+    void drag_walkthrough(Vec2 pointer);
+    lsp::Json save_walkthrough();
     void poll_agent_window();
     void start_agent_windows();
     ChatCanvas* chat_at(Vec2 pointer);

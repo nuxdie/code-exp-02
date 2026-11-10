@@ -24,6 +24,14 @@ void Application::load_session()
     if (!state.is_object() || state.value("root", "") != workspace_root)
         return;
     try {
+        const auto saved_walkthrough = state.value("walkthrough", lsp::Json());
+        if (saved_walkthrough.is_object()) {
+            try {
+                show_walkthrough(saved_walkthrough, true);
+            } catch (const std::exception&) {
+                // Invalid walkthroughs must not block restoration of the rest of the session.
+            }
+        }
         intent_session = state.value("intent", lsp::Json::object());
         const auto saved_search = state.value("globalSearch", lsp::Json::object());
         search.query.set(saved_search.value("query", ""));
@@ -115,6 +123,7 @@ void Application::save_session()
          {"originThread", origin ? origin : ""},
          {"globalSearch", {{"query", search.query.text}, {"active", search.active}}},
          {"additionalAgents", additional},
+         {"walkthrough", save_walkthrough()},
          {"camera", {{"x", camera.center.x}, {"y", camera.center.y}, {"zoom", camera.zoom}}},
          {"cameraHistory", save_navigation()},
          {"window", {{"x", x}, {"y", y}, {"width", width}, {"height", height}}},

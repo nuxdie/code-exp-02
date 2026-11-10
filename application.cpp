@@ -254,6 +254,7 @@ Application::~Application()
         cairo_surface_destroy(surface);
     if (window_destroyed && renderer)
         renderer->window_destroyed();
+    release_walkthrough();
     renderer.reset();
     XCloseDisplay(display);
 }
