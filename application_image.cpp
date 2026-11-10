@@ -19,13 +19,8 @@ void Application::load_image_panel(SourcePanel& panel, const std::string& bytes,
     const bool closed = gdk_pixbuf_loader_close(loader, written ? &error : nullptr);
     auto* decoded = written && closed ? gdk_pixbuf_loader_get_pixbuf(loader) : nullptr;
     if (!decoded) {
-        const std::string message = "Cannot display image: " +
-                                    std::string(error ? error->message : "unsupported image data");
-        auto* label = make_line(message, {});
-        panel.bounds.size = {std::max(480.0, double(title_width)),
-                             double(header_height + line_height)};
-        renderer->upload(panel.mesh, {{label, {0, double(header_height)}}});
-        g_object_unref(label);
+        panel.image_error = "Cannot display image: " +
+                            std::string(error ? error->message : "unsupported image data");
     } else {
         auto* pixels = gdk_pixbuf_apply_embedded_orientation(decoded);
         const int width = gdk_pixbuf_get_width(pixels), height = gdk_pixbuf_get_height(pixels);
@@ -47,13 +42,26 @@ void Application::load_image_panel(SourcePanel& panel, const std::string& bytes,
         cairo_surface_mark_dirty(surface);
         const double scale = std::min(1.0, 640.0 / std::max(width, height));
         panel.image_size = {width * scale, height * scale};
-        panel.bounds.size = {std::max(double(title_width), panel.image_size.x),
-                             header_height + panel.image_size.y};
-        renderer->upload_image(panel.mesh, surface, {{0, double(header_height)}, panel.image_size});
+        renderer->upload_image(panel.mesh, surface, {{0, 0}, panel.image_size});
         cairo_surface_destroy(surface);
         g_object_unref(pixels);
     }
     if (error)
         g_error_free(error);
     g_object_unref(loader);
+    update_image_geometry(panel, title_width);
+}
+
+void Application::update_image_geometry(SourcePanel& panel, int title_width)
+{
+    if (panel.image_error.empty()) {
+        panel.bounds.size = {std::max(double(title_width), panel.image_size.x),
+                             header_height + panel.image_size.y};
+    } else {
+        auto* label = make_line(panel.image_error, {});
+        panel.bounds.size = {std::max(480.0, double(title_width)),
+                             double(header_height + line_height)};
+        renderer->upload(panel.mesh, {{label, {0, 0}}});
+        g_object_unref(label);
+    }
 }

@@ -154,7 +154,10 @@ void Application::show_options(bool settings)
     if (settings)
         text = "Settings · Appearance\n" + std::string(appearance == "system" ? "● " : "○ ") +
                "System [1]\n" + (appearance == "light" ? "● " : "○ ") + "Light [2]\n" +
-               (appearance == "dark" ? "● " : "○ ") + "Dark [3]\nBack [Esc]";
+               (appearance == "dark" ? "● " : "○ ") + "Dark [3]\n\nMonospace font\n" +
+               (monospace_font == MonospaceFont::JetBrains ? "● " : "○ ") + "JetBrains Mono [4]\n" +
+               (monospace_font == MonospaceFont::Victor ? "● " : "○ ") +
+               "Victor Mono [5]\nBack [Esc]";
     show_popup(text, {std::max(0.0, (width - 400.0) / 2), std::max(0.0, (height - 240.0) / 2)});
     options_page = settings ? OptionsPage::Settings : OptionsPage::Options;
 }
@@ -174,7 +177,11 @@ void Application::options_action(int row)
             renderer->set_dark_theme(appearance == "system" ? desktop_dark : appearance == "dark");
             schedule_save();
             show_options(true);
-        } else if (row == 4)
+        } else if (row == 6 || row == 7) {
+            set_monospace_font(row == 6 ? MonospaceFont::JetBrains : MonospaceFont::Victor);
+            schedule_save();
+            show_options(true);
+        } else if (row == 8)
             show_options();
     }
 }
@@ -193,6 +200,8 @@ bool Application::options_key(KeySym key)
             options_action(2);
     } else if (key >= XK_1 && key <= XK_3)
         options_action(static_cast<int>(key - XK_1) + 1);
+    else if (key == XK_4 || key == XK_5)
+        options_action(key == XK_4 ? 6 : 7);
     return true;
 }
 
@@ -230,7 +239,7 @@ void Application::style_shortcuts(int layout_width)
         add(pango_attr_foreground_new(0x2300, 0x4400, 0x6a00), span.begin, span.length);
     }
     for (const auto& [begin, length] : popup_inline_code) {
-        add(pango_attr_family_new("JetBrains Mono"), begin, length);
+        add(pango_attr_family_new(monospace_family()), begin, length);
         add(pango_attr_size_new_absolute(12 * PANGO_SCALE), begin, length);
         add(pango_attr_weight_new(PANGO_WEIGHT_MEDIUM), begin, length);
     }

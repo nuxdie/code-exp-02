@@ -87,6 +87,11 @@ class Application {
     enum class OptionsPage { Closed, Options, Settings };
     OptionsPage options_page = OptionsPage::Closed;
     std::string appearance = "system";
+    enum class MonospaceFont { JetBrains, Victor };
+    MonospaceFont monospace_font = MonospaceFont::JetBrains;
+    const char* monospace_family() const;
+    void set_monospace_font(MonospaceFont font);
+    void configure_source_font();
     bool desktop_dark = false;
     Clock::time_point save_due = Clock::time_point::max();
     std::unique_ptr<GpuRenderer> renderer;
@@ -362,13 +367,14 @@ class Application {
     SourcePanel make_panel(const std::string& path, const std::string& text);
     void update_mesh(SourcePanel& panel);
     void load_image_panel(SourcePanel& panel, const std::string& bytes, int title_width);
+    void update_image_geometry(SourcePanel& panel, int title_width);
     void relayout();
     void load_project();
     void poll_project();
     void release_panel(SourcePanel& panel);
     void replace_source(int index, const std::string& source);
     void apply_project_change(const ProjectChange& change);
-    void refresh_project_geometry();
+    void refresh_project_geometry(bool settle = true);
     void apply_styles(SourcePanel& panel);
     Viewport viewport();
     void hide_popup();

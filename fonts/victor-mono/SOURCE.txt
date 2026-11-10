@@ -1,0 +1,3 @@
+Victor Mono, version 1.560
+https://github.com/rubjo/victor-mono/blob/a5d059ff7a098a4c63ca74ab4c9ff8b9876534bf/public/VictorMonoAll.zip
+Regular, Bold, Italic, and Bold Italic TrueType faces from the TTF directory.

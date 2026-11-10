@@ -109,7 +109,9 @@ void Application::draw_files(const Viewport& view)
         }
         draw_source_selection(panel, origin);
         // One cached GPU mesh per file; navigation only updates uniforms.
-        renderer->draw(panel.mesh, origin, camera.zoom);
+        const Vec2 mesh_origin{origin.x,
+                               origin.y + (panel.image ? header_height * camera.zoom : 0)};
+        renderer->draw(panel.mesh, mesh_origin, camera.zoom);
     }
 }
 
@@ -325,7 +327,7 @@ void Application::rebuild_connections()
 void Application::add_popup_syntax(PangoAttrList* attributes, const std::string& text,
                                    std::size_t offset, HighlightState& state)
 {
-    auto* description = pango_font_description_from_string("JetBrains Mono");
+    auto* description = pango_font_description_from_string(monospace_family());
     pango_font_description_set_absolute_size(description, 14 * PANGO_SCALE);
     auto* font = pango_attr_font_desc_new(description);
     pango_font_description_free(description);
@@ -379,7 +381,7 @@ void Application::style_document_spans(PangoAttrList* attributes,
 void Application::configure_document(PangoLayout* layout, const PopupDocument& document,
                                      int layout_width, bool prose)
 {
-    auto* font = pango_font_description_from_string(prose ? "Noto Serif" : "JetBrains Mono");
+    auto* font = pango_font_description_from_string(prose ? "Noto Serif" : monospace_family());
     pango_font_description_set_absolute_size(font, (prose ? 17 : 14) * PANGO_SCALE);
     pango_layout_set_font_description(layout, font);
     pango_font_description_free(font);

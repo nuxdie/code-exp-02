@@ -3154,6 +3154,51 @@
         "kind": "reviewed_checkpoint",
         "precision": "selected_diff"
       }
+    },
+    {
+      "id": "decision-01a1c797-a491-7b42-b899-7596a437b984",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c797-a491-7b42-b899-7596a437b984",
+        "thread_id": "01a1c797-9e0a-77b0-acae-9b50f8341e45",
+        "turn_id": "01a1c797-9e8f-7010-8169-4ed3cb9130c0"
+      },
+      "statement": "can we also add a victor mono set in addition to jetbrains? and allow switching between in settings?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T22:32:46.496077+00:00",
+      "statement_hash": "4aee0708cc3d3a979459d3f3bf8c13557e4cff98f0318ec5befa3e884e92a6e0",
+      "artifacts": [
+        "CMakeLists.txt",
+        "README.md",
+        "application.cpp",
+        "application.h",
+        "application_image.cpp",
+        "application_live.cpp",
+        "application_session.cpp",
+        "application_shortcuts.cpp",
+        "application_view.cpp",
+        "fonts/victor-mono/OFL.txt",
+        "fonts/victor-mono/SOURCE.txt",
+        "fonts/victor-mono/VictorMono-Bold.ttf",
+        "fonts/victor-mono/VictorMono-BoldItalic.ttf",
+        "fonts/victor-mono/VictorMono-Italic.ttf",
+        "fonts/victor-mono/VictorMono-Regular.ttf",
+        "source_panel.h",
+        "tests/search_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Bundle Victor Mono and make the canvas monospace font selectable in Settings so users can switch between it and JetBrains Mono.",
+        "author_role": "agent",
+        "basis": "user_request"
+      },
+      "association": {
+        "kind": "explicit_artifact_binding",
+        "precision": "file"
+      }
     }
   ]
 }

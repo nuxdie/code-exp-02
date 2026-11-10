@@ -12,6 +12,7 @@ struct SourcePanel {
     std::string source;
     bool image = false;
     Vec2 image_size;
+    std::string image_error;
     bool cpp = false, cmake = false;
     int version = 1;
     RsvgHandle* icon = nullptr;

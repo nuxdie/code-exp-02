@@ -207,4 +207,4 @@ The repository's commit hook requires an `Intent-ID` trailer linked to a recorde
 
 ### Credits
 
-Typography: [JetBrains Mono](fonts/OFL.txt) and [Noto Serif](fonts/noto-serif/LICENSE). File icons: [vscode-icons](assets/vscode-icons/LICENSE). Their source and license files are included alongside the assets.
+Typography: [JetBrains Mono](fonts/OFL.txt), [Victor Mono](fonts/victor-mono/OFL.txt), and [Noto Serif](fonts/noto-serif/LICENSE). File icons: [vscode-icons](assets/vscode-icons/LICENSE). Their source and license files are included alongside the assets.

@@ -224,6 +224,30 @@ struct ApplicationTestAccess {
                          app.popup_bounds.origin.y + 12 + (row.y + row.height / 2.0) / PANGO_SCALE};
         app.popup_button(click, point, true);
         expect(app.appearance == "dark", "Settings rows must also respond to mouse clicks");
+        const auto& panel = app.panels.front();
+        const auto origin = panel.bounds.origin;
+        const auto source_family = [&] {
+            auto* layout = panel.lines.front();
+            auto* font = pango_context_load_font(pango_layout_get_context(layout),
+                                                 pango_layout_get_font_description(layout));
+            expect(font, "The selected source font must be available");
+            auto* description = pango_font_describe(font);
+            const std::string family = pango_font_description_get_family(description);
+            pango_font_description_free(description);
+            g_object_unref(font);
+            return family;
+        };
+        key(app, XK_5);
+        expect(source_family() == "Victor Mono" && panel.bounds.origin.x == origin.x &&
+                   panel.bounds.origin.y == origin.y,
+               "Switching fonts must update open source layouts in place");
+        app.draw();
+        expect(std::string(pango_font_description_get_family(
+                   pango_layout_get_font_description(app.popup_layout))) == "Victor Mono",
+               "Settings must redraw in the selected font");
+        key(app, XK_4);
+        expect(source_family() == "JetBrains Mono", "Settings must switch back to JetBrains Mono");
+        key(app, XK_5);
         key(app, XK_Escape);
         expect(app.options_page == Application::OptionsPage::Options,
                "Escape from Settings must return to Options");
@@ -233,9 +257,11 @@ struct ApplicationTestAccess {
         app.chat->disabled = false;
         app.save_session();
         app.appearance = "system";
+        app.set_monospace_font(Application::MonospaceFont::JetBrains);
         app.load_session();
         app.chat->disabled = true;
         expect(app.appearance == "dark", "Appearance must survive a session reload");
+        expect(source_family() == "Victor Mono", "The selected font must survive a session reload");
     }
     static void run(Application& app, const std::filesystem::path& root)
     {

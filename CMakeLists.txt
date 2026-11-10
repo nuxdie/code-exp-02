@@ -74,8 +74,18 @@ endif()
 file(COPY fonts/noto-serif DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/fonts")
 file(COPY assets DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
-foreach(font_file JetBrainsMono-Regular.ttf JetBrainsMono-Bold.ttf
-                  JetBrainsMono-Italic.ttf OFL.txt
+foreach(
+    font_file
+    JetBrainsMono-Regular.ttf
+    JetBrainsMono-Bold.ttf
+    JetBrainsMono-Italic.ttf
+    OFL.txt
+    victor-mono/VictorMono-Regular.ttf
+    victor-mono/VictorMono-Bold.ttf
+    victor-mono/VictorMono-Italic.ttf
+    victor-mono/VictorMono-BoldItalic.ttf
+    victor-mono/OFL.txt
+    victor-mono/SOURCE.txt
 )
     configure_file("fonts/${font_file}" "fonts/${font_file}" COPYONLY)
 endforeach()

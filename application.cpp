@@ -25,9 +25,11 @@ bool Application::initialize()
         std::cerr << "Could not locate the executable: " << path_error.message() << '\n';
         return false;
     }
-    for (const char* face : {"Regular", "Bold", "Italic"}) {
-        const auto path =
-            executable.parent_path() / "fonts" / (std::string("JetBrainsMono-") + face + ".ttf");
+    for (const char* filename :
+         {"JetBrainsMono-Regular.ttf", "JetBrainsMono-Bold.ttf", "JetBrainsMono-Italic.ttf",
+          "victor-mono/VictorMono-Regular.ttf", "victor-mono/VictorMono-Bold.ttf",
+          "victor-mono/VictorMono-Italic.ttf", "victor-mono/VictorMono-BoldItalic.ttf"}) {
+        const auto path = executable.parent_path() / "fonts" / filename;
         if (!FcConfigAppFontAddFile(FcConfigGetCurrent(),
                                     reinterpret_cast<const FcChar8*>(path.c_str()))) {
             std::cerr << "Could not load bundled font: " << path << '\n';
@@ -78,25 +80,9 @@ bool Application::initialize()
     base_layout = pango_cairo_create_layout(cr);
     pango_cairo_context_set_font_options(pango_layout_get_context(base_layout), options);
     cairo_font_options_destroy(options);
-    PangoFontDescription* font = pango_font_description_from_string("JetBrains Mono");
-    pango_font_description_set_absolute_size(font, 16 * PANGO_SCALE);
-    pango_layout_set_font_description(base_layout, font);
-    pango_font_description_free(font);
     pango_layout_set_single_paragraph_mode(base_layout, TRUE);
     pango_layout_set_text(base_layout, "Ag", -1);
-
-    pango_layout_get_pixel_size(base_layout, nullptr, &font_height);
-
-    // Colors follow the order of the Syntax enum and stay readable on white.
-
-    line_height = font_height + 4;
-    header_height = line_height * 2;
-    for (std::size_t i = 0; i < fold_toggle_meshes.size(); ++i) {
-        const std::string marker = i == 0 ? "▾" : "▸";
-        auto* layout = make_line(marker, {{0, marker.size(), Syntax::Comment}});
-        renderer->upload(fold_toggle_meshes[i], {{layout, {0, 0}}});
-        g_object_unref(layout);
-    }
+    configure_source_font();
 
     system_theme = std::make_unique<SystemTheme>();
     initialize_workspace();
@@ -105,10 +91,6 @@ bool Application::initialize()
 
     popup_layout = pango_layout_copy(base_layout);
     pango_layout_set_single_paragraph_mode(popup_layout, FALSE);
-    auto* popup_font = pango_font_description_from_string("JetBrains Mono");
-    pango_font_description_set_absolute_size(popup_font, 14 * PANGO_SCALE);
-    pango_layout_set_font_description(popup_layout, popup_font);
-    pango_font_description_free(popup_font);
     pango_layout_set_wrap(popup_layout, PANGO_WRAP_WORD_CHAR);
     pango_layout_set_ellipsize(popup_layout, PANGO_ELLIPSIZE_NONE);
 
@@ -119,6 +101,66 @@ bool Application::initialize()
     XMapWindow(display, window);
 
     return true;
+}
+
+const char* Application::monospace_family() const
+{
+    return monospace_font == MonospaceFont::Victor ? "Victor Mono" : "JetBrains Mono";
+}
+
+void Application::configure_source_font()
+{
+    auto* font = pango_font_description_from_string(monospace_family());
+    pango_font_description_set_absolute_size(font, 16 * PANGO_SCALE);
+    pango_layout_set_font_description(base_layout, font);
+    pango_font_description_free(font);
+    pango_layout_get_pixel_size(base_layout, nullptr, &font_height);
+    line_height = font_height + 4;
+    header_height = line_height * 2;
+    for (std::size_t i = 0; i < fold_toggle_meshes.size(); ++i) {
+        const std::string marker = i == 0 ? "▾" : "▸";
+        auto* layout = make_line(marker, {{0, marker.size(), Syntax::Comment}});
+        renderer->upload(fold_toggle_meshes[i], {{layout, {0, 0}}});
+        g_object_unref(layout);
+    }
+}
+
+void Application::set_monospace_font(MonospaceFont font)
+{
+    if (font == monospace_font)
+        return;
+    monospace_font = font;
+    configure_source_font();
+    const auto* description = pango_layout_get_font_description(base_layout);
+    for (auto& panel : panels) {
+        pango_layout_set_font_description(panel.title, description);
+        int title_width = 0;
+        pango_layout_get_pixel_size(panel.title, &title_width, nullptr);
+        title_width += 32;
+        if (panel.image) {
+            update_image_geometry(panel, title_width);
+        } else {
+            int text_width = title_width;
+            for (auto* line : panel.lines) {
+                pango_layout_set_font_description(line, description);
+                int width = 0;
+                pango_layout_get_pixel_size(line, &width, nullptr);
+                text_width = std::max(text_width, width);
+            }
+            panel.bounds.size.x = text_width + 36;
+        }
+        renderer->release(panel.header_mesh);
+        update_mesh(panel);
+    }
+    ++document_generation;
+    cached_popup.clear();
+    refresh_project_geometry(false);
+    if (walkthrough) {
+        for (auto& step : walkthrough->steps)
+            renderer->release(step.code);
+        prepare_walkthrough(false);
+    }
+    redraw = true;
 }
 
 int Application::benchmark_run()

@@ -157,18 +157,20 @@ void Application::poll_project()
     redraw = true;
 }
 
-void Application::refresh_project_geometry()
+void Application::refresh_project_geometry(bool settle)
 {
     std::vector<GraphFile> files;
     file_sizes.clear();
     for (std::size_t i = 0; i < panels.size(); ++i) {
-        settle_panel(panels, i);
+        if (settle)
+            settle_panel(panels, i);
         const auto& panel = panels[i];
         files.push_back({panel.path, panel.source, panel.bounds.size});
         file_sizes.push_back(panel.bounds.size);
     }
     dependencies = file_dependencies(files);
-    graph.routes.clear();
+    if (settle)
+        graph.routes.clear();
     graph.files.clear();
     for (const auto& panel : panels)
         graph.files.push_back(panel.bounds);

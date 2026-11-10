@@ -28,6 +28,10 @@ void Application::load_session()
         if (appearance != "light" && appearance != "dark")
             appearance = "system";
         renderer->set_dark_theme(appearance == "system" ? desktop_dark : appearance == "dark");
+        set_monospace_font(state.contains("monospaceFont") &&
+                                   state["monospaceFont"] == "Victor Mono"
+                               ? MonospaceFont::Victor
+                               : MonospaceFont::JetBrains);
         const auto saved_walkthrough = state.value("walkthrough", lsp::Json());
         if (saved_walkthrough.is_object()) {
             try {
@@ -100,6 +104,7 @@ void Application::load_session()
 }
 void Application::save_session()
 {
+    save_due = Clock::time_point::max();
     if (!chat || chat->disabled || benchmark || window_destroyed ||
         std::getenv("SOURCE_CANVAS_DISABLE_SESSION"))
         return;
@@ -125,6 +130,7 @@ void Application::save_session()
     state.update(
         {{"root", workspace_root},
          {"appearance", appearance},
+         {"monospaceFont", monospace_family()},
          {"originThread", origin ? origin : ""},
          {"globalSearch", {{"query", search.query.text}, {"active", search.active}}},
          {"additionalAgents", additional},
@@ -146,7 +152,6 @@ void Application::save_session()
     const auto temporary = path.string() + ".tmp";
     std::ofstream(temporary) << state.dump(2);
     std::filesystem::rename(temporary, path, error);
-    save_due = Clock::time_point::max();
 }
 void Application::schedule_save()
 {
