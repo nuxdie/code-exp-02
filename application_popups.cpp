@@ -3,6 +3,7 @@
 
 void Application::hide_popup()
 {
+    options_page = OptionsPage::Closed;
     shortcuts_visible = false;
     if (!popup_text.empty())
         redraw = true;
@@ -21,6 +22,7 @@ void Application::hide_popup()
 
 void Application::show_popup(std::string text, Vec2 origin, bool syntax)
 {
+    options_page = OptionsPage::Closed;
     shortcuts_visible = false;
     auto document = popup_document(text, syntax);
     popup_text = std::move(document.text);

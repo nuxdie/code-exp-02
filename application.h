@@ -83,6 +83,10 @@ class Application {
     CanvasSelection text_selection;
     SearchCanvas search;
     bool shortcuts_visible = false;
+    enum class OptionsPage { Closed, Options, Settings };
+    OptionsPage options_page = OptionsPage::Closed;
+    std::string appearance = "system";
+    bool desktop_dark = false;
     Clock::time_point save_due = Clock::time_point::max();
     std::unique_ptr<GpuRenderer> renderer;
     Window window = 0;
@@ -258,6 +262,9 @@ class Application {
     bool search_button(const XEvent& event, Vec2 pointer);
     void paste_search(const XEvent& event);
     bool canvas_shortcut_key(const XEvent& event);
+    void show_options(bool settings = false);
+    bool options_key(KeySym key);
+    void options_action(int row);
     void show_shortcuts();
     bool shortcuts_key(KeySym key);
     bool handle_canvas_tool(const lsp::Json& message);

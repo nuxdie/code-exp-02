@@ -24,6 +24,10 @@ void Application::load_session()
     if (!state.is_object() || state.value("root", "") != workspace_root)
         return;
     try {
+        appearance = state.value("appearance", "system");
+        if (appearance != "light" && appearance != "dark")
+            appearance = "system";
+        renderer->set_dark_theme(appearance == "system" ? desktop_dark : appearance == "dark");
         const auto saved_walkthrough = state.value("walkthrough", lsp::Json());
         if (saved_walkthrough.is_object()) {
             try {
@@ -120,6 +124,7 @@ void Application::save_session()
     }
     state.update(
         {{"root", workspace_root},
+         {"appearance", appearance},
          {"originThread", origin ? origin : ""},
          {"globalSearch", {{"query", search.query.text}, {"active", search.active}}},
          {"additionalAgents", additional},

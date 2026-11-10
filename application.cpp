@@ -276,7 +276,8 @@ void Application::update_timers(Clock::time_point now)
     if (system_theme) {
         const auto dark = system_theme->take_change();
         if (dark) {
-            renderer->set_dark_theme(*dark);
+            desktop_dark = *dark;
+            renderer->set_dark_theme(appearance == "system" ? desktop_dark : appearance == "dark");
             redraw = true;
         }
     }

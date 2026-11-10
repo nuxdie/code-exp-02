@@ -42,9 +42,10 @@ void Application::handle_event(const XEvent& event)
         if (!drag_button) {
             mouse_position = {static_cast<double>(event.xcrossing.x),
                               static_cast<double>(event.xcrossing.y)};
-            popup_dismiss_due = search.active || shortcuts_visible
-                                    ? Clock::time_point::max()
-                                    : Clock::now() + std::chrono::milliseconds(300);
+            popup_dismiss_due =
+                search.active || shortcuts_visible || options_page != OptionsPage::Closed
+                    ? Clock::time_point::max()
+                    : Clock::now() + std::chrono::milliseconds(300);
             mouse_position = {-1, -1};
             redraw = true;
         }
@@ -163,7 +164,8 @@ void Application::handle_motion(const XEvent& event)
     mouse_position = pointer;
     redraw = true;
     update_cursor();
-    if ((search.active || shortcuts_visible) && !drag_button) {
+    if ((search.active || shortcuts_visible || options_page != OptionsPage::Closed) &&
+        !drag_button) {
         hover_due = popup_dismiss_due = Clock::time_point::max();
         return;
     }
@@ -268,6 +270,17 @@ void Application::handle_key(const XEvent& event)
         redraw = true;
         return;
     }
+    auto escape_event = event.xkey;
+    if (XLookupKeysym(&escape_event, 0) == XK_Escape) {
+        if (!popup_text.empty())
+            hide_popup();
+        else if (!drag_button)
+            show_options();
+        drag_button = 0;
+        XUngrabPointer(display, CurrentTime);
+        redraw = true;
+        return;
+    }
     schedule_save();
     hide_popup();
     auto key_event = event.xkey;
@@ -337,6 +350,18 @@ void Application::handle_key(const XEvent& event)
 
 bool Application::popup_button(const XEvent& event, Vec2 pointer, bool in_popup)
 {
+    if (in_popup && options_page != OptionsPage::Closed && event.xbutton.button == Button1) {
+        int index = 0, trailing = 0;
+        pango_layout_xy_to_index(
+            popup_layout, static_cast<int>((pointer.x - popup_bounds.origin.x - 12) * PANGO_SCALE),
+            static_cast<int>((pointer.y - popup_bounds.origin.y - 12 + popup_scroll) * PANGO_SCALE),
+            &index, &trailing);
+        const int row = static_cast<int>(std::count(
+            popup_text.begin(),
+            popup_text.begin() + std::clamp(index, 0, static_cast<int>(popup_text.size())), '\n'));
+        options_action(row);
+        return true;
+    }
     if (in_popup && (event.xbutton.button == Button4 || event.xbutton.button == Button5)) {
         if (!jump_rows.empty()) {
             list_offset += event.xbutton.button == Button4 ? -3 : 3;

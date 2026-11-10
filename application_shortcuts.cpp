@@ -14,7 +14,7 @@ void Application::show_shortcuts()
                "`↑ / ↓` or `Shift+Tab / Tab`\tchoose a search result\n"
                "`Page Up / Down`\tmove through search results\n"
                "`Enter`\tjump to the selected result\n"
-               "`Esc`\tclose search or this guide\n"
+               "`Esc`\tclose focused UI; on the canvas, open Options and Settings\n"
                "In this guide: arrows, Page Up/Down, Home/End or wheel scroll.\n\n"
                "## Canvas and camera\n"
                "`Wheel`\tsmooth zoom at the pointer\n"
@@ -103,6 +103,9 @@ bool Application::shortcuts_key(KeySym key)
 }
 bool Application::canvas_shortcut_key(const XEvent& event)
 {
+    auto options_event = event.xkey;
+    if (options_page != OptionsPage::Closed)
+        return options_key(XLookupKeysym(&options_event, 0));
     if (navigation_key(event))
         return true;
     auto key_event = event.xkey;
@@ -141,6 +144,56 @@ bool Application::canvas_shortcut_key(const XEvent& event)
         return shortcuts_key(key);
     }
     return false;
+}
+
+void Application::show_options(bool settings)
+{
+    text_selection = {};
+    hide_popup();
+    std::string text = "Options\nSettings [Enter / S]\nKeyboard shortcuts [? / F1]\nClose [Esc]";
+    if (settings)
+        text = "Settings · Appearance\n" + std::string(appearance == "system" ? "● " : "○ ") +
+               "System [1]\n" + (appearance == "light" ? "● " : "○ ") + "Light [2]\n" +
+               (appearance == "dark" ? "● " : "○ ") + "Dark [3]\nBack [Esc]";
+    show_popup(text, {std::max(0.0, (width - 400.0) / 2), std::max(0.0, (height - 240.0) / 2)});
+    options_page = settings ? OptionsPage::Settings : OptionsPage::Options;
+}
+
+void Application::options_action(int row)
+{
+    if (options_page == OptionsPage::Options) {
+        if (row == 1)
+            show_options(true);
+        else if (row == 2)
+            show_shortcuts();
+        else if (row == 3)
+            hide_popup();
+    } else if (options_page == OptionsPage::Settings) {
+        if (row >= 1 && row <= 3) {
+            appearance = row == 1 ? "system" : row == 2 ? "light" : "dark";
+            renderer->set_dark_theme(appearance == "system" ? desktop_dark : appearance == "dark");
+            schedule_save();
+            show_options(true);
+        } else if (row == 4)
+            show_options();
+    }
+}
+
+bool Application::options_key(KeySym key)
+{
+    if (key == XK_Escape) {
+        if (options_page == OptionsPage::Settings)
+            show_options();
+        else
+            hide_popup();
+    } else if (options_page == OptionsPage::Options) {
+        if (key == XK_Return || key == XK_KP_Enter || key == XK_s || key == XK_S)
+            options_action(1);
+        else if (key == XK_F1 || key == XK_question || key == XK_slash)
+            options_action(2);
+    } else if (key >= XK_1 && key <= XK_3)
+        options_action(static_cast<int>(key - XK_1) + 1);
+    return true;
 }
 
 void Application::style_shortcuts(int layout_width)
