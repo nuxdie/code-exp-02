@@ -75,7 +75,7 @@ std::string evidence_text(const Json& evidence)
                 "](" + path + ":" + std::to_string(evidence.value("line", 1)) + ") · " +
                 evidence.value("status", "") + "\n\n";
         if (evidence.value("decisions", Json::array()).empty())
-            text += "*No recorded human attribution for this line. No intent is inferred.*\n\n";
+            text += "*No recorded attribution for this line.*\n\n";
     }
     if (evidence.contains("token")) {
         text += "**Review frozen diff** · Later working edits will remain uncommitted.\n\n";
@@ -124,8 +124,7 @@ std::string overview_text(const Json& records, const std::string& path)
                 (linked ? " · checkpoint linked" : " · captured") + "*\n\n";
     }
     if (!count)
-        return path.empty() ? "No intents yet. Requests from your conversations will appear here."
-                            : "No intents are linked to this file yet.";
+        return path.empty() ? "No intents yet." : "No intents linked to this file.";
     return "**" + std::to_string(count) + (count == 1 ? " intent" : " intents") +
            "** · newest first\n\n" + text;
 }
@@ -172,6 +171,5 @@ std::string intent_document(const Json& records, const std::string& selected, co
     for (const auto& record : records)
         if (record.value("id", "") == selected)
             return decision_text(record);
-    return "No decisions recorded yet. Human messages are captured from the conversation; Git "
-           "checkpoints bind reviewed changes to them.";
+    return "No decisions recorded yet.";
 }

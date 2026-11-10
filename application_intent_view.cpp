@@ -59,23 +59,13 @@ void Application::draw_intent()
 }
 void Application::draw_intent_controls()
 {
-    if (intent->overview || intent->selected.empty()) {
-        update_document(intent->controls, "Select an intent · I or Alt+click code for line history",
-                        592, false);
-        renderer->draw(
-            intent->controls.mesh,
-            camera.world_to_screen({intent->bounds.origin.x + 24,
-                                    intent->bounds.origin.y + intent->bounds.size.y - 32},
-                                   viewport()),
-            camera.zoom);
+    if (intent->overview || intent->selected.empty())
         return;
-    }
     const auto controls =
         intent->token.empty()
             ? "[Add explanation](why:)   [Review changes](preview:)   [Commit intent "
-              "only](capture:)\nI or Alt+click source for line history"
-            : "[Commit reviewed changes](checkpoint:)   [Cancel preview](cancel:)\nThe preview is "
-              "frozen; later edits remain in the working tree.";
+              "only](capture:)"
+            : "[Commit reviewed changes](checkpoint:)   [Cancel preview](cancel:)";
     update_document(intent->controls, controls, static_cast<int>(intent->bounds.size.x - 48));
     renderer->draw(intent->controls.mesh,
                    camera.world_to_screen({intent->bounds.origin.x + 24,
