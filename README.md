@@ -55,7 +55,7 @@ Press `/` to search file names and source text. Results update as you type; use 
 | **Spatial source browsing** | Move file cards, fold blocks, fit the canvas, and arrange files with Graphviz. Toggle arrows for include and build dependencies. |
 | **Language navigation** | Inspect documentation, definitions, references, symbols, diagnostics, and completion suggestions through `clangd` and `neocmakelsp`. |
 | **Conversations beside the code** | Open an agent conversation at the pointer. The app attaches source location, selected text, and visible-file context. Keep multiple conversation cards on the canvas. |
-| **Human intent and history** | Browse recorded decisions, inspect a line's intent and diff, and associate reviewed Git checkpoints with a human statement and an explicit rationale. |
+| **Human intent and history** | Click a file's intent label for concise requests, then select one to read its explanation beside the code. Inspect line history and associate reviewed Git checkpoints with a human statement and an explicit rationale. |
 | **Live source updates** | Watch project files for changes. With agents enabled, the viewer can rebuild and restart itself while preserving session state. |
 | **Rich reading** | Read formatted documentation, code blocks, and LaTeX equations; select and copy text across source, conversations, and popups. The canvas follows the desktop theme. |
 
@@ -147,7 +147,7 @@ Start with **`/`** to find a file, **`F`** to see the whole canvas, and **`F1`**
 | Open a contextual conversation | Right-click or `Ctrl+Shift+A` |
 | Close a conversation, intent card, search, or popup | Middle-click it |
 | Focus the active conversation / send / insert newline | `Tab` or `Ctrl+L` / `Enter` / `Shift+Enter` |
-| Focus decisions / inspect a source line's intent | `D` / `I` or `Alt+click` |
+| Browse all intents / inspect a source line's intent | `D` / `I` or `Alt+click` |
 | Select / copy text | Drag / `Ctrl+C` |
 | Help / dismiss | `F1` or `?` / `Esc` |
 

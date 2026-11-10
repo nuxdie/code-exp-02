@@ -1182,7 +1182,7 @@
         "turn_id": "01a1c0af-1a0b-75e2-a51c-bdd0a8f81788",
         "message_id": "01a1c0bc-e2b0-7931-84cf-f068aef9fb1e",
         "turn_started_at": 1794234063,
-        "context": "I\u2019ll make source cards update immediately from disk. Should successful builds also reload the running viewer itself while preserving the conversation and view?"
+        "context": "I’ll make source cards update immediately from disk. Should successful builds also reload the running viewer itself while preserving the conversation and view?"
       },
       "recorded_at": "2026-11-09T15:50:12.531227+00:00",
       "status": "recorded",
@@ -2644,6 +2644,79 @@
       "recorded_at": "2026-11-10T00:01:28.340544+00:00",
       "statement_hash": "4f82e9ff6bafd4340e2c43ffe45d2f9d57b60593a923e05ef443c30738d9855d",
       "relations": []
+    },
+    {
+      "id": "decision-01a1c4fa-eebd-7260-b9e8-673d2ce0ac52",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c4fa-eebd-7260-b9e8-673d2ce0ac52",
+        "thread_id": "01a1c4fa-ea63-7181-8f56-251650feea90",
+        "turn_id": "01a1c4fa-ea73-7461-8d3e-f2ee1db4dd1d"
+      },
+      "statement": "i dont like the way we show intents. ",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T10:22:21.888144+00:00",
+      "statement_hash": "daac2884eaae1a3144950707700434f2ca6287ac41076cb571b439947f8924c6",
+      "artifacts": [],
+      "relations": [],
+      "rationale": {
+        "summary": "",
+        "author_role": "agent",
+        "basis": "not_recorded"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
+    },
+    {
+      "id": "decision-01a1c4fc-4139-7141-86be-4198ccd9fa70",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c4fc-4139-7141-86be-4198ccd9fa70",
+        "thread_id": "01a1c4fa-ea63-7181-8f56-251650feea90",
+        "turn_id": "01a1c4fa-ea73-7461-8d3e-f2ee1db4dd1d"
+      },
+      "statement": "concise intents, with details on selection beside the code they explain",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T10:23:48.540727+00:00",
+      "statement_hash": "c179a614650d235277d9e9a49831173de605af938f0b22a2589f711ab0bad4d5",
+      "artifacts": [
+        "CMakeLists.txt",
+        "README.md",
+        "application.h",
+        "application_events.cpp",
+        "application_file_links.cpp",
+        "application_intent.cpp",
+        "application_intent_badges.cpp",
+        "application_intent_input.cpp",
+        "application_intent_view.cpp",
+        "application_pointer.cpp",
+        "application_session.cpp",
+        "application_shortcuts.cpp",
+        "application_text_targets.cpp",
+        "application_view.cpp",
+        "intent_canvas.h",
+        "intent_document.cpp",
+        "intent_document.h",
+        "tests/intent_canvas_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Show concise request excerpts beside file titles, filter history by recorded artifact bindings, and reveal the full request, explanation, code links and Git evidence beside the relevant source on selection. Keep global history, line inspection, literal text selection and reviewed checkpoints; verify the native interactions and source attachment.",
+        "author_role": "agent",
+        "basis": "recorded_live"
+      },
+      "association": {
+        "kind": "explicit_artifact_binding",
+        "precision": "file"
+      }
     },
     {
       "id": "decision-01a1c501-e394-7c21-b93f-05b42c8a3758",

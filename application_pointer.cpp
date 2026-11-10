@@ -19,6 +19,12 @@ void Application::update_cursor()
             cursor = drag_cursor;
     } else if (viewport().contains(mouse_position) && over_text(mouse_position)) {
         cursor = text_link_at(mouse_position).empty() ? text_cursor : link_cursor;
+    } else if (intent && !search.active && popup_text.empty() && !chat_at(mouse_position)) {
+        for (const auto& badge : intent->badge_hits)
+            if (Viewport{badge.bounds.origin.x, badge.bounds.origin.y, badge.bounds.size.x,
+                         badge.bounds.size.y}
+                    .contains(mouse_position))
+                cursor = link_cursor;
     }
     if (cursor != active_cursor) {
         XDefineCursor(display, window, cursor);

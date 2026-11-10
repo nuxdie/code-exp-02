@@ -23,12 +23,11 @@ std::string link_at(const DocumentView& document, Vec2 point)
 } // namespace
 bool Application::intent_button(const XEvent& event, Vec2 pointer)
 {
-    if (!intent || !intent->placed || !intent->visible || drag_button ||
-        event.xbutton.button == Button2)
+    if (!intent || !intent->placed || drag_button || event.xbutton.button == Button2)
         return false;
     const auto world = camera.screen_to_world(pointer, viewport());
-    if (!inside(intent->bounds, world))
-        return false;
+    if (!intent->visible || !inside(intent->bounds, world))
+        return intent_badge_button(event, pointer);
     if (event.xbutton.button == Button4 || event.xbutton.button == Button5)
         intent->scroll += (event.xbutton.button == Button4 ? -70 : 70) / camera.zoom;
     if (event.xbutton.button == Button1) {
@@ -66,20 +65,26 @@ bool Application::intent_button(const XEvent& event, Vec2 pointer)
 void Application::intent_action(const std::string& action)
 {
     if (action == "all:") {
+        intent->path.clear();
         intent->overview = true;
         intent->evidence.clear();
+        intent->token.clear();
+        intent->editing = false;
+        intent->scroll = 0;
+        focus_intent();
+    } else if (action == "file:") {
+        intent->overview = true;
+        intent->evidence.clear();
+        intent->token.clear();
+        intent->editing = false;
         intent->scroll = 0;
     } else if (action == "conversation:")
         focus_chat();
     else if (action == "refresh:")
         intent_request("decisions/list");
-    else if (action.compare(0, 7, "intent:") == 0) {
-        intent->selected = action.substr(7);
-        intent->overview = false;
-        intent->evidence.clear();
-        intent->token.clear();
-        intent->scroll = 0;
-    } else if (action.compare(0, 7, "commit:") == 0)
+    else if (action.compare(0, 7, "intent:") == 0)
+        select_intent(action.substr(7));
+    else if (action.compare(0, 7, "commit:") == 0)
         intent_request("evidence/commit", {{"commit", action.substr(7)}});
     else if (action.compare(0, 5, "chat:") == 0)
         open_intent_conversation(action.substr(5));

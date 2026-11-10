@@ -116,6 +116,10 @@ TextTarget Application::text_at(Vec2 pointer)
                 camera.zoom};
         return {};
     }
+    if (intent)
+        for (const auto& badge : intent->badge_hits)
+            if (contains(badge.bounds, pointer))
+                return {};
     return source_text_target(pointer);
 }
 TextTarget Application::active_text_target()

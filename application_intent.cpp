@@ -19,7 +19,8 @@ void Application::initialize_intent()
     if (intent_session.contains("x")) {
         intent->bounds.origin = {intent_session.value("x", 0.0), intent_session.value("y", 0.0)};
         intent->selected = intent_session.value("selected", "");
-        intent->overview = intent_session.value("overview", false);
+        intent->overview = intent_session.value("overview", true);
+        intent->path = intent_session.value("path", "");
         intent->scroll = intent_session.value("scroll", 0.0);
     }
     intent->placed = true;
@@ -66,6 +67,7 @@ void Application::receive_intent(const lsp::Json& message)
     const auto result = message.value("result", lsp::Json::object());
     if (result.contains("decisions") && result.contains("working_paths")) {
         intent->records = result["decisions"];
+        rebuild_intent_index();
         intent->ready = true;
         intent->refresh = Clock::now() + std::chrono::seconds(3);
         for (const auto& record : intent->records)
@@ -115,6 +117,7 @@ void Application::focus_intent()
         return;
     remember_view();
     intent->visible = true;
+    anchor_intent();
     content_size.x = std::max(content_size.x, intent->bounds.origin.x + intent->bounds.size.x);
     content_size.y = std::max(content_size.y, intent->bounds.origin.y + intent->bounds.size.y);
     camera.zoom = std::clamp(
@@ -122,6 +125,15 @@ void Application::focus_intent()
         0.4, 1.0);
     camera.center = {intent->bounds.origin.x + intent->bounds.size.x / 2,
                      intent->bounds.origin.y + intent->bounds.size.y / 2};
+    for (const auto& panel : panels)
+        if (panel.path == intent->anchor_path) {
+            const double code_width = panel.bounds.size.x;
+            const double combined = code_width + 24 + intent->bounds.size.x;
+            camera.zoom = std::clamp(std::min(camera.zoom, (width - 64.0) / combined), 0.25, 1.0);
+            camera.center.x =
+                panel.bounds.origin.x + panel.bounds.size.x - code_width + combined / 2;
+            break;
+        }
     zoom_animation.cancel(camera);
     finish_view();
     chat->focused = false;
@@ -133,9 +145,13 @@ void Application::inspect_intent(Vec2 pointer)
     const auto hit = hit_test(pointer);
     if (hit.panel < 0 || hit.line < 0)
         return;
+    show_file_intents(
+        panels[hit.panel].path,
+        std::max(0.0, header_height +
+                          panels[hit.panel].folded.display_lines[hit.line] * line_height - 104.0));
     intent->overview = false;
+    intent->evidence.clear();
     intent_request("evidence/line", {{"path", panels[hit.panel].path}, {"line", hit.line + 1}});
-    focus_intent();
 }
 
 void Application::attribute_chat_entry(std::size_t index)
@@ -147,7 +163,9 @@ void Application::attribute_chat_entry(std::size_t index)
         return;
     if (entry.role == "You") {
         capture_intents();
-        intent->selected = "decision-" + entry.id;
+        intent->path.clear();
+        intent->anchor_path.clear();
+        select_intent("decision-" + entry.id);
     } else if (entry.role == "Agent") {
         intent_request("decisions/rationale", {{"decision_id", intent->selected},
                                                {"rationale",
@@ -159,6 +177,8 @@ void Application::attribute_chat_entry(std::size_t index)
                                                  {"thread_id", chat->conversation.thread_id}}}});
     }
     intent->overview = false;
+    intent->editing = false;
+    intent->token.clear();
     intent->evidence.clear();
     intent->scroll = 0;
     focus_intent();

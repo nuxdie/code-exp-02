@@ -219,6 +219,7 @@ add_library(
     system_theme.cpp
     intent_document.cpp
     application_intent.cpp
+    application_intent_badges.cpp
     application_intent_view.cpp
     application_intent_input.cpp
     application_view.cpp

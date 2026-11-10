@@ -30,6 +30,93 @@ void git(const std::string& root, std::vector<std::string> arguments)
 }
 } // namespace
 struct ApplicationTestAccess {
+    static void click(Application& app, Vec2 point)
+    {
+        XEvent event{};
+        event.type = ButtonPress;
+        event.xbutton.button = Button1;
+        event.xbutton.x = static_cast<int>(point.x);
+        event.xbutton.y = static_cast<int>(point.y);
+        app.handle_button(event);
+        event.type = ButtonRelease;
+        app.handle_release(event);
+    }
+    static void test_browsing(Application& app)
+    {
+        app.intent_request("decisions/record", {{"decision",
+                                                 {{"id", "unrelated"},
+                                                  {"statement", "Only explain a different file."},
+                                                  {"artifacts", {"other.cpp"}}}}});
+        wait_for(app, [&] { return app.intent->pending.empty(); });
+        auto panel = std::find_if(app.panels.begin(), app.panels.end(),
+                                  [](const auto& source) { return source.path == "code.cpp"; });
+        expect(panel != app.panels.end(), "The attributed source must exist");
+        app.intent->visible = false;
+        app.camera.zoom = 1;
+        app.camera.center = {panel->bounds.origin.x + 200, panel->bounds.origin.y + 160};
+        app.chat->visible = false;
+        app.draw();
+        expect(app.intent->badge_hits.size() == 1 &&
+                   app.intent->file_records["code.cpp"].size() == 1,
+               "Only explicitly linked requests must label the source");
+        const auto badge = app.intent->badge_hits.front().bounds;
+        click(app, {badge.origin.x + 16, badge.origin.y + 12});
+        app.draw();
+        expect(app.intent->visible && app.intent->overview && app.intent->path == "code.cpp" &&
+                   app.intent->anchor_path == "code.cpp",
+               "Clicking a source label must open that file's concise intent list");
+        expect(app.intent->document.document.text.find("different file") == std::string::npos &&
+                   app.intent->document.document.text.find("A reviewed checkpoint") ==
+                       std::string::npos,
+               "A file's concise list must omit unrelated requests and detailed rationale");
+        const auto link =
+            std::find_if(app.intent->document.document.styles.begin(),
+                         app.intent->document.document.styles.end(), [](const auto& span) {
+                             return span.destination == "intent:decision-human-id";
+                         });
+        expect(link != app.intent->document.document.styles.end(), "The intent must be selectable");
+        PangoRectangle glyph{};
+        pango_layout_index_to_pos(app.intent->document.layout.get(), static_cast<int>(link->begin),
+                                  &glyph);
+        const auto point = app.camera.world_to_screen(
+            {app.intent->body.origin.x + (glyph.x + glyph.width / 2.0) / PANGO_SCALE,
+             app.intent->body.origin.y + (glyph.y + glyph.height / 2.0) / PANGO_SCALE},
+            app.viewport());
+        click(app, point);
+        app.draw();
+        expect(!app.intent->overview && app.intent->selected == "decision-human-id" &&
+                   app.intent->document.document.text.find("A reviewed checkpoint") !=
+                       std::string::npos &&
+                   app.intent->document.document.text.find("code.cpp") != std::string::npos,
+               "Selecting a concise intent must reveal its exact explanation and code links");
+        expect(app.intent->bounds.origin.x == panel->bounds.origin.x + panel->bounds.size.x + 24,
+               "Selected details must sit beside the source");
+        panel->bounds.origin.x += 80;
+        app.draw();
+        expect(app.intent->bounds.origin.x == panel->bounds.origin.x + panel->bounds.size.x + 24,
+               "Attached details must follow the source when it moves");
+        app.intent_action("why:");
+        app.draw();
+        expect(app.intent->body.origin.y + app.intent->body.size.y < app.intent->editor.origin.y,
+               "The rationale editor must not cover the intent being read");
+        app.intent_action("all:");
+        app.draw();
+        expect(!app.intent->editing && app.intent->path.empty() &&
+                   app.intent->document.document.text.find("different file") != std::string::npos,
+               "All intents must restore the complete history and close editing");
+        app.intent->anchor_path.clear();
+        app.intent_action("intent:decision-human-id");
+        expect(app.intent->anchor_path == "code.cpp",
+               "Selecting from the global history must also reveal details beside linked code");
+        const lsp::Json wildcard{{"artifacts", {"*.cpp", "include/*.h"}}};
+        expect(intent_matches_path(wildcard, "code.cpp") &&
+                   intent_matches_path(wildcard, "include/model.h") &&
+                   !intent_matches_path(wildcard, "README.md"),
+               "File intent links must honor recorded artifact patterns");
+        const auto summary = intent_summary("λμν\nrequest", 5);
+        expect(g_utf8_validate(summary.c_str(), -1, nullptr) && summary == "λμ…",
+               "Concise titles must truncate at UTF-8 boundaries");
+    }
     template <class Predicate> static void wait_for(Application& app, Predicate predicate)
     {
         const auto deadline = Application::Clock::now() + std::chrono::seconds(10);
@@ -96,6 +183,7 @@ struct ApplicationTestAccess {
         app.draw();
         expect(!app.intent->document.document.styles.empty(),
                "The decision index must provide navigable links");
+        test_browsing(app);
     }
 };
 int main()

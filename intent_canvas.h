@@ -9,17 +9,24 @@
 #include <set>
 
 struct IntentCanvas {
+    struct Badge {
+        CanvasRect bounds;
+        std::string path;
+    };
     std::unique_ptr<AgentClient> client;
-    CanvasRect bounds{{0, 0}, {820, 940}}, body{}, editor{};
+    CanvasRect bounds{{0, 0}, {640, 800}}, body{}, editor{};
     DocumentView header, document, controls, rationale;
+    std::map<std::string, DocumentView> badges;
+    std::map<std::string, std::vector<std::string>> file_records;
+    std::vector<Badge> badge_hits;
     nlohmann::json records = nlohmann::json::array(), evidence = nlohmann::json::object();
     std::map<int, std::string> pending;
     std::set<std::string> captured;
     TextInput input;
-    std::string selected, error, token;
+    std::string selected, error, token, path, anchor_path;
     int next_id = 1;
-    double scroll = 0;
-    bool ready = false, overview = false, editing = false, dragging = false, placed = false;
+    double scroll = 0, anchor_offset = 0;
+    bool ready = false, overview = true, editing = false, dragging = false, placed = false;
     bool visible = false;
     std::chrono::steady_clock::time_point refresh = std::chrono::steady_clock::time_point::max();
 };

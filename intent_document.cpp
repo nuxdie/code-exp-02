@@ -1,5 +1,6 @@
 #include "intent_document.h"
 #include <algorithm>
+#include <fnmatch.h>
 
 namespace {
 using Json = nlohmann::json;
@@ -16,25 +17,33 @@ std::string rationale_text(const Json& record)
     const auto rationale = record.value("rationale", Json::object());
     const auto summary = rationale.value("summary", "");
     if (summary.empty())
-        return "*Why: no explicit rationale recorded yet.*\n\n";
+        return "*No explanation recorded yet.*\n\n";
     const auto role = rationale.value("author_role", "agent");
     auto basis = rationale.value("basis", "explicit_record");
     std::replace(basis.begin(), basis.end(), '_', ' ');
-    return "**Why · " + role + "** (" + intent_literal(basis) + ")\n" + intent_literal(summary) +
-           "\n\n";
+    return "**Why**\n" + intent_literal(summary) + "\n\n*" + intent_literal(role) + " · " +
+           intent_literal(basis) + "*\n\n";
 }
 std::string decision_text(const Json& record)
 {
-    const auto heading = record.contains("id")
-                             ? "[Human intent](intent:" + record.value("id", "") + ")"
-                             : "**Human intent**";
-    std::string text = heading + "\n" + intent_literal(record.value("statement", "")) + "\n\n";
+    std::string text = "**Request**\n" + intent_literal(record.value("statement", "")) + "\n\n";
     const auto origin = record.value("origin", Json::object());
     if (!origin.value("context", "").empty())
         text += "Context: " + intent_literal(origin.value("context", "")) + "\n\n";
     text += rationale_text(record);
+    const auto artifacts = record.value("artifacts", Json::array());
+    if (!artifacts.empty()) {
+        text += "**Code**\n";
+        for (const auto& artifact : artifacts) {
+            const auto path = artifact.get<std::string>();
+            text += path.find_first_of("*?[") == std::string::npos
+                        ? "[" + intent_literal(path) + "](" + path + ")\n"
+                        : intent_literal(path) + "\n";
+        }
+        text += "\n";
+    }
     if (origin.value("kind", "") == "conversation")
-        text += "[Original conversation](chat:" + record.value("id", "") + ")\n\n";
+        text += "[View conversation](chat:" + record.value("id", "") + ")\n\n";
     const auto binding = record.value("binding", Json::object());
     if (binding.contains("commit")) {
         const auto revision = binding.value("commit", "");
@@ -52,8 +61,9 @@ std::string decision_text(const Json& record)
                 "](commit:" + revision + ")";
         text += commit.value("reconstructed", false) ? " · reconstructed milestone\n\n" : "\n\n";
     }
-    if (record.value("commits", Json::array()).empty() && !binding.contains("commit"))
-        text += "*Captured intent; no Git checkpoint is attributed yet.*\n\n";
+    if (record.contains("id") && record.value("commits", Json::array()).empty() &&
+        !binding.contains("commit"))
+        text += "*No linked checkpoint yet.*\n\n";
     return text;
 }
 std::string evidence_text(const Json& evidence)
@@ -95,7 +105,50 @@ std::string evidence_text(const Json& evidence)
                 "\n```\n";
     return text;
 }
+std::string overview_text(const Json& records, const std::string& path)
+{
+    std::string text;
+    std::size_t count = 0;
+    for (auto record = records.rbegin(); record != records.rend(); ++record) {
+        if (!path.empty() && !intent_matches_path(*record, path))
+            continue;
+        ++count;
+        const auto label = intent_summary(record->value("statement", ""));
+        text += "[" + intent_literal(label) + "](intent:" + record->value("id", "") + ")\n";
+        const auto date = record->value("recorded_at", "").substr(0, 10);
+        const auto files = record->value("artifacts", Json::array()).size();
+        const bool linked = !record->value("commits", Json::array()).empty() ||
+                            record->value("binding", Json::object()).contains("commit");
+        text += "*" + (date.empty() ? "" : date + " · ") + std::to_string(files) +
+                (files == 1 ? " file" : " files") +
+                (linked ? " · checkpoint linked" : " · captured") + "*\n\n";
+    }
+    if (!count)
+        return path.empty() ? "No intents yet. Requests from your conversations will appear here."
+                            : "No intents are linked to this file yet.";
+    return "**" + std::to_string(count) + (count == 1 ? " intent" : " intents") +
+           "** · newest first\n\n" + text;
+}
 } // namespace
+
+std::string intent_summary(const std::string& statement, std::size_t limit)
+{
+    auto text = statement;
+    std::replace(text.begin(), text.end(), '\n', ' ');
+    std::replace(text.begin(), text.end(), '\r', ' ');
+    return excerpt(text, limit) + (text.size() > limit ? "…" : "");
+}
+
+bool intent_matches_path(const Json& record, const std::string& path)
+{
+    const auto artifacts = record.find("artifacts");
+    if (artifacts == record.end())
+        return false;
+    for (const auto& artifact : *artifacts)
+        if (fnmatch(artifact.get_ref<const std::string&>().c_str(), path.c_str(), 0) == 0)
+            return true;
+    return false;
+}
 
 std::string intent_literal(const std::string& text)
 {
@@ -110,18 +163,10 @@ std::string intent_literal(const std::string& text)
 }
 
 std::string intent_document(const Json& records, const std::string& selected, const Json& evidence,
-                            bool overview)
+                            bool overview, const std::string& path)
 {
-    if (overview) {
-        std::string text =
-            "Your decisions are the primary record. Changes and artifacts are their evidence.\n\n";
-        for (auto record = records.rbegin(); record != records.rend(); ++record) {
-            auto label = excerpt(record->value("statement", ""), 300);
-            std::replace(label.begin(), label.end(), '\n', ' ');
-            text += "[" + intent_literal(label) + "](intent:" + record->value("id", "") + ")\n\n";
-        }
-        return text;
-    }
+    if (overview)
+        return overview_text(records, path);
     if (!evidence.empty())
         return evidence_text(evidence);
     for (const auto& record : records)

@@ -227,6 +227,12 @@ class Application {
     void capture_intents();
     void attribute_chat_entry(std::size_t index);
     void focus_intent();
+    void rebuild_intent_index();
+    void show_file_intents(const std::string& path, double offset = 0);
+    void select_intent(const std::string& id);
+    void anchor_intent();
+    void draw_intent_badges();
+    bool intent_badge_button(const XEvent& event, Vec2 pointer);
     void inspect_intent(Vec2 pointer);
     void draw_intent();
     void draw_intent_controls();

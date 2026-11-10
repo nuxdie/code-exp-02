@@ -123,6 +123,7 @@ void Application::save_session()
                                        {"y", intent->bounds.origin.y},
                                        {"selected", intent->selected},
                                        {"overview", intent->overview},
+                                       {"path", intent->path},
                                        {"scroll", intent->scroll}}
                            : lsp::Json::object()}});
     const auto path = session_path(workspace_root);

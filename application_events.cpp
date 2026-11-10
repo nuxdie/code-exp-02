@@ -174,6 +174,7 @@ void Application::handle_motion(const XEvent& event)
         if (chat && chat->scrolling) {
             drag_chat_scroll(camera.screen_to_world(pointer, viewport()));
         } else if (intent && intent->dragging) {
+            intent->anchor_path.clear();
             intent->bounds.origin.x += delta.x / camera.zoom;
             intent->bounds.origin.y += delta.y / camera.zoom;
         } else if (chat && chat->dragging) {
@@ -300,7 +301,7 @@ void Application::handle_key(const XEvent& event)
         break;
     case XK_d:
     case XK_D:
-        focus_intent();
+        intent_action("all:");
         break;
     case XK_k:
     case XK_K:

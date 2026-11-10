@@ -58,6 +58,7 @@ void Application::draw()
     draw_files(view);
 
     draw_headers(view);
+    draw_intent_badges();
     draw_fold_toggle();
     draw_agent_activity();
     draw_conversation();
