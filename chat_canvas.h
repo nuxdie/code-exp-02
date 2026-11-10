@@ -53,6 +53,21 @@ struct ChatCanvas {
     bool focused = false, follow = true, choosing_thread = false, placed = false;
     bool dragging = false, scrolling = false;
     double scroll_grab_fraction = 0;
+    void follow_camera(const Camera& before, const Camera& after, const Viewport& viewport)
+    {
+        const auto screen = before.world_to_screen(bounds.origin, viewport);
+        const auto origin = after.screen_to_world(screen, viewport);
+        const Vec2 delta{origin.x - bounds.origin.x, origin.y - bounds.origin.y};
+        auto move = [&](CanvasRect& rect) {
+            rect.origin.x += delta.x;
+            rect.origin.y += delta.y;
+        };
+        move(bounds);
+        move(body);
+        move(editor);
+        for (auto& hit : hits)
+            move(hit.bounds);
+    }
     int message_width() const { return static_cast<int>(body.size.x * 0.86 - 24); }
     double working_height() const
     {

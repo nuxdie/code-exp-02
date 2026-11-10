@@ -127,9 +127,14 @@ void Application::chat_action(const ChatHit& hit, Vec2 world)
             entry.expanded = !entry.expanded;
         else {
             const auto found = chat->messages.find(entry.id);
-            if (found != chat->messages.end())
-                open_chat_link(found->second,
-                               {world.x - hit.bounds.origin.x, world.y - hit.bounds.origin.y});
+            if (found != chat->messages.end()) {
+                const auto before = camera;
+                if (open_chat_link(found->second, {world.x - hit.bounds.origin.x,
+                                                   world.y - hit.bounds.origin.y})) {
+                    chat->follow_camera(before, camera, viewport());
+                    schedule_save();
+                }
+            }
         }
         break;
     }

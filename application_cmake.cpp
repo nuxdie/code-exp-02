@@ -25,8 +25,16 @@ lsp::LanguageServer* Application::server_for(const SourcePanel& panel)
 bool Application::open_document_link(Vec2 pointer)
 {
     const auto literal = text_link_at(pointer);
-    if (!literal.empty())
-        return open_link(literal);
+    if (!literal.empty()) {
+        auto* companion = chat_at(pointer);
+        const auto before = camera;
+        const bool opened = open_link(literal);
+        if (opened && companion) {
+            companion->follow_camera(before, camera, viewport());
+            schedule_save();
+        }
+        return opened;
+    }
     const auto hit = hit_test(pointer);
     if (hit.panel < 0)
         return false;

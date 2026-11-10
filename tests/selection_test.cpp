@@ -201,10 +201,40 @@ struct ApplicationTestAccess {
         }
         const auto local = glyph(view.layout.get(), view.document.text.find("Source") + 2,
                                  message_origin, app.camera.zoom);
+        const auto chat_screen =
+            app.camera.world_to_screen(app.chat->bounds.origin, app.viewport());
+        auto other = std::make_unique<ChatCanvas>(app.workspace_root);
+        other->bounds.origin = {12000, 14000};
+        app.chat_windows.push_back(std::move(other));
         app.handle_button(mouse(Button1, local));
         app.handle_release(mouse(Button1, local));
         expect(app.focused_line && app.focused_line->line == 1 && app.focused_line->byte == 4,
                "Chat file links must navigate to the requested line and column");
+        const auto moved_screen =
+            app.camera.world_to_screen(app.chat->bounds.origin, app.viewport());
+        expect(std::hypot(moved_screen.x - chat_screen.x, moved_screen.y - chat_screen.y) < 0.001,
+               "The clicked chat must follow source navigation at the same screen position");
+        expect(app.chat_windows.back()->bounds.origin.x == 12000 &&
+                   app.chat_windows.back()->bounds.origin.y == 14000,
+               "Following a link must leave other chat windows in place");
+        app.camera.center.x += 30;
+        const auto shortcut_before =
+            app.camera.world_to_screen(app.chat->bounds.origin, app.viewport());
+        app.draw();
+        const auto& updated = app.chat->messages.at("links-message");
+        const auto updated_hit =
+            std::find_if(app.chat->hits.begin(), app.chat->hits.end(),
+                         [](const auto& h) { return h.kind == ChatHit::Kind::Message; });
+        const auto shortcut_point =
+            glyph(updated.layout.get(), updated.document.text.find("Source") + 2,
+                  app.camera.world_to_screen(updated_hit->bounds.origin, app.viewport()),
+                  app.camera.zoom);
+        expect(app.open_document_link(shortcut_point), "The shortcut must open chat source links");
+        const auto shortcut_screen =
+            app.camera.world_to_screen(app.chat->bounds.origin, app.viewport());
+        expect(std::hypot(shortcut_screen.x - shortcut_before.x,
+                          shortcut_screen.y - shortcut_before.y) < 0.001,
+               "Shortcut navigation must also bring the clicked chat along");
         expect(app.open_link(lsp::file_uri(
                    (std::filesystem::path(app.workspace_root) / "main.cpp").string())),
                "File URI links must continue to open source cards");
