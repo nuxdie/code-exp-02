@@ -2644,6 +2644,36 @@
       "recorded_at": "2026-11-10T00:01:28.340544+00:00",
       "statement_hash": "4f82e9ff6bafd4340e2c43ffe45d2f9d57b60593a923e05ef443c30738d9855d",
       "relations": []
+    },
+    {
+      "id": "decision-01a1c501-e394-7c21-b93f-05b42c8a3758",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1c501-e394-7c21-b93f-05b42c8a3758",
+        "thread_id": "01a1c500-c295-74b1-9e48-dddb87b18dfb",
+        "turn_id": "01a1c501-e37f-7c61-84d5-0f9bce3c6b9c"
+      },
+      "statement": "get rid of it",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-10T10:29:57.788484+00:00",
+      "statement_hash": "f10e69ae935b8dc2aea630701e3f474f4683808dbb5789d70b11c82d2c7cd53c",
+      "artifacts": [
+        "application_chat_view.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Remove the pale blue rectangle behind conversation titles as requested, leaving the title text and icon in place.",
+        "author_role": "agent",
+        "basis": "recorded_live",
+        "recorded_at": "2026-11-10T10:30:27.646657+00:00"
+      },
+      "association": {
+        "kind": "captured_statement",
+        "precision": "unbound"
+      }
     }
   ]
 }

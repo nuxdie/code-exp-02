@@ -122,7 +122,6 @@ void Application::draw_chat_header(std::vector<CanvasRect>& occupied)
                          {{{7, 8}, {17, 8}}, blue, 2, false},
                          {{{7, 12}, {14, 12}}, blue, 2, false}});
     }
-    renderer->rectangle(bounds, {0.92f, 0.96f, 1, 0.97f});
     renderer->draw(chat_icon_mesh, bounds.origin, scale);
     renderer->draw(header.mesh, bounds.origin, scale);
 }
