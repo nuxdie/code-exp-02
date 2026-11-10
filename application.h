@@ -423,8 +423,11 @@ class Application {
     void draw();
 
     void handle_button(const XEvent& event);
+    void handle_canvas_button(const XEvent& event, Vec2 pointer, const Viewport& view);
     void zoom_wheel(unsigned button, Vec2 pointer);
     void handle_motion(const XEvent& event);
+    void handle_drag_motion(Vec2 pointer);
+    void update_pointer_hover(Vec2 pointer);
     void update_cursor();
     bool over_text(Vec2 screen);
     void handle_release(const XEvent& event);
@@ -486,5 +489,7 @@ class Application {
     void language_references(const lsp::Message& message);
     void language_completion(const lsp::Message& message);
     bool popup_button(const XEvent& event, Vec2 pointer, bool in_popup);
+    int popup_row_at(Vec2 pointer);
+    void activate_popup_location(Vec2 pointer);
     void begin_drag(const XEvent& event, Vec2 pointer, const Viewport& view, bool pan_only = false);
 };

@@ -103,6 +103,11 @@ void Application::handle_button(const XEvent& event)
         return;
     schedule_save();
     hide_popup();
+    handle_canvas_button(event, pointer, view);
+}
+
+void Application::handle_canvas_button(const XEvent& event, Vec2 pointer, const Viewport& view)
+{
     if (event.xbutton.button == Button1 && !(event.xbutton.state & Mod1Mask) &&
         open_document_link(pointer))
         return;
@@ -184,46 +189,56 @@ void Application::handle_motion(const XEvent& event)
         move_text_selection(pointer);
         return;
     }
-    if (drag_button) {
-        hide_popup();
-        const Vec2 delta{pointer.x - last_pointer.x, pointer.y - last_pointer.y};
-        drag_moved = drag_moved || std::hypot(delta.x, delta.y) > 1;
-        if (chat && chat->scrolling) {
-            drag_chat_scroll(camera.screen_to_world(pointer, viewport()));
-        } else if (intent && intent->scrolling) {
-            intent->drag_scroll(camera.screen_to_world(pointer, viewport()));
-        } else if (window_manager.moving) {
-            window_manager.move(delta, camera.zoom);
-            if (dragged_panel >= 0) {
-                const auto& bounds = panels[dragged_panel].bounds;
-                content_size.x = std::max(content_size.x, bounds.origin.x + bounds.size.x);
-                content_size.y = std::max(content_size.y, bounds.origin.y + bounds.size.y);
-                connections_dirty = true;
-            }
-        } else {
-            remember_view(true);
-            camera.pan(delta);
+    if (drag_button)
+        handle_drag_motion(pointer);
+    else
+        update_pointer_hover(pointer);
+}
+
+void Application::handle_drag_motion(Vec2 pointer)
+{
+    hide_popup();
+    const Vec2 delta{pointer.x - last_pointer.x, pointer.y - last_pointer.y};
+    drag_moved = drag_moved || std::hypot(delta.x, delta.y) > 1;
+    if (chat && chat->scrolling) {
+        drag_chat_scroll(camera.screen_to_world(pointer, viewport()));
+    } else if (intent && intent->scrolling) {
+        intent->drag_scroll(camera.screen_to_world(pointer, viewport()));
+    } else if (window_manager.moving) {
+        window_manager.move(delta, camera.zoom);
+        if (dragged_panel >= 0) {
+            const auto& bounds = panels[dragged_panel].bounds;
+            content_size.x = std::max(content_size.x, bounds.origin.x + bounds.size.x);
+            content_size.y = std::max(content_size.y, bounds.origin.y + bounds.size.y);
+            connections_dirty = true;
         }
-        last_pointer = pointer;
-        zoom_animation.anchor = pointer;
-        redraw = true;
-    } else if (popup_text.empty() || !Viewport{popup_bounds.origin.x, popup_bounds.origin.y,
-                                               popup_bounds.size.x, popup_bounds.size.y}
-                                          .contains(pointer)) {
-        if (!popup_text.empty() && popup_dismiss_due == Clock::time_point::max())
-            popup_dismiss_due = Clock::now() + std::chrono::milliseconds(300);
-        const auto world = camera.screen_to_world(pointer, viewport());
-        const bool in_intent = intent && intent->visible &&
-                               Viewport{intent->bounds.origin.x, intent->bounds.origin.y,
-                                        intent->bounds.size.x, intent->bounds.size.y}
-                                   .contains(world);
-        const bool in_chat = chat_at(pointer) != nullptr;
-        hover_due = in_chat || in_intent ? Clock::time_point::max()
-                                         : Clock::now() + std::chrono::milliseconds(400);
     } else {
-        popup_dismiss_due = Clock::time_point::max();
-        hover_due = Clock::time_point::max();
+        remember_view(true);
+        camera.pan(delta);
     }
+    last_pointer = pointer;
+    zoom_animation.anchor = pointer;
+    redraw = true;
+}
+
+void Application::update_pointer_hover(Vec2 pointer)
+{
+    const Viewport popup_view{popup_bounds.origin.x, popup_bounds.origin.y, popup_bounds.size.x,
+                              popup_bounds.size.y};
+    if (!popup_text.empty() && popup_view.contains(pointer)) {
+        popup_dismiss_due = hover_due = Clock::time_point::max();
+        return;
+    }
+    if (!popup_text.empty() && popup_dismiss_due == Clock::time_point::max())
+        popup_dismiss_due = Clock::now() + std::chrono::milliseconds(300);
+    const auto world = camera.screen_to_world(pointer, viewport());
+    const bool in_intent = intent && intent->visible &&
+                           Viewport{intent->bounds.origin.x, intent->bounds.origin.y,
+                                    intent->bounds.size.x, intent->bounds.size.y}
+                               .contains(world);
+    const bool in_chat = chat_at(pointer) != nullptr;
+    hover_due = in_chat || in_intent ? Clock::time_point::max()
+                                     : Clock::now() + std::chrono::milliseconds(400);
 }
 
 void Application::handle_release(const XEvent& event)
@@ -370,15 +385,7 @@ void Application::handle_key(const XEvent& event)
 bool Application::popup_button(const XEvent& event, Vec2 pointer, bool in_popup)
 {
     if (in_popup && options_page != OptionsPage::Closed && event.xbutton.button == Button1) {
-        int index = 0, trailing = 0;
-        pango_layout_xy_to_index(
-            popup_layout, static_cast<int>((pointer.x - popup_bounds.origin.x - 12) * PANGO_SCALE),
-            static_cast<int>((pointer.y - popup_bounds.origin.y - 12 + popup_scroll) * PANGO_SCALE),
-            &index, &trailing);
-        const int row = static_cast<int>(std::count(
-            popup_text.begin(),
-            popup_text.begin() + std::clamp(index, 0, static_cast<int>(popup_text.size())), '\n'));
-        options_action(row);
+        options_action(popup_row_at(pointer));
         return true;
     }
     if (in_popup && (event.xbutton.button == Button4 || event.xbutton.button == Button5)) {
@@ -394,32 +401,39 @@ bool Application::popup_button(const XEvent& event, Vec2 pointer, bool in_popup)
         Viewport{popup_bounds.origin.x, popup_bounds.origin.y, popup_bounds.size.x,
                  popup_bounds.size.y}
             .contains(pointer)) {
-        int index = 0, trailing = 0;
-        pango_layout_xy_to_index(
-            popup_layout, static_cast<int>((pointer.x - popup_bounds.origin.x - 12) * PANGO_SCALE),
-            static_cast<int>((pointer.y - popup_bounds.origin.y - 12 + popup_scroll) * PANGO_SCALE),
-            &index, &trailing);
-        const int row =
-            static_cast<int>(std::count(
-                popup_text.begin(),
-                popup_text.begin() + std::clamp(index, 0, static_cast<int>(popup_text.size())),
-                '\n')) -
-            (list_title.empty() ? 0 : 1);
-        if (row >= 0 && row < static_cast<int>(popup_locations.size())) {
-            if (row < static_cast<int>(popup_symbol_rows.size()) && popup_symbol_rows[row] &&
-                !popup_symbol_rows[row]->children.empty() &&
-                pointer.x - popup_bounds.origin.x < 12 + popup_row_depths[row] * 17 + 25) {
-                popup_symbol_rows[row]->expanded = !popup_symbol_rows[row]->expanded;
-                show_outline(outline_panel);
-                return true;
-            }
-            const auto location = popup_locations[row];
-            jump_to(location);
-        }
+        activate_popup_location(pointer);
         return true;
     }
 
     return in_popup && event.xbutton.button == Button1;
+}
+
+int Application::popup_row_at(Vec2 pointer)
+{
+    int index = 0, trailing = 0;
+    pango_layout_xy_to_index(
+        popup_layout, static_cast<int>((pointer.x - popup_bounds.origin.x - 12) * PANGO_SCALE),
+        static_cast<int>((pointer.y - popup_bounds.origin.y - 12 + popup_scroll) * PANGO_SCALE),
+        &index, &trailing);
+    return static_cast<int>(std::count(
+        popup_text.begin(),
+        popup_text.begin() + std::clamp(index, 0, static_cast<int>(popup_text.size())), '\n'));
+}
+
+void Application::activate_popup_location(Vec2 pointer)
+{
+    const int row = popup_row_at(pointer) - (list_title.empty() ? 0 : 1);
+    if (row < 0 || row >= static_cast<int>(popup_locations.size()))
+        return;
+    if (row < static_cast<int>(popup_symbol_rows.size()) && popup_symbol_rows[row] &&
+        !popup_symbol_rows[row]->children.empty() &&
+        pointer.x - popup_bounds.origin.x < 12 + popup_row_depths[row] * 17 + 25) {
+        popup_symbol_rows[row]->expanded = !popup_symbol_rows[row]->expanded;
+        show_outline(outline_panel);
+        return;
+    }
+    const auto location = popup_locations[row];
+    jump_to(location);
 }
 
 void Application::begin_drag(const XEvent& event, Vec2 pointer, const Viewport& view, bool pan_only)

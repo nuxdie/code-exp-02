@@ -140,7 +140,7 @@ struct AgentClient::Impl {
             if ((fds[0].revents & POLLOUT) && !pending.empty()) {
                 const auto count = ::send(stream, pending.data() + written,
                                           pending.size() - written, MSG_NOSIGNAL);
-                if (count > 0) {
+                if (count >= 0) {
                     written += static_cast<std::size_t>(count);
                     if (written == pending.size()) {
                         pending.clear();
