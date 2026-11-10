@@ -37,6 +37,7 @@ struct AgentClient::Impl {
     std::atomic<bool> stopping{false};
     std::mutex mutex;
     std::string outgoing, incoming;
+    bool disconnected = false;
     std::vector<Json> received;
     std::thread worker;
 
@@ -51,8 +52,9 @@ struct AgentClient::Impl {
                 spawn(python, bridge);
                 run();
             } catch (const std::exception& error) {
-                publish(
-                    {{"method", "canvas/disconnected"}, {"params", {{"message", error.what()}}}});
+                if (!disconnected)
+                    publish({{"method", "canvas/disconnected"},
+                             {"params", {{"message", error.what()}}}});
             }
             cleanup();
         });
@@ -88,6 +90,8 @@ struct AgentClient::Impl {
     }
     void publish(Json message)
     {
+        if (message.value("method", "") == "canvas/disconnected")
+            disconnected = true;
         {
             std::lock_guard<std::mutex> lock(mutex);
             received.push_back(std::move(message));

@@ -1,9 +1,16 @@
+#include "agent_client.h"
 #include "conversation.h"
 #include "text_input.h"
 
+#include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <poll.h>
 #include <regex>
 #include <stdexcept>
+#include <sys/stat.h>
+#include <unistd.h>
 
 using Json = nlohmann::json;
 void expect(bool condition, const char* message)
@@ -243,9 +250,34 @@ void test_thread_titles()
                    {"result", {{"thread", {{"id", "untitled"}, {"name", nullptr}}}}}});
     expect(model.title == "Conversation", "Untitled threads must have a safe header label");
 }
+void test_bridge_error_survives_exit()
+{
+    const auto script = std::filesystem::temp_directory_path() /
+                        ("canvas-bridge-error-" + std::to_string(getpid()));
+    std::ofstream(script) << "#!/bin/sh\n"
+                             "echo '{\"method\":\"canvas/disconnected\",\"params\":{"
+                             "\"message\":\"Codex executable not found\"}}'\n";
+    chmod(script.c_str(), 0700);
+    std::vector<Json> messages;
+    {
+        AgentClient client(script.string(), "unused");
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+        while (std::chrono::steady_clock::now() < deadline) {
+            pollfd fd{client.event_fd(), POLLIN, 0};
+            poll(&fd, 1, 50);
+            for (auto& message : client.take_messages())
+                messages.push_back(std::move(message));
+        }
+    }
+    std::filesystem::remove(script);
+    expect(messages.size() == 1 &&
+               messages.front()["params"]["message"] == "Codex executable not found",
+           "Bridge exit must preserve the specific diagnostic without a second generic error");
+}
 int main()
 {
     try {
+        test_bridge_error_survives_exit();
         test_conversation();
         test_input();
         test_contextual_conversation();

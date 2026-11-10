@@ -3096,6 +3096,32 @@
         "application_chat_view.cpp",
         "tests/agent_windows_test.cpp"
       ]
+    },
+    {
+      "id": "decision-agent-desktop-path",
+      "statement": "why is agent connection closed flashing?",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "origin": {
+        "kind": "conversation",
+        "context": "User report in current coding session"
+      },
+      "recorded_at": "2026-11-10T21:14:25.321472+00:00",
+      "status": "recorded",
+      "rationale": {
+        "author_role": "agent",
+        "basis": "recorded_live",
+        "summary": "The desktop process omits ~/.local/bin from PATH, so resolve the local Codex executable and allow an explicit override. Preserve bridge diagnostics on exit rather than replacing them with a generic disconnect."
+      },
+      "artifacts": [
+        "README.md",
+        "agent_client.cpp",
+        "tests/conversation_test.cpp",
+        "tests/test_agent_bridge.py",
+        "tools/agent_bridge.py"
+      ]
     }
   ]
 }

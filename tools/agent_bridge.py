@@ -4,6 +4,7 @@
 import asyncio
 import json
 import os
+import shutil
 from pathlib import Path
 import sys
 
@@ -50,12 +51,30 @@ async def finish_when_either(*coroutines):
         task.result()
 
 
+def codex_executable():
+    override = os.environ.get("SOURCE_CANVAS_CODEX")
+    if override:
+        executable = shutil.which(override)
+        if executable:
+            return executable
+        raise FileNotFoundError(f"SOURCE_CANVAS_CODEX executable not found: {override}")
+    executable = shutil.which("codex")
+    if executable:
+        return executable
+    # Desktop launchers often omit the per-user installation directory from PATH.
+    local = Path.home() / ".local" / "bin" / "codex"
+    if local.is_file() and os.access(local, os.X_OK):
+        return str(local)
+    raise FileNotFoundError(
+        "Codex executable not found. Install Codex or set SOURCE_CANVAS_CODEX to its full path.")
+
+
 async def daemon_socket():
     # Reuse the daemon so the agent keeps running while the canvas reloads or reconnects.
     if path := os.environ.get("SOURCE_CANVAS_AGENT_SOCKET"):
         return path
     process = await asyncio.create_subprocess_exec(
-        "codex", "app-server", "daemon", "version",
+        codex_executable(), "app-server", "daemon", "version",
         stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
     stdout, _ = await process.communicate()
     if process.returncode == 0:
@@ -79,7 +98,7 @@ async def websocket_bridge(path, reader):
 
 async def stdio_bridge(reader):
     process = await asyncio.create_subprocess_exec(
-        "codex", "app-server", "--listen", "stdio://", stdin=asyncio.subprocess.PIPE,
+        codex_executable(), "app-server", "--listen", "stdio://", stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE, stderr=sys.stderr, limit=64 * 1024 * 1024)
     emit({"method": "canvas/connected", "params": {}})
 

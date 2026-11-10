@@ -116,7 +116,7 @@ Bundled fonts and icons are copied into `build/`; keep them beside the executabl
 
 ### Agent conversations
 
-The agent bridge expects an authenticated local Codex installation available as `codex` on `PATH`. It reuses a running app-server daemon when available and otherwise starts a server over standard input/output. See [`tools/agent_bridge.py`](tools/agent_bridge.py) for the transport.
+The agent bridge expects an authenticated local Codex installation available as `codex` on `PATH` or in `~/.local/bin`. Set `SOURCE_CANVAS_CODEX` to use an explicit executable path. It reuses a running app-server daemon when available and otherwise starts a server over standard input/output. See [`tools/agent_bridge.py`](tools/agent_bridge.py) for the transport.
 
 New canvas threads currently run with full filesystem access and no approval prompts.
 
