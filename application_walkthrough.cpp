@@ -75,14 +75,17 @@ void Application::release_walkthrough()
 {
     if (!walkthrough)
         return;
-    if (dragged_walkthrough_step >= 0) {
+    if (dragged_walkthrough_step != -1) {
+        window_manager.end();
         XUngrabPointer(display, CurrentTime);
         drag_button = 0;
     }
     renderer->release(walkthrough->heading.mesh);
+    renderer->release(walkthrough->title_view.mesh);
     renderer->release(walkthrough->arrows);
     for (auto& step : walkthrough->steps) {
         renderer->release(step.heading.mesh);
+        renderer->release(step.title_view.mesh);
         renderer->release(step.explanation.mesh);
         renderer->release(step.location.mesh);
         renderer->release(step.code);

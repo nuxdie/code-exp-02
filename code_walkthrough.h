@@ -7,7 +7,8 @@ struct WalkthroughStep {
     std::string id, path, title, note, cached_source;
     int first = 1, last = 1;
     CanvasRect bounds;
-    DocumentView heading, explanation, location;
+    CanvasRect header_bounds{};
+    DocumentView title_view, heading, explanation, location;
     GpuMesh code;
     double code_y = 0;
     bool available = false;
@@ -23,7 +24,8 @@ struct CodeWalkthrough {
     std::string title;
     Vec2 origin;
     CanvasRect bounds;
-    DocumentView heading;
+    CanvasRect header_bounds{};
+    DocumentView title_view, heading;
     std::vector<WalkthroughStep> steps;
     std::vector<WalkthroughConnection> connections;
     GpuMesh arrows;

@@ -116,21 +116,20 @@ void Application::draw_files(const Viewport& view)
 void Application::draw_headers(const Viewport& view)
 {
     header_hits.assign(panels.size(), {});
+    window_headers.clear();
     for (std::size_t i = 0; i < panels.size(); ++i) {
         const auto& panel = panels[i];
         const auto point = camera.world_to_screen(panel.bounds.origin, view);
-        const double scale = std::max(0.7, camera.zoom);
+        const double scale = CanvasWindowManager::title_scale(camera.zoom);
         int title_width = 0;
         pango_layout_get_pixel_size(panel.title, &title_width, nullptr);
-        CanvasRect bounds{{point.x, point.y}, {(title_width + 34) * scale, 27 * scale}};
-        if (bounds.origin.y < -bounds.size.y || bounds.origin.y > height ||
-            bounds.origin.x > width || bounds.origin.x + bounds.size.x < 0)
+        if (point.y < -27 * scale || point.y > height || point.x > width ||
+            point.x + (title_width + 34) * scale < 0)
             continue;
-        bounds.origin.x = std::clamp(bounds.origin.x, 0.0, std::max(0.0, width - bounds.size.x));
-        for (std::size_t j = 0; j < i; ++j)
-            if (header_hits[j].size.x > 0 && bounds.intersects(header_hits[j]))
-                bounds.origin.y = header_hits[j].origin.y + header_hits[j].size.y + 2;
+        const auto bounds = CanvasWindowManager::title_bounds(
+            point, {static_cast<double>(title_width + 34), 27}, camera.zoom, width, window_headers);
         header_hits[i] = bounds;
+        window_headers.push_back(bounds);
         renderer->rectangle(bounds, {1, 1, 1, 0.94f});
         renderer->draw(panel.header_mesh, bounds.origin, scale);
     }

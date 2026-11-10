@@ -87,35 +87,12 @@ void Application::draw_chat_header(std::vector<CanvasRect>& occupied)
     chat->header_bounds = {};
     if (!chat->visible || chat->composing)
         return;
-    auto& header = chat->header;
-    const auto& title = chat->conversation.title;
-    const int text_width = static_cast<int>(chat->bounds.size.x - 64);
-    if (!header.layout || header.source != title || header.width != text_width ||
-        header.generation != document_generation) {
-        header.source = title;
-        header.width = text_width;
-        header.generation = document_generation;
-        header.document = popup_document(title, false);
-        header.layout.reset(make_line(title, {{0, title.size(), Syntax::Directive}}));
-        pango_layout_set_width(header.layout.get(), text_width * PANGO_SCALE);
-        pango_layout_set_height(header.layout.get(), -1);
-        pango_layout_set_ellipsize(header.layout.get(), PANGO_ELLIPSIZE_END);
-        int width = 0;
-        pango_layout_get_pixel_size(header.layout.get(), &width, nullptr);
-        header.size = {static_cast<double>(width + 34), 27};
-        renderer->upload(header.mesh, {{header.layout.get(), {32, 0}}});
-    }
-    const double scale = std::max(0.7, camera.zoom);
-    CanvasRect bounds{camera.world_to_screen(chat->bounds.origin, viewport()),
-                      {header.size.x * scale, header.size.y * scale}};
-    if (!bounds.intersects({{0, 0}, {static_cast<double>(width), static_cast<double>(height)}}))
+    draw_window_title(chat->header, chat->conversation.title, chat->bounds, chat->header_bounds,
+                      occupied);
+    const auto bounds = chat->header_bounds;
+    const double scale = CanvasWindowManager::title_scale(camera.zoom);
+    if (bounds.size.x == 0)
         return;
-    bounds.origin.x = std::clamp(bounds.origin.x, 0.0, std::max(0.0, width - bounds.size.x));
-    for (const auto& other : occupied)
-        if (other.size.x > 0 && bounds.intersects(other))
-            bounds.origin.y = other.origin.y + other.size.y + 2;
-    occupied.push_back(bounds);
-    chat->header_bounds = bounds;
     if (!chat_icon_mesh.buffer) {
         const std::array<float, 4> blue{0.12f, 0.38f, 0.72f, 1};
         renderer->paths(chat_icon_mesh,
@@ -127,7 +104,6 @@ void Application::draw_chat_header(std::vector<CanvasRect>& occupied)
                          {{{7, 12}, {14, 12}}, blue, 2, false}});
     }
     renderer->draw(chat_icon_mesh, bounds.origin, scale);
-    renderer->draw(header.mesh, bounds.origin, scale);
 }
 
 void Application::draw_chat_threads()

@@ -15,7 +15,8 @@ struct IntentCanvas {
     };
     std::unique_ptr<AgentClient> client;
     CanvasRect bounds{{0, 0}, {640, 800}}, body{}, editor{};
-    DocumentView header, document, controls, rationale;
+    CanvasRect header_bounds{};
+    DocumentView title, header, document, controls, rationale;
     std::map<std::string, DocumentView> badges;
     std::map<std::string, std::vector<std::string>> file_records;
     std::vector<Badge> badge_hits;

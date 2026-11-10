@@ -28,9 +28,20 @@ bool Application::intent_button(const XEvent& event, Vec2 pointer)
          event.xbutton.button == Button5))
         return false;
     const auto world = camera.screen_to_world(pointer, viewport());
-    if (!intent->visible || !inside(intent->bounds, world))
+    if (window_at(pointer) != WindowKind::Intent)
+        return intent_badge_button(event, pointer);
+    if (!intent->visible ||
+        (!inside(intent->bounds, world) && !inside(intent->header_bounds, pointer)))
         return intent_badge_button(event, pointer);
     if (event.xbutton.button == Button1) {
+        if (inside(intent->header_bounds, pointer)) {
+            if (begin_window_drag(intent->bounds.origin, pointer)) {
+                intent->anchor_path.clear();
+                intent->dragging = true;
+            }
+            chat->focused = false;
+            return true;
+        }
         if (inside(intent->scrollbar_track(), world)) {
             if (XGrabPointer(display, window, False,
                              ButtonPressMask | ButtonReleaseMask | PointerMotionMask, GrabModeAsync,
@@ -48,8 +59,9 @@ bool Application::intent_button(const XEvent& event, Vec2 pointer)
             return true;
         }
         const Vec2 header{world.x - intent->bounds.origin.x - 24,
-                          world.y - intent->bounds.origin.y - 16};
-        auto link = link_at(intent->header, header);
+                          world.y - intent->bounds.origin.y - 48};
+        auto link = inside(intent->header_bounds, pointer) ? std::string{}
+                                                           : link_at(intent->header, header);
         if (world.y > intent->bounds.origin.y + intent->bounds.size.y - 86)
             link = link_at(intent->controls, {header.x, world.y - intent->bounds.origin.y -
                                                             intent->bounds.size.y + 86});
@@ -63,14 +75,11 @@ bool Application::intent_button(const XEvent& event, Vec2 pointer)
         }
         if (!link.empty())
             intent_action(link);
-        else if (header.y < 24 &&
-                 XGrabPointer(display, window, False,
-                              ButtonPressMask | ButtonReleaseMask | PointerMotionMask,
-                              GrabModeAsync, GrabModeAsync, None, normal_cursor,
-                              CurrentTime) == GrabSuccess) {
-            drag_button = Button1;
+        else if ((inside(intent->header_bounds, pointer) ||
+                  world.y < intent->bounds.origin.y + 32) &&
+                 begin_window_drag(intent->bounds.origin, pointer)) {
+            intent->anchor_path.clear();
             intent->dragging = true;
-            last_pointer = pointer;
         }
         chat->focused = false;
     }

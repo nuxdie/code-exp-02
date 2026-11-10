@@ -1,4 +1,5 @@
 #include "canvas.h"
+#include "canvas_window.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -13,6 +14,18 @@ void expect(bool condition, const char* message)
 
 int main()
 {
+    Vec2 position{-30, 20};
+    CanvasWindowManager manager;
+    manager.begin(position);
+    manager.move({20, -10}, 0.5);
+    manager.end();
+    manager.move({100, 100}, 1);
+    expect(position.x == 10 && position.y == 0,
+           "Shared dragging must scale movement and stop after release");
+    const auto title =
+        CanvasWindowManager::title_bounds({-20, 10}, {100, 27}, 0.1, 500, {{{0, 10}, {70, 19}}});
+    expect(title.origin.x == 0 && title.origin.y == 31 && title.size.y > 18,
+           "Titles must clamp, avoid occupied headers and remain readable when zoomed out");
     expect(arrange_files({}).empty(), "Empty projects must have an empty layout");
     const std::vector<CanvasRect> occupied = {
         {{100, 0}, {100, 200}}, {{0, 0}, {100, 200}}, {{224, 0}, {100, 200}}};

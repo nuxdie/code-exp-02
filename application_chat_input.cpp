@@ -47,13 +47,8 @@ void Application::chat_action(const ChatHit& hit, Vec2 world)
     switch (hit.kind) {
     case ChatHit::Kind::Title:
         chat->focused = false;
-        if (XGrabPointer(display, window, False,
-                         ButtonPressMask | ButtonReleaseMask | PointerMotionMask, GrabModeAsync,
-                         GrabModeAsync, None, normal_cursor, CurrentTime) == GrabSuccess) {
-            drag_button = Button1;
+        if (begin_window_drag(chat->bounds.origin, mouse_position))
             chat->dragging = true;
-            last_pointer = mouse_position;
-        }
         break;
     case ChatHit::Kind::Text:
         break;

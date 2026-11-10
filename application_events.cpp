@@ -122,23 +122,25 @@ bool Application::close_window_button(const XEvent& event, Vec2 pointer)
         return Viewport{bounds.origin.x, bounds.origin.y, bounds.size.x, bounds.size.y}.contains(
             point);
     };
-    // Match the drawing order: search, popups, intent, then conversations.
-    if (search.active) {
+    const auto target = window_at(pointer);
+    if (target == WindowKind::Search) {
         if (!contains(search.bounds, pointer))
             return false;
         close_search();
-    } else if (!popup_text.empty() && contains(popup_bounds, pointer)) {
+    } else if (target == WindowKind::Popup) {
         if (text_selection.surface == TextSurface::Popup)
             text_selection = {};
         hide_popup();
-    } else if (intent && intent->placed && intent->visible &&
-               contains(intent->bounds, camera.screen_to_world(pointer, viewport()))) {
+    } else if (target == WindowKind::Intent) {
         intent->visible = intent->editing = false;
         if (text_selection.surface == TextSurface::Intent ||
             text_selection.surface == TextSurface::Rationale)
             text_selection = {};
         schedule_save();
-    } else if (activate_chat(pointer))
+    } else if (target == WindowKind::Walkthrough) {
+        release_walkthrough();
+        schedule_save();
+    } else if (target == WindowKind::Chat && activate_chat(pointer))
         close_agent_window();
     else
         return false;
@@ -182,22 +184,14 @@ void Application::handle_motion(const XEvent& event)
             drag_chat_scroll(camera.screen_to_world(pointer, viewport()));
         } else if (intent && intent->scrolling) {
             intent->drag_scroll(camera.screen_to_world(pointer, viewport()));
-        } else if (intent && intent->dragging) {
-            intent->anchor_path.clear();
-            intent->bounds.origin.x += delta.x / camera.zoom;
-            intent->bounds.origin.y += delta.y / camera.zoom;
-        } else if (chat && chat->dragging) {
-            chat->bounds.origin.x += delta.x / camera.zoom;
-            chat->bounds.origin.y += delta.y / camera.zoom;
-        } else if (dragged_panel >= 0) {
-            auto& position = panels[dragged_panel].bounds.origin;
-            position.x = std::max(0.0, position.x + delta.x / camera.zoom);
-            position.y = std::max(0.0, position.y + delta.y / camera.zoom);
-            content_size.x =
-                std::max(content_size.x, position.x + panels[dragged_panel].bounds.size.x);
-            content_size.y =
-                std::max(content_size.y, position.y + panels[dragged_panel].bounds.size.y);
-            connections_dirty = true;
+        } else if (window_manager.moving) {
+            window_manager.move(delta, camera.zoom);
+            if (dragged_panel >= 0) {
+                const auto& bounds = panels[dragged_panel].bounds;
+                content_size.x = std::max(content_size.x, bounds.origin.x + bounds.size.x);
+                content_size.y = std::max(content_size.y, bounds.origin.y + bounds.size.y);
+                connections_dirty = true;
+            }
         } else {
             remember_view(true);
             camera.pan(delta);
@@ -238,6 +232,7 @@ void Application::handle_release(const XEvent& event)
         intent->drag_scroll(camera.screen_to_world(
             {static_cast<double>(event.xbutton.x), static_cast<double>(event.xbutton.y)},
             viewport()));
+    window_manager.end();
     drag_button = 0;
     XUngrabPointer(display, CurrentTime);
     if (dragged_panel >= 0 && !drag_moved) {
@@ -265,11 +260,17 @@ bool Application::cancel_pointer_drag(const XEvent& event)
 {
     auto key = event.xkey;
     if (XLookupKeysym(&key, 0) != XK_Escape ||
-        (!text_selection.dragging && (!chat || !chat->scrolling) &&
+        (!window_manager.moving && !text_selection.dragging && (!chat || !chat->scrolling) &&
          (!intent || !intent->scrolling)))
         return false;
     text_selection.moved = true;
-    handle_release(event);
+    drag_moved = true;
+    XEvent release{};
+    release.type = ButtonRelease;
+    release.xbutton.button = drag_button;
+    release.xbutton.x = static_cast<int>(mouse_position.x);
+    release.xbutton.y = static_cast<int>(mouse_position.y);
+    handle_release(release);
     return true;
 }
 
@@ -444,6 +445,8 @@ void Application::begin_drag(const XEvent& event, Vec2 pointer, const Viewport& 
         zoom_animation.anchor = pointer;
         dragged_panel = header;
         drag_moved = false;
+        if (header >= 0)
+            window_manager.begin(panels[header].bounds.origin);
         if (header < 0)
             remember_view(true);
         update_cursor();

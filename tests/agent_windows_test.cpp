@@ -1,5 +1,6 @@
 #include "application.h"
 #include <epoxy/gl.h>
+#include <string_view>
 #include <unistd.h>
 
 namespace {
@@ -588,9 +589,65 @@ struct ApplicationTestAccess {
         pan.type = ButtonRelease;
         app.handle_event(pan);
     }
-    static void run(Application& app)
+    static void test_shared_windows(Application& app)
+    {
+        app.hide_popup();
+        app.chat->visible = true;
+        app.chat->composing = false;
+        app.intent->placed = app.intent->visible = true;
+        app.intent->bounds = app.chat->bounds;
+        app.intent->path = "a_file-name_[draft].cpp";
+        app.intent->anchor_path.clear();
+        app.camera.zoom = 0.15;
+        app.camera.center = app.intent->bounds.origin;
+        app.zoom_animation.cancel(app.camera);
+        app.draw();
+        expect(app.intent->title.source == app.intent->path &&
+                   std::string(pango_layout_get_text(app.intent->title.layout.get())) ==
+                       app.intent->path,
+               "Intent titles must preserve punctuation without HTML character codes");
+        expect(app.intent->header_bounds.size.y == app.chat->header_bounds.size.y &&
+                   app.intent->header_bounds.size.y >= 18,
+               "Intent and chat titles must share the minimum readable zoom scale");
+        const auto header = app.intent->header_bounds;
+        const Vec2 pointer{header.origin.x + 10, header.origin.y + 5};
+        expect(app.window_at(pointer) == Application::WindowKind::Intent &&
+                   app.chat_at(pointer) == nullptr,
+               "The painted intent title must receive input ahead of the underlying chat");
+        XEvent press{};
+        press.type = ButtonPress;
+        press.xbutton.button = Button1;
+        press.xbutton.x = static_cast<int>(pointer.x);
+        press.xbutton.y = static_cast<int>(pointer.y);
+        const auto before = app.intent->bounds.origin;
+        app.handle_button(press);
+        expect(app.window_manager.moving == &app.intent->bounds.origin,
+               "Intent titles must start a shared window drag");
+        XEvent motion{};
+        motion.type = MotionNotify;
+        motion.xmotion.x = press.xbutton.x + 30;
+        motion.xmotion.y = press.xbutton.y + 15;
+        app.handle_event(motion);
+        expect(std::abs(app.intent->bounds.origin.x - before.x - 200) < 0.01,
+               "Window movement must map screen deltas through the camera zoom");
+        XEvent escape{};
+        escape.type = KeyPress;
+        escape.xkey.display = app.display;
+        escape.xkey.keycode = XKeysymToKeycode(app.display, XK_Escape);
+        app.handle_event(escape);
+        expect(!app.window_manager.moving && !app.drag_button && !app.intent->dragging,
+               "Escape must release the pointer and clear shared drag state");
+    }
+    static void run(Application& app, bool window_policy)
     {
         expect(app.initialize(), "The multi-agent canvas must initialize");
+        if (window_policy) {
+            test_chat_titles(app);
+            test_chat_header_stacking(app);
+            test_middle_click_overlays(app);
+            test_shared_windows(app);
+            return;
+        }
         test_spawn_and_context(app);
         test_reload_state(app);
         test_input_and_close(app);
@@ -605,7 +662,7 @@ struct ApplicationTestAccess {
         app.draw();
     }
 };
-int main()
+int main(int argc, char** argv)
 {
     if (!std::getenv("DISPLAY"))
         return 77;
@@ -622,7 +679,7 @@ int main()
         setenv("SOURCE_CANVAS_STATE_FILE", (root / "session.json").c_str(), 1);
         unsetenv("SOURCE_CANVAS_DISABLE_SESSION");
         Application app;
-        ApplicationTestAccess::run(app);
+        ApplicationTestAccess::run(app, argc == 2 && std::string_view(argv[1]) == "window_policy");
         std::cout << "Agent placement, context, independent conversations and reload-state checks "
                      "passed.\n";
     } catch (const std::exception& error) {

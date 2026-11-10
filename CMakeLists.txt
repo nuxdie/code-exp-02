@@ -215,6 +215,7 @@ add_library(
     application_walkthrough.cpp
     application_walkthrough_view.cpp
     application_walkthrough_input.cpp
+    application_window_manager.cpp
     application_agent_windows.cpp
     application_agent_context.cpp
     application_agent_menu.cpp
@@ -394,16 +395,19 @@ if(BUILD_TESTING)
     endif()
     set_tests_properties(navigation PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30)
     target_link_libraries(agent_windows_tests PRIVATE application_core)
-    if(XVFB_RUN_EXECUTABLE)
-        add_test(NAME agent_windows COMMAND "${XVFB_RUN_EXECUTABLE}" -a
-                                            $<TARGET_FILE:agent_windows_tests>
+    foreach(test_name IN ITEMS agent_windows window_policy)
+        if(XVFB_RUN_EXECUTABLE)
+            add_test(NAME ${test_name}
+                     COMMAND "${XVFB_RUN_EXECUTABLE}" -a
+                             $<TARGET_FILE:agent_windows_tests> ${test_name}
+            )
+        else()
+            add_test(NAME ${test_name} COMMAND agent_windows_tests ${test_name})
+        endif()
+        set_tests_properties(
+            ${test_name} PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30
         )
-    else()
-        add_test(NAME agent_windows COMMAND agent_windows_tests)
-    endif()
-    set_tests_properties(
-        agent_windows PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30
-    )
+    endforeach()
     add_executable(cmake_canvas_tests tests/cmake_canvas_test.cpp)
     target_link_libraries(cmake_canvas_tests PRIVATE application_core)
     add_test(NAME cmake_canvas COMMAND cmake_canvas_tests)

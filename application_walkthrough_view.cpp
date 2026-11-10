@@ -4,15 +4,14 @@
 void Application::prepare_walkthrough_step(WalkthroughStep& step, std::size_t index)
 {
     constexpr int text_width = 600;
-    update_document(step.heading, std::to_string(index + 1) + ". " + intent_literal(step.title),
-                    text_width, false);
-    update_document(step.explanation, intent_literal(step.note), text_width, false);
+    update_document(step.heading, std::to_string(index + 1) + ". " + step.title, text_width, false);
+    update_document(step.explanation, step.note, text_width, false);
     const auto found = std::find_if(panels.begin(), panels.end(),
                                     [&](const auto& panel) { return panel.path == step.path; });
     step.available = found != panels.end() && step.last <= static_cast<int>(found->text.size());
     auto location = step.path + ":" + std::to_string(step.first) + "–" + std::to_string(step.last);
     location += step.available ? " · click code to open source" : " · source range unavailable";
-    update_document(step.location, intent_literal(location), text_width, false);
+    update_document(step.location, location, text_width, false);
     step.code_y = step.heading.size.y + step.explanation.size.y + step.location.size.y + 44;
     step.bounds.size = {text_width + 32.0,
                         step.code_y + (step.last - step.first + 1) * line_height + 16};
@@ -127,13 +126,16 @@ void Application::draw_walkthrough()
         board.arrow_points = std::move(arrow_points);
     }
     renderer->draw(board.arrows, point({0, 0}), camera.zoom);
-    renderer->draw(board.heading.mesh, point(board.origin), camera.zoom);
-    for (const auto& step : board.steps) {
+    auto& occupied = window_headers;
+    draw_window_title(board.title_view, board.title, {board.origin, board.bounds.size},
+                      board.header_bounds, occupied);
+    for (auto& step : board.steps) {
         rectangle(step.bounds, {1, 1, 1, 1});
         auto origin = step.bounds.origin;
         origin.x += 16;
         origin.y += 12;
-        renderer->draw(step.heading.mesh, point(origin), camera.zoom);
+        draw_window_title(step.title_view, step.heading.source, step.bounds, step.header_bounds,
+                          occupied);
         origin.y += step.heading.size.y + 8;
         renderer->draw(step.explanation.mesh, point(origin), camera.zoom);
         origin.y += step.explanation.size.y + 8;

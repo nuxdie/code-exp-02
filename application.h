@@ -2,6 +2,7 @@
 #include "agent_activity.h"
 #include "agent_client.h"
 #include "canvas_selection.h"
+#include "canvas_window.h"
 #include "chat_canvas.h"
 #include "code_walkthrough.h"
 #include "conversation.h"
@@ -130,6 +131,13 @@ class Application {
     bool initial_view = true;
     unsigned drag_button = 0;
     int dragged_panel = -1;
+    CanvasWindowManager window_manager;
+    std::vector<CanvasRect> window_headers;
+    enum class WindowKind { Canvas, Source, Walkthrough, Chat, Intent, Popup, Search };
+    WindowKind window_at(Vec2 pointer);
+    bool begin_window_drag(Vec2& origin, Vec2 pointer);
+    void draw_window_title(DocumentView& title, const std::string& text, CanvasRect world,
+                           CanvasRect& hit, std::vector<CanvasRect>& occupied);
     bool show_connections = true;
     bool connections_dirty = true;
     GpuMesh connection_mesh;

@@ -9,20 +9,25 @@ void Application::draw_intent()
     const auto origin = camera.world_to_screen(intent->bounds.origin, viewport());
     const CanvasRect screen{
         origin, {intent->bounds.size.x * camera.zoom, intent->bounds.size.y * camera.zoom}};
-    if (!screen.intersects({{0, 0}, {static_cast<double>(width), static_cast<double>(height)}}))
+    auto& occupied = window_headers;
+    if (!screen.intersects({{0, 0}, {static_cast<double>(width), static_cast<double>(height)}})) {
+        draw_window_title(intent->title, intent->path.empty() ? "Intent history" : intent->path,
+                          intent->bounds, intent->header_bounds, occupied);
         return;
+    }
     renderer->rectangle({{origin.x + 3, origin.y + 4}, screen.size}, {0.1f, 0.15f, 0.2f, 0.08f});
     renderer->rectangle(screen, {0.995f, 0.993f, 0.985f, 1});
     renderer->rectangle({origin, {screen.size.x, 4 * camera.zoom}}, {0.38f, 0.58f, 0.79f, 1});
-    const auto title = intent->path.empty() ? "Intent history" : intent->path;
+    draw_window_title(intent->title, intent->path.empty() ? "Intent history" : intent->path,
+                      intent->bounds, intent->header_bounds, occupied);
     const auto back = intent->path.empty() || intent->overview ? "" : "[File intents](file:)   ";
     update_document(intent->header,
-                    "**" + intent_literal(intent_summary(title, 64)) + "**\n" + back +
+                    std::string(back) +
                         "[All intents](all:)   [Conversation](conversation:)   [Refresh](refresh:)",
                     static_cast<int>(intent->bounds.size.x - 48));
     renderer->draw(intent->header.mesh,
                    camera.world_to_screen(
-                       {intent->bounds.origin.x + 24, intent->bounds.origin.y + 16}, viewport()),
+                       {intent->bounds.origin.x + 24, intent->bounds.origin.y + 48}, viewport()),
                    camera.zoom);
     if (camera.zoom < 0.25)
         return;

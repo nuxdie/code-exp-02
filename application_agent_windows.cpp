@@ -2,6 +2,8 @@
 
 ChatCanvas* Application::chat_at(Vec2 pointer)
 {
+    if (window_at(pointer) != WindowKind::Chat)
+        return nullptr;
     const auto world = camera.screen_to_world(pointer, viewport());
     auto contains = [&](const auto& card) {
         return card && card->visible &&
@@ -57,6 +59,11 @@ void Application::draw_conversation()
 {
     chat_animation_due = Clock::time_point::max();
     auto occupied = header_hits;
+    if (walkthrough) {
+        occupied.push_back(walkthrough->header_bounds);
+        for (const auto& step : walkthrough->steps)
+            occupied.push_back(step.header_bounds);
+    }
     for (auto& card : chat_windows) {
         std::swap(chat, card);
         draw_chat_card();
@@ -65,6 +72,7 @@ void Application::draw_conversation()
     }
     draw_chat_card();
     draw_chat_header(occupied);
+    window_headers = std::move(occupied);
 }
 void Application::poll_agent()
 {

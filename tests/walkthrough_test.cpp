@@ -93,6 +93,10 @@ struct ApplicationTestAccess {
         expect(app.camera.center.x > bounds.origin.x && board.arrows.vertices > 0 &&
                    board.connections[0].caption.document.text == "calls",
                "Focusing and rendering must reveal labeled flow arrows");
+        const double title_scale = CanvasWindowManager::title_scale(app.camera.zoom);
+        expect(std::abs(board.header_bounds.size.y - 27 * title_scale) < 0.001 &&
+                   std::abs(board.steps.front().header_bounds.size.y - 27 * title_scale) < 0.001,
+               "Explanation boards and excerpts must use the shared title scale");
         capture(app);
         spec["layout"] = "vertical";
         app.show_walkthrough(spec);

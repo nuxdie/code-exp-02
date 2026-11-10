@@ -91,7 +91,9 @@ TextTarget Application::text_at(Vec2 pointer)
     const auto world = camera.screen_to_world(pointer, viewport());
     if (chat_at(pointer))
         return {};
-    if (intent && intent->placed && intent->visible && contains(intent->bounds, world)) {
+    if (window_at(pointer) == WindowKind::Intent) {
+        if (contains(intent->header_bounds, pointer))
+            return {};
         if (intent->editing && contains(intent->editor, world)) {
             const std::string prefix = "Human rationale · Enter saves · Esc cancels\n";
             return {TextSurface::Rationale,
