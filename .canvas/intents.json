@@ -3168,6 +3168,30 @@
     "connection_hud.h": "d211284 159d744 1a93469 f3b7665 38977a0 3fe431e 5da73c3",
     "tests/integration_test.cpp": "cccb668 2c93dc3 a99c85b 45049f8 bfdfd21 0472e2d a40297d 949b1ea b57b05d 53164cb 7e2c05f 52a9cef 323ded6"
    }
+  },
+  {
+   "id": "claude-2026-11-11-arrows-on-click",
+   "at": "2026-11-11T22:07:29.329Z",
+   "source": "transcript",
+   "said": "you know what. lets try a different approach. draw the arrows and markers only when i click on a symbol. like instead of what happens now on ctrlclick with usage and definition we draw arrows",
+   "why": "Arrows and markers now appear only for a symbol you Ctrl+click: to where it is defined and from every place that uses it, asked of the language server on demand, so the whole project is covered. Esc puts them away. The hover-driven arrows and the background symbol resolver they needed are removed; F12 and Shift+F12 keep the jump and the usages list.",
+   "intent": "useful-legible-contextual",
+   "changes": {
+    "CMakeLists.txt": "77004bd",
+    "README.md": "aa97de6 d1c1494 9d4274b 1ab65da fa2505f",
+    "application.cpp": "d10a537",
+    "application.h": "cf3657f 79b6262 c20abff 311e6cc 62f8d12 655fb6a a623354 d79c5c7 3420b97 0198aa9 040771c ca671c4 fc47ef7 f571b5f 8d0b870 9df72b3 26b1ef1 dba2d5c 7be589a 95c453f 745e5a5",
+    "application_connection_hud.cpp": "6b6c4f8 d5ac29e 24230b8 d45ff32 4a1acd0 2ce74ea e0241fd ec3447e 75634fc 1192655 93baf91 11a4493 28f10f4 743435d 41c3a72 facbebd d9fb710 b36e5e1 82bdeb1 09088f5 28ffaa8 be6c5e5 f3aa187 4e25af5 0a6d975 5acc12e 19b7afe a834fcb ecfe7e9 4a76df9 df6db97 1598bf0 5ca4765 ff8a897 26a60d6 b80dcd0 9cb8ed5 424d833 472490b fbcb7ad 85cca08 24ce7ad 557bd24 85df4e0 f4a8f1e 95ba672 acd35d1 75097b8 1fcc9f4 09725c9 a327b9d 7bc7841 8025fc0 15b29e5 711755d d9145bc 60a70ff c41bf3f 84395e9 0863293 f061635 6218beb a0c044a c026bda f83b6b5 8ed8527 cc5a240 35932a7 927c5d9 bf5e50e e0817c3 d81e811 4e8d539 cb40002 7a5ec9b 1745073 48d84e8 7862a19 bc64616 6edc2e2 dcfa64c 5485202 3d255d6 e7b1d7d cb863e2 9c7f39e b7dbb2a c41112f eee10ab c13a387 a04ae3a 51104ca 270f53b 06de103 23d2b8f 2884262 29fb60c 7403a0b f64ddd7 ef17f38 afa589b dbac029 713c221 dc8abe1",
+    "application_connections.cpp": "a160deb ea53c7d 3d21602 52fd241 da22a70 44c9385 87c0825 dc8abe1 977c7ac 97dad49 8ed8527 3c939c8 62456bf 5649069 fcb37e6 9832e31 5d1e3e8 25d9044 6ccabd0 360cf58 6d1d186 25981b1 7383941 7fe3d0b d407b2e 0754d3a 8bc4c6c dc47b92 470e6c0 dc53d17 aa5a413 f2def38 f8afaf6 0f63d2b 11e06cd b78ca6e 4a1ba28 e210983 993b756 b49519a b52ecce 330b190 cd6aa8e 87a8863 ccf1b89 9eb6f37 8adf98d f9de0a5 fd6617e c28e8a9 d205dc5 130013e fb74021 c73b464 42d82a0 1a088fd 26f4630 36dba2a c9f7697 7796b97 bca421f 5cb830f 18fbe48 c1c827b d45ff32 90d2fff b81e462 dfc83ab 62049b3 01308f8 2500e41 ba7d177 2cc246f d1240f0 81c02aa 94e2c57 edb0bb5 3adec35 aa7b815",
+    "application_events.cpp": "2e8d645 a723bc3 25e5861",
+    "application_language.cpp": "9806128",
+    "application_live.cpp": "0754d3a",
+    "application_shortcuts.cpp": "e6d7952 0b2c9f2 6015ef3 a4f767b b7fe8c7 e863cbd b7ef23a b45c7c6 89a4125 1879f4e 407ac8d f7273ce 40c2259 7407844 0c63ed7 78d7721 97d1535 081e282 050f245 f8fb455 099bff4 a54f4ce db546c4 327d6b1 8e5d048 5e37c2e de2e259 2103663 da54599 19c7aab 171d44c ab848e1 71defec 1a44033 e11bb05 bd8b766 2eaace1 873813a d8b8610 d25498d 4b4a943 e12da41 f6ced05 8e179f9 2d1e735 7314c70 3f16bec 855685d 09b1a4f b7f526d 8ff6bb8 d5e21ea b996678 d2eb4c4 1814c60 178f5f3 7ae9a25 ea59106 8465b28 eee8438 d449437 966c308 f4c4704 1e37054 4738fc9",
+    "connection_hud.cpp": "50651ff 8d0acff e52f46b f40d896 57a34ce ba1999d 02862da 2af57cd d310ce7 a647da4 787b429 3019fef 2d0b48a",
+    "connection_hud.h": "bc3fafb 1a6941f 3114af4 3bd8b01 116d51a 2311bbf c30ab53 8b1f950 f07556d ec65e9e 6bf054e 5593ad8 f513402 2a8ba34 ca6c439 dac68c4 ffc6c35 5da73c3 38977a0 3fe431e 6a4480a 377c9a8 a0ddcce f47c936 daa0e86",
+    "tests/integration_test.cpp": "8392e14 9f332a9 83bcab4 0c6c17c 221e44a 1d8bccf f46f02a 5a8433d 70d16e4 47b586f 7c2273e 77df0d2 76c9960 4c96ba0 30ef59f",
+    "tests/live_canvas_test.cpp": "388cfc1 11b1b57 5a6565a 8989317 e387db4 9762cb8 3e073c3 c7debe7 d442834 304241f 80efd11 2ba7646 faa3453 3c3518c dd43f1d b9a5b5f d3ba4ac de413be dd16080 c6d0564 1a2762f a3ed6f5 3640b4a f42825c fef9007 0bb286e a2ff0bf 9e47b4b 04169dc 12b7f3c b6e6df2 8857ecb ced1f56 c16e5a0 c8dd53e f418a6e 9eb31cd 53afefc 2ef8d60 b843469 004b4fe 31837b1 69f2c8c 82afeee 77df0d2 7dd3ab4 f737cc2 7f01d04 c02994f c273b10 6bafcb2 9a23cd2 76b799f 4772847 9ef0344 ac2ed22 7b1b73f 2fbc76b"
+   }
   }
  ]
 }

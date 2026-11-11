@@ -209,6 +209,11 @@ class Application {
     CanvasRect connection_box(const ConnectionEnd& end);
     void connect_boxes(std::vector<GpuPath>& paths, const CanvasRect& from, const CanvasRect& to,
                        std::array<float, 4> color, float width);
+    void mark_connection(const CanvasRect& view, std::vector<std::size_t> members,
+                         const ConnectionEnd& end, const std::string& text);
+    std::vector<std::size_t> place_connection_ends(const CanvasRect& view);
+    void connection_arrows(std::vector<GpuPath>& paths, const CanvasRect& subject,
+                           const std::vector<std::size_t>& visible, bool to_markers);
     void layout_connections();
     void draw_connection_markers();
     const ConnectionMarker* connection_marker_at(Vec2 pointer);
