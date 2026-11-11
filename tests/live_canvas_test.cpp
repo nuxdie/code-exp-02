@@ -38,6 +38,83 @@ struct ApplicationTestAccess {
             throw std::runtime_error(std::string("Missing source panel: ") + path);
         return *found;
     }
+    static SymbolConnection connection(Application& app, const std::string& uri, int line,
+                                       const std::string& target, int target_line)
+    {
+        const auto& edges = app.symbol_graph.connections();
+        const auto found = std::find_if(edges.begin(), edges.end(), [&](const auto& edge) {
+            return edge.source.uri == uri && edge.source.line == line &&
+                   edge.target_uri == target && edge.line == target_line;
+        });
+        if (found == edges.end())
+            throw std::runtime_error("Expected a resolved symbol connection");
+        return *found;
+    }
+    static void test_symbol_connections(Application& app, const std::filesystem::path& root)
+    {
+        const auto caller_uri = panel(app, "main.cpp").uri;
+        const auto target_uri = panel(app, "widget.h").uri;
+        wait_for(app, [&] {
+            const auto& edges = app.symbol_graph.connections();
+            return std::count_if(edges.begin(), edges.end(), [&](const auto& edge) {
+                       return edge.source.uri == caller_uri;
+                   }) == 3;
+        });
+        const auto integer = connection(app, caller_uri, 1, target_uri, 1);
+        const auto floating = connection(app, caller_uri, 2, target_uri, 2);
+        const auto local = connection(app, caller_uri, 2, caller_uri, 1);
+        const auto path = app.symbol_path(integer);
+        const auto& caller = panel(app, "main.cpp");
+        const auto& target = panel(app, "widget.h");
+        const auto target_byte = target.text[1].find("compute");
+        expect(lsp::utf16_to_byte(target.text[1], integer.column) == target_byte,
+               "Definition columns must convert Unicode prefixes from UTF-16 to UTF-8");
+        const auto start = app.dependency_anchor(caller, 1, integer.source.end, true);
+        const auto end = app.dependency_anchor(target, 1, target_byte, false);
+        expect(
+            !path.points.empty() && path.points.front().x == start.x &&
+                path.points.front().y == start.y && path.points.back().x == end.x &&
+                path.points.back().y == end.y,
+            "Symbol arrows must join the actual call and definition rather than first file lines");
+        expect(app.symbol_path(floating).points.back().y > path.points.back().y,
+               "Overloaded calls must resolve to their distinct definitions");
+        const auto local_path = app.symbol_path(local);
+        expect(!local_path.points.empty() &&
+                   local_path.points.front().y != local_path.points.back().y,
+               "Calls within a file must connect the source and definition rows");
+        panel(app, "widget.h").bounds.origin.x += 60;
+        const auto moved = app.symbol_path(integer);
+        expect(moved.points.back().x == path.points.back().x + 60 &&
+                   moved.points.front().x == path.points.front().x,
+               "Moving a definition card must move only its own arrow endpoint");
+        panel(app, "widget.h").bounds.origin.x -= 60;
+        auto& folded = panel(app, "widget.h");
+        const auto folds = folded.folds;
+        folded.folds = {{0, 2, true}};
+        app.update_mesh(folded);
+        expect(app.symbol_path(integer).points.back().y < path.points.back().y,
+               "Folded definitions must anchor to the visible enclosing fold");
+        folded.folds = folds;
+        app.update_mesh(folded);
+        expect(app.symbol_path(integer).points.back().y == path.points.back().y,
+               "Expanding a definition must restore its exact symbol endpoint");
+        const auto updated = "// shifted definition\n" + folded.source;
+        std::ofstream(root / "widget.h") << updated;
+        wait_for(app, [&] {
+            const auto& edges = app.symbol_graph.connections();
+            return panel(app, "widget.h").source == updated &&
+                   std::any_of(edges.begin(), edges.end(), [&](const auto& edge) {
+                       return edge.source.uri == caller_uri && edge.source.line == 1 &&
+                              edge.target_uri == target_uri && edge.line == 2;
+                   });
+        });
+        expect(app.symbol_path(connection(app, caller_uri, 1, target_uri, 2)).points.back().y >
+                   path.points.back().y,
+               "Editing a target must re-resolve uses in unchanged caller files");
+        app.draw();
+        expect(glGetError() == GL_NO_ERROR,
+               "Resolved symbol arrows must render without GPU errors");
+    }
     static void test_live_source(Application& app, const std::filesystem::path& root)
     {
         app.initial_view = false;
@@ -258,7 +335,7 @@ struct ApplicationTestAccess {
         expect(app.reload_requested && !app.running,
                "A ready viewer must request a state-preserving restart");
     }
-    static void run(Application& app, const std::filesystem::path& root)
+    static void run(Application& app, const std::filesystem::path& root, bool symbols)
     {
         expect(app.initialize(), "Live canvas must initialize");
         const auto deadline = Application::Clock::now() + std::chrono::seconds(2);
@@ -270,6 +347,12 @@ struct ApplicationTestAccess {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         } while (Application::Clock::now() < deadline);
         expect(attributes.map_state == IsViewable, "Live canvas test window must be mapped");
+        if (symbols) {
+            test_symbol_connections(app, root);
+            std::cout
+                << "Symbol arrows, overloads, Unicode, folds, moves and live definitions passed.\n";
+            return;
+        }
         test_live_source(app, root);
         test_conversation_navigation(app);
         test_composer_and_state(app, root);
@@ -278,24 +361,32 @@ struct ApplicationTestAccess {
     }
 };
 
-int main()
+int main(int argc, char** argv)
 {
     if (!std::getenv("DISPLAY"))
         return 77;
     const auto root =
         std::filesystem::temp_directory_path() / ("live-canvas-" + std::to_string(getpid()));
     const auto launch_directory = std::filesystem::current_path();
+    const bool symbols = argc > 1 && std::string(argv[1]) == "--symbols";
     try {
         std::filesystem::create_directories(root);
-        std::ofstream(root / "main.cpp") << "#include \"widget.h\"\nint main() { return 0; }\n";
-        std::ofstream(root / "widget.h") << "#pragma once\n";
+        std::ofstream(root / "main.cpp")
+            << (symbols ? "#include \"widget.h\"\nint local() { return compute(1); }\n"
+                          "int main() { return local() + static_cast<int>(compute(1.5)); }\n"
+                        : "#include \"widget.h\"\nint main() { return 0; }\n");
+        std::ofstream(root / "widget.h")
+            << (symbols
+                    ? "#pragma once\n/* 🌍 */ inline int compute(int value) { return value + 1; }\n"
+                      "inline double compute(double value) { return value + 0.5; }\n"
+                    : "#pragma once\n");
         std::filesystem::current_path(root);
         unsetenv("SOURCE_CANVAS_PROJECT_ROOT");
         setenv("SOURCE_CANVAS_DISABLE_AGENT", "1", 1);
         setenv("SOURCE_CANVAS_AUTO_BUILD", "0", 1);
         {
             Application app(root.string());
-            ApplicationTestAccess::run(app, root);
+            ApplicationTestAccess::run(app, root, symbols);
         }
         std::filesystem::current_path(launch_directory);
         std::filesystem::remove_all(root);

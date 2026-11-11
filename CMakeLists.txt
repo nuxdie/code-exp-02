@@ -195,10 +195,10 @@ target_compile_features(math_typesetter PUBLIC cxx_std_17)
 target_include_directories(math_typesetter PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(math_typesetter PUBLIC Threads::Threads)
 find_program(NEATO_EXECUTABLE neato REQUIRED)
-add_library(source_graph source_graph.cpp)
+add_library(source_graph source_graph.cpp symbol_graph.cpp)
 target_compile_features(source_graph PUBLIC cxx_std_17)
 target_include_directories(source_graph PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(source_graph PUBLIC nlohmann_json::nlohmann_json)
+target_link_libraries(source_graph PUBLIC language_server)
 
 add_library(gpu_renderer gpu.cpp)
 target_compile_features(gpu_renderer PUBLIC cxx_std_17)
@@ -215,6 +215,7 @@ add_library(
     application_workspace.cpp
     directory_picker.cpp
     application_model.cpp
+    application_connections.cpp
     application_image.cpp
     application_navigation.cpp
     application_popups.cpp
@@ -438,6 +439,17 @@ if(BUILD_TESTING)
         add_test(NAME live_canvas COMMAND live_canvas_tests)
     endif()
     set_tests_properties(live_canvas PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 35)
+    if(XVFB_RUN_EXECUTABLE)
+        add_test(NAME symbol_connections
+                 COMMAND "${XVFB_RUN_EXECUTABLE}" -a
+                         $<TARGET_FILE:live_canvas_tests> --symbols
+        )
+    else()
+        add_test(NAME symbol_connections COMMAND live_canvas_tests --symbols)
+    endif()
+    set_tests_properties(
+        symbol_connections PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30
+    )
     add_executable(workspace_tests tests/workspace_test.cpp)
     target_link_libraries(workspace_tests PRIVATE application_core)
     add_test(NAME workspace COMMAND workspace_tests)

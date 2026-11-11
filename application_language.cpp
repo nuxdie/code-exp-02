@@ -4,6 +4,15 @@ void Application::handle_message(const lsp::Message& message)
 {
     if (std::getenv("SOURCE_CANVAS_TRACE_LSP"))
         std::cerr << "LSP response " << message.method << " id=" << message.id << '\n';
+    const auto previous_connections = symbol_graph.connections().size();
+    if (symbol_graph.complete(message)) {
+        request_symbol_connections();
+        if (previous_connections != symbol_graph.connections().size()) {
+            connections_dirty = true;
+            redraw = true;
+        }
+        return;
+    }
     const auto panel = std::find_if(panels.begin(), panels.end(),
                                     [&](const auto& entry) { return entry.uri == message.uri; });
     if (message.version > 0 && (panel == panels.end() || panel->version != message.version))
@@ -68,11 +77,14 @@ void Application::language_initialized(const lsp::Message& message)
         const auto& legend = message.result["semanticTokensProvider"]["legend"];
         token_legend = legend["tokenTypes"].get<std::vector<std::string>>();
         const auto modifiers = legend["tokenModifiers"].get<std::vector<std::string>>();
-        for (std::size_t i = 0; i < modifiers.size() && i < 32; ++i)
+        for (std::size_t i = 0; i < modifiers.size() && i < 32; ++i) {
             if (modifiers[i] == "deprecated")
                 deprecated_modifier = 1u << i;
             else if (modifiers[i] == "definition")
                 definition_modifier = 1u << i;
+            if (modifiers[i] == "declaration" || modifiers[i] == "definition")
+                declaration_modifiers |= 1u << i;
+        }
     }
 }
 
@@ -112,11 +124,16 @@ void Application::language_styles(const lsp::Message& message)
                               [&](const auto& panel) { return panel.uri == message.uri; });
     if (found == panels.end())
         return;
-    if (message.method == "textDocument/semanticTokens/full" && message.result.is_object())
+    if (message.method == "textDocument/semanticTokens/full" && message.result.is_object()) {
         found->semantics =
             lsp::semantic_tokens(message.result.value("data", lsp::Json::array()),
                                  found->cmake ? cmake_token_legend : token_legend, found->text);
-    else if (message.method == "textDocument/publishDiagnostics")
+        if (found->cpp) {
+            symbol_graph.update(found->uri, found->version, found->semantics,
+                                declaration_modifiers);
+            request_symbol_connections();
+        }
+    } else if (message.method == "textDocument/publishDiagnostics")
         found->diagnostics = message.result;
     else if (message.method == "textDocument/diagnostic")
         found->diagnostics = message.result.value("items", lsp::Json::array());

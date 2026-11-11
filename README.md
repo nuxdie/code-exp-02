@@ -36,7 +36,7 @@ Live agent edits appear on the canvas as colored figures that fly from their con
 
 ### From the project to the details
 
-Pan between files and zoom around the pointer. Syntax stays sharp as the camera moves; dependency arrows keep related files connected.
+Pan between files and zoom around the pointer. Syntax stays sharp as the camera moves; symbol arrows connect uses to their definitions at the source lines.
 
 Use **Alt+Left / Alt+Right** or your mouse's **back / forward buttons** to revisit camera positions and zoom levels after panning, zooming, fitting, or jumping to code and conversations. Continuous movement counts as one step. Moving somewhere new after going back clears the forward history; the last 100 positions are saved with the project session.
 
@@ -54,7 +54,7 @@ Press `/` to search file names and source text. Results update as you type; use 
 
 | Capability | What you can do |
 | --- | --- |
-| **Spatial source browsing** | Move file cards, fold blocks, fit the canvas, and arrange files with Graphviz. Toggle arrows for include and build dependencies. |
+| **Spatial source browsing** | Move file cards, fold blocks, fit the canvas, and arrange files with Graphviz. Arrows resolve calls, types, and cross-file data uses to definitions, with include/build dependencies as a fallback. |
 | **Language navigation** | Inspect documentation, definitions, references, symbols, diagnostics, and completion suggestions through `clangd` and `neocmakelsp`. |
 | **Conversations beside the code** | Open an agent conversation at the pointer. The app attaches source location, selected text, and visible-file context. Keep multiple conversation cards on the canvas. |
 | **Human intent and history** | Click a file's intent label for concise requests, then select one to read its explanation beside the code. Inspect line history and associate reviewed Git checkpoints with a human statement and an explicit rationale. |
@@ -145,7 +145,7 @@ Start with **`/`** to find a file, **`F`** to see the whole canvas, and **`F1`**
 | Pan | Drag blank space, middle-drag on source or blank canvas, or arrow keys |
 | Move a card | Drag its title |
 | Fit everything / fit width / reset view | `F` / `W` / `0` |
-| Arrange files / toggle dependency arrows | `L` / `G` |
+| Arrange files / toggle connections | `L` / `G` |
 | Search the project | `/`, then `↑` / `↓` and `Enter` |
 | Read symbol documentation | Hover or `K` |
 | Go to definition / usages / back | `Ctrl+click` or `F12` / `Shift+F12` / `Alt+Left` |

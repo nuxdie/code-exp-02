@@ -4063,6 +4063,47 @@
         "kind": "captured_statement",
         "precision": "unbound"
       }
+    },
+    {
+      "id": "decision-01a1cb48-ca42-74c2-8f37-d0faf425bcb6",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1cb48-ca42-74c2-8f37-d0faf425bcb6",
+        "thread_id": "01a1cb48-c52c-7aa1-828c-6f3788282bfe",
+        "turn_id": "01a1cb48-c53b-7022-bf11-f8ed6458c916"
+      },
+      "statement": "instead of file headers arrows i want symbols arrows where possible. and those pointting to the lines, not only files titles. the whole idea is to see program organisation from logic level",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-11T15:45:07.667431+00:00",
+      "statement_hash": "5ebf0c562eac014721e8ff9c7c8adae82ae0ab94bc48c916da48560dae2ac0ef",
+      "artifacts": [
+        "CMakeLists.txt",
+        "README.md",
+        "application.h",
+        "application_connections.cpp",
+        "application_language.cpp",
+        "application_live.cpp",
+        "application_shortcuts.cpp",
+        "application_view.cpp",
+        "application_workspace.cpp",
+        "symbol_graph.cpp",
+        "symbol_graph.h",
+        "tests/live_canvas_test.cpp",
+        "tests/structure_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Resolve semantic symbol uses through clangd and connect exact call/type/data reference positions to their definitions, including same-file calls. Replace include arrows with resolved logic where available, preserve build and unresolved file dependencies, map endpoints through folds, and refresh open source analysis after edits so cached definitions cannot leave arrows on stale lines. Bound background requests and verify overloads, Unicode positions, live target edits, and stale responses.",
+        "author_role": "agent",
+        "basis": "implementation_analysis"
+      },
+      "association": {
+        "kind": "explicit_artifact_binding",
+        "precision": "file"
+      }
     }
   ]
 }

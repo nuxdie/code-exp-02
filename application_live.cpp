@@ -109,6 +109,7 @@ void Application::poll_project()
                              : "";
     for (const auto& change : changes)
         apply_project_change(change);
+    refresh_symbol_sources(changes);
     auto index_for = [&](const std::string& path) {
         const auto found = std::find_if(panels.begin(), panels.end(),
                                         [&](const auto& panel) { return panel.path == path; });
@@ -146,6 +147,7 @@ void Application::refresh_project_geometry(bool settle)
         file_sizes.push_back(panel.bounds.size);
     }
     dependencies = file_dependencies(files);
+    reset_symbol_connections();
     if (settle)
         graph.routes.clear();
     graph.files.clear();

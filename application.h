@@ -16,6 +16,7 @@
 #include "search_canvas.h"
 #include "source_graph.h"
 #include "source_panel.h"
+#include "symbol_graph.h"
 #include "syntax.h"
 #include "system_theme.h"
 #include "text_input.h"
@@ -148,6 +149,7 @@ class Application {
     std::vector<lsp::Document> documents;
     std::unordered_set<std::string> opened_documents;
     std::vector<Dependency> dependencies;
+    SymbolGraph symbol_graph;
     GraphLayout graph;
     Vec2 content_size;
     std::unique_ptr<lsp::LanguageServer> language_server;
@@ -158,6 +160,7 @@ class Application {
     std::vector<std::string> token_legend;
     unsigned deprecated_modifier = 0;
     unsigned definition_modifier = 0;
+    unsigned declaration_modifiers = 0;
     bool language_ready = false;
     std::string language_failure;
     int width = 800;
@@ -478,6 +481,10 @@ class Application {
     void style_shortcuts(int layout_width);
     void draw_shortcut_keys(Vec2 origin);
     GpuPath dependency_path(std::size_t index);
+    GpuPath symbol_path(const SymbolConnection& edge);
+    void request_symbol_connections();
+    void reset_symbol_connections();
+    void refresh_symbol_sources(const std::vector<ProjectChange>& changes);
     Vec2 dependency_anchor(const SourcePanel& panel, int line, std::size_t byte, bool outgoing);
     void rebuild_connections();
     void update_popup_mesh(int layout_width);

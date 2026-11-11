@@ -236,6 +236,7 @@ void Application::draw_workspace_preview(const Viewport& view)
 
 void Application::finish_workspace_load()
 {
+    reset_symbol_connections();
     if (!benchmark) {
         try {
             language_server = std::make_unique<lsp::LanguageServer>(
