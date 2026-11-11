@@ -4128,10 +4128,10 @@
       ],
       "relations": [],
       "rationale": {
-        "summary": "Stop automatic quality runs on routine pushes to remove repeated failure-email noise while retaining pull-request and manual checks. Repair the two reproduced UI test fixture failures: clear inherited source context before testing the working indicator, and enable the simulated agent before testing composer submission. Keep the complete quality gate enforced. Runner logs also show repeated DNS failures for azure.archive.ubuntu.com during package setup. Use the official Ubuntu HTTPS mirrors directly, bound APT network retries and timeouts, and reject failed index updates so installation cannot silently continue from stale indexes.",
+        "summary": "Stop automatic quality runs on routine pushes to remove repeated failure-email noise while retaining pull-request and manual checks. Repair the two reproduced UI test fixture failures: clear inherited source context before testing the working indicator, and enable the simulated agent before testing composer submission. Keep the complete quality gate enforced. Runner logs also show repeated DNS failures for azure.archive.ubuntu.com during package setup. Use the official Ubuntu HTTPS mirrors directly, bound APT network retries and timeouts, and reject failed index updates so installation cannot silently continue from stale indexes. A fresh hosted run confirmed DNS failures also affect archive.ubuntu.com and security.ubuntu.com. Use the Kernel.org and MIT Ubuntu mirrors, whose noble release indexes were verified reachable, instead of the failing Ubuntu-domain endpoints.",
         "author_role": "agent",
         "basis": "implementation_analysis",
-        "recorded_at": "2026-11-11T16:21:10.769994+00:00"
+        "recorded_at": "2026-11-11T16:25:32.370704+00:00"
       },
       "association": {
         "kind": "explicit_artifact_binding",
@@ -4142,6 +4142,12 @@
           "summary": "Stop automatic quality runs on routine pushes to remove repeated failure-email noise while retaining pull-request and manual checks. Repair the two reproduced UI test fixture failures: clear inherited source context before testing the working indicator, and enable the simulated agent before testing composer submission. Keep the complete quality gate enforced.",
           "author_role": "agent",
           "basis": "implementation_analysis"
+        },
+        {
+          "summary": "Stop automatic quality runs on routine pushes to remove repeated failure-email noise while retaining pull-request and manual checks. Repair the two reproduced UI test fixture failures: clear inherited source context before testing the working indicator, and enable the simulated agent before testing composer submission. Keep the complete quality gate enforced. Runner logs also show repeated DNS failures for azure.archive.ubuntu.com during package setup. Use the official Ubuntu HTTPS mirrors directly, bound APT network retries and timeouts, and reject failed index updates so installation cannot silently continue from stale indexes.",
+          "author_role": "agent",
+          "basis": "implementation_analysis",
+          "recorded_at": "2026-11-11T16:21:10.769994+00:00"
         }
       ]
     }
