@@ -100,3 +100,21 @@ std::string marker_text(const std::vector<ConnectionLink>& links,
         text += " ×" + std::to_string(links[order.front()].count);
     return text;
 }
+
+Vec2 center(const CanvasRect& box)
+{
+    return {box.origin.x + box.size.x / 2, box.origin.y + box.size.y / 2};
+}
+
+Vec2 border_point(const CanvasRect& box, Vec2 toward)
+{
+    const auto middle = center(box);
+    const double dx = toward.x - middle.x, dy = toward.y - middle.y;
+    if (dx == 0 && dy == 0)
+        return middle;
+    // Scale the direction until it reaches the nearer pair of sides.
+    const double horizontal = dx == 0 ? 1e9 : box.size.x / 2 / std::abs(dx);
+    const double vertical = dy == 0 ? 1e9 : box.size.y / 2 / std::abs(dy);
+    const double reach = std::min({horizontal, vertical, 1.0});
+    return {middle.x + dx * reach, middle.y + dy * reach};
+}

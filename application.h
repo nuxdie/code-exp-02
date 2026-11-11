@@ -194,6 +194,7 @@ class Application {
     std::map<std::string, DocumentView> connection_labels;
     Camera connection_camera;
     Vec2 connection_size;
+    int connection_pointed = -1; // the marker under the pointer, whose lines stand out
     struct AgentMarker {
         CanvasRect bounds;
         std::string uri;
@@ -210,7 +211,17 @@ class Application {
     void unit_connections();
     void layout_connections();
     void draw_connection_markers();
-    void draw_marker_sites(const ConnectionMarker& marker, const std::array<float, 4>& color);
+    struct ConnectionWord {
+        CanvasRect bounds; // on screen
+        std::array<float, 4> color;
+        bool title = false;
+    };
+    std::vector<ConnectionWord> connection_words;
+    CanvasRect word_bounds(const SourcePanel& panel, int line, std::size_t begin, std::size_t end);
+    CanvasRect connection_box(const CanvasRect& word, int file);
+    void connect_boxes(std::vector<GpuPath>& paths, const CanvasRect& from, const CanvasRect& to,
+                       std::array<float, 4> color, float width);
+    void marker_connections(std::vector<GpuPath>& paths, const CanvasRect& view);
     const ConnectionMarker* connection_marker_at(Vec2 pointer);
     bool connection_marker_button(const XEvent& event, Vec2 pointer);
     GpuMesh connection_mesh;

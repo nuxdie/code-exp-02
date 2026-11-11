@@ -50,6 +50,29 @@ Vec2 Application::dependency_anchor(const SourcePanel& panel, int line, std::siz
             panel.bounds.origin.y + header_height + (row + 0.5) * line_height};
 }
 
+// The box a word occupies on the canvas, or its fold row's end when the line is folded away.
+CanvasRect Application::word_bounds(const SourcePanel& panel, int line, std::size_t begin,
+                                    std::size_t end)
+{
+    if (panel.folded.source_lines.empty() || panel.text.empty())
+        return {};
+    line = std::clamp(line, 0, static_cast<int>(panel.text.size()) - 1);
+    const int row = panel.folded.display_lines[line];
+    const int visible = panel.folded.source_lines[row];
+    const auto size = panel.text[visible].size();
+    if (visible != line)
+        begin = end = size;
+    PangoRectangle first{}, last{};
+    pango_layout_index_to_pos(panel.lines[visible], static_cast<int>(std::min(begin, size)),
+                              &first);
+    pango_layout_index_to_pos(panel.lines[visible], static_cast<int>(std::min(end, size)), &last);
+    const double left = static_cast<double>(first.x) / PANGO_SCALE;
+    const double right = static_cast<double>(last.x) / PANGO_SCALE;
+    return {{panel.bounds.origin.x + 24 + left - 2,
+             panel.bounds.origin.y + header_height + row * line_height},
+            {std::max(6.0, right - left) + 4, static_cast<double>(line_height)}};
+}
+
 GpuPath Application::dependency_path(std::size_t index)
 {
     const auto& edge = dependencies[index];
@@ -143,12 +166,12 @@ std::optional<Application::ConnectionFocus> Application::connection_focus_at(Vec
 // The same destination reached several times is one link with a count.
 void Application::add_connection_link(ConnectionLink link)
 {
-    link.sites = {link.near};
+    link.sites = {link.word};
     for (auto& known : connection_links)
         if (known.uses == link.uses && known.uri == link.uri && known.name == link.name &&
             (!link.uses || known.line == link.line)) {
             ++known.count;
-            known.sites.push_back(link.near);
+            known.sites.push_back(link.word);
             return;
         }
     connection_links.push_back(std::move(link));
@@ -172,6 +195,8 @@ void Application::file_connections()
         link.file = file_name(other.path);
         link.uri = other.uri;
         link.uses = uses;
+        link.near_file = focus;
+        link.far_file = uses ? target : source;
         add_connection_link(std::move(link));
     };
     for (const auto& edge : symbol_graph.connections()) {
@@ -207,12 +232,25 @@ ConnectionLink Application::symbol_link(const SymbolConnection& edge, const GpuP
     link.file = file_name(lsp::uri_path(link.uri));
     link.line = uses ? edge.line : edge.source.line;
     link.column = uses ? edge.column : 0;
-    if (!uses) {
-        link.name = use_site_label(edge);
-        return link;
-    }
-    const auto& text = panels[connection_focus.panel].text[edge.source.line];
-    link.name = text.substr(edge.source.begin, edge.source.end - edge.source.begin);
+    const auto source = std::find_if(panels.begin(), panels.end(), [&](const auto& panel) {
+        return panel.uri == edge.source.uri;
+    });
+    const auto target = std::find_if(panels.begin(), panels.end(), [&](const auto& panel) {
+        return panel.uri == edge.target_uri;
+    });
+    const auto use = word_bounds(*source, edge.source.line, edge.source.begin, edge.source.end);
+    const auto& defined = target->text[edge.line];
+    const auto begin = lsp::utf16_to_byte(defined, edge.column);
+    auto end = begin;
+    while (end < defined.size() &&
+           (std::isalnum(static_cast<unsigned char>(defined[end])) || defined[end] == '_'))
+        ++end;
+    const auto definition = word_bounds(*target, edge.line, begin, std::max(end, begin + 1));
+    link.word = uses ? use : definition;
+    link.target = uses ? definition : use;
+    const auto& text = source->text[edge.source.line];
+    link.name = uses ? text.substr(edge.source.begin, edge.source.end - edge.source.begin)
+                     : use_site_label(edge);
     return link;
 }
 
@@ -246,6 +284,8 @@ void Application::unit_connections()
         ConnectionLink link{path.points.front(), path.points.back()};
         link.file = file_name(panels[edge.target].path);
         link.uri = panels[edge.target].uri;
+        link.word = word_bounds(panel, edge.line, edge.byte, panel.text[edge.line].size());
+        link.far_file = edge.target;
         add_connection_link(std::move(link));
     }
 }

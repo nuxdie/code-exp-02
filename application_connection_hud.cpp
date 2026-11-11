@@ -6,33 +6,54 @@ constexpr std::array<float, 4> used_by_color{0.85f, 0.50f, 0.15f, 0.75f};
 constexpr double edge_margin = 10;
 } // namespace
 
-// Place every link for the current camera. A far end that is visible gets an arrow to the
-// thing itself. Far ends that are not are gathered per file into one labelled marker on the
-// window edge in that file's direction, so nothing ever just runs off the screen.
+// Where an end of a link is on screen: the word itself, or the file's title for a whole file.
+CanvasRect Application::connection_box(const CanvasRect& word, int file)
+{
+    if (file >= 0 && file < static_cast<int>(header_hits.size()) && header_hits[file].size.x > 0)
+        return header_hits[file];
+    return {camera.world_to_screen(word.origin, viewport()),
+            {word.size.x * camera.zoom, word.size.y * camera.zoom}};
+}
+
+// An arrow from one box's border to another's, so it is clear which word it belongs to.
+void Application::connect_boxes(std::vector<GpuPath>& paths, const CanvasRect& from,
+                                const CanvasRect& to, std::array<float, 4> color, float width)
+{
+    auto path = connection_curve(border_point(from, center(to)), border_point(to, center(from)));
+    path.color = color;
+    path.width = width;
+    paths.push_back(std::move(path));
+}
+
+// Place every link for the current camera. Every word an arrow starts from is highlighted.
+// A far end that is visible gets an arrow to that word. Far ends that are not are gathered
+// per file into one labelled marker on the window edge in that file's direction, and the
+// arrows go to the marker, so nothing ever just runs off the screen.
 void Application::layout_connections()
 {
     const CanvasRect view{
         {edge_margin, edge_margin},
         {std::max(1.0, width - 2 * edge_margin), std::max(1.0, height - 2 * edge_margin)}};
-    const Vec2 middle{width / 2.0, height / 2.0};
     connection_markers.clear();
+    connection_words.clear();
     std::vector<GpuPath> paths;
     std::map<std::pair<bool, std::string>, std::vector<std::size_t>> hidden;
     for (std::size_t i = 0; i < connection_links.size(); ++i) {
         const auto& link = connection_links[i];
-        const auto far = camera.world_to_screen(link.far, viewport());
-        if (!inside(view, far)) {
+        const auto color = link.uses ? uses_color : used_by_color;
+        const auto far = connection_box(link.target, link.far_file);
+        const bool visible = inside(view, center(far)) && far.size.x > 0;
+        if (visible)
+            connection_words.push_back({far, color, link.far_file >= 0});
+        else
             hidden[{link.uses, link.uri}].push_back(i);
-            continue;
-        }
         for (const auto& site : link.sites) {
-            const auto near = camera.world_to_screen(site, viewport());
-            if (!inside(view, near))
+            const auto near = connection_box(site, link.near_file);
+            if (!inside(view, center(near)))
                 continue;
-            auto path = connection_curve(near, far);
-            path.color = link.uses ? uses_color : used_by_color;
-            path.width = 1.5f;
-            paths.push_back(std::move(path));
+            connection_words.push_back({near, color, link.near_file >= 0});
+            if (visible)
+                connect_boxes(paths, near, far, color, 1.5f);
         }
     }
     for (const auto& [key, members] : hidden) {
@@ -40,15 +61,37 @@ void Application::layout_connections()
         const auto text = marker_text(connection_links, members, direction_glyph(view, far));
         auto& label = connection_labels[text];
         update_document(label, text, 640, false);
-        connection_markers.push_back(
-            {members,
-             marker_box(view, view_exit(view, middle, far), {label.size.x + 22, label.size.y + 8}),
-             text});
+        connection_markers.push_back({members,
+                                      marker_box(view, view_exit(view, center(view), far),
+                                                 {label.size.x + 22, label.size.y + 8}),
+                                      text});
     }
     separate_markers(view, connection_markers);
+    marker_connections(paths, view);
     renderer->paths(connection_mesh, paths);
     connection_camera = camera;
     connection_size = {static_cast<double>(width), static_cast<double>(height)};
+}
+
+// Each word is tied to the marker that stands for where it leads. The marker under the
+// pointer has its arrows drawn strongly and the rest step back.
+void Application::marker_connections(std::vector<GpuPath>& paths, const CanvasRect& view)
+{
+    const auto* pointed = connection_marker_at(mouse_position);
+    connection_pointed = pointed ? static_cast<int>(pointed - connection_markers.data()) : -1;
+    for (const auto& marker : connection_markers) {
+        const float strength = &marker == pointed ? 0.95f : pointed ? 0.12f : 0.5f;
+        for (const auto index : marker.links) {
+            const auto& link = connection_links[index];
+            auto color = link.uses ? uses_color : used_by_color;
+            color[3] = strength;
+            for (const auto& site : link.sites) {
+                const auto near = connection_box(site, link.near_file);
+                if (inside(view, center(near)))
+                    connect_boxes(paths, near, marker.bounds, color, &marker == pointed ? 2 : 1);
+            }
+        }
+    }
 }
 
 void Application::draw_connections(const Viewport&)
@@ -76,36 +119,33 @@ void Application::draw_connections(const Viewport&)
                        connection_camera.center.x != camera.center.x ||
                        connection_camera.center.y != camera.center.y ||
                        connection_size.x != width || connection_size.y != height;
+    const auto* marker = connection_marker_at(mouse_position);
+    const int pointed = marker ? static_cast<int>(marker - connection_markers.data()) : -1;
     if (connections_dirty)
         rebuild_connections();
-    else if (moved)
+    else if (moved || pointed != connection_pointed)
         layout_connections();
+    // Words are tinted beneath the text; file titles are underlined later, above their cards.
+    for (const auto& word : connection_words)
+        if (!word.title)
+            renderer->rectangle(word.bounds,
+                                {0.55f + word.color[0] * 0.45f, 0.55f + word.color[1] * 0.45f,
+                                 0.55f + word.color[2] * 0.45f, 1});
     renderer->draw(connection_mesh, {0, 0}, 1);
-}
-
-void Application::draw_marker_sites(const ConnectionMarker& marker,
-                                    const std::array<float, 4>& color)
-{
-    for (const auto index : marker.links)
-        for (const auto& site : connection_links[index].sites) {
-            const auto at = camera.world_to_screen(site, viewport());
-            renderer->rectangle({{at.x - 18 * camera.zoom, at.y + line_height * 0.42 * camera.zoom},
-                                 {18 * camera.zoom, std::max(2.0, 2 * camera.zoom)}},
-                                {color[0], color[1], color[2], 1});
-        }
 }
 
 void Application::draw_connection_markers()
 {
     if (!show_connections)
         return;
-    const auto* pointed = connection_marker_at(mouse_position);
+    for (const auto& word : connection_words)
+        if (word.title)
+            renderer->rectangle({{word.bounds.origin.x, word.bounds.origin.y + word.bounds.size.y},
+                                 {word.bounds.size.x, 2}},
+                                {word.color[0], word.color[1], word.color[2], 1});
     for (const auto& marker : connection_markers) {
         const auto& color =
             connection_links[marker.links.front()].uses ? uses_color : used_by_color;
-        // Pointing at a marker shows which places in the code it stands for.
-        if (&marker == pointed)
-            draw_marker_sites(marker, color);
         renderer->rectangle(marker.bounds, {1, 1, 1, 0.96f});
         renderer->rectangle({marker.bounds.origin, {3, marker.bounds.size.y}},
                             {color[0], color[1], color[2], 1});

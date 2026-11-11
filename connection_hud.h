@@ -14,8 +14,15 @@ struct ConnectionLink {
     int line = 0, column = 0;
     bool uses = true; // the focused code uses it; otherwise it uses the focused code
     int count = 1;
-    std::vector<Vec2> sites{}; // every place in the focused code that refers to it
+    CanvasRect word{};                 // the word in the focused code this link starts from
+    CanvasRect target{};               // the word at the far end
+    int near_file = -1, far_file = -1; // set when an end is a whole file, shown by its title
+    std::vector<CanvasRect> sites{};   // every word in the focused code that refers to it
 };
+
+// The point on a box's border facing another point: where an arrow should touch it.
+Vec2 border_point(const CanvasRect& box, Vec2 toward);
+Vec2 center(const CanvasRect& box);
 
 // A link's far end as drawn: on the thing itself, or on the window edge nearest to it.
 // What lies off screen in one file, drawn on the window edge nearest to it.

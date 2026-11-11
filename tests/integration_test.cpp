@@ -218,6 +218,9 @@ struct ApplicationTestAccess {
                    (!app.connection_markers.empty() &&
                     app.connection_markers.front().text.find(link.file) != std::string::npos),
                "A link whose far end is off screen must become a labelled marker at the edge");
+        expect(link.word.size.x > 0 && !app.connection_words.empty() &&
+                   app.connection_mesh.vertices > 0,
+               "The word an arrow starts from must be highlighted and tied to where it leads");
         for (const auto& marker : app.connection_markers)
             expect(marker.bounds.origin.x >= 0 && marker.bounds.origin.y >= 0 &&
                        marker.bounds.origin.x + marker.bounds.size.x <= app.width &&
