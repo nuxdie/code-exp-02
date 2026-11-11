@@ -39,6 +39,9 @@ std::array<float, 3> intent_color(const std::string& intent, double lightness);
 // The sidenote for a run: the decision, and when asked, the words and reasoning behind it.
 std::string intent_note(const IntentView& view, const IntentRun& run, bool detailed);
 
+// Standing guidance for a new agent: the decisions already made, in the human's words.
+std::string intent_instructions(const IntentView& view);
+
 struct IntentMargin {
     IntentView view;
     std::future<std::string> loading;

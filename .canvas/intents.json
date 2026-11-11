@@ -3072,6 +3072,28 @@
     "tests/agent_windows_test.cpp": "47347fc d8a5dd8 8dbd2c3 30f1548 eb0610d 669a0ff 148cae2 31e4afe 773b8ce b162156 0e4079e 34d859b f05b7d5 d73a27e fcb587a 5c5f7a2 77df0d2 d55e90c 7d884ab b554549 8d103e0 435bc7e 9fa6b0c 93122de 68d1d72 51206a6 fe01c47 b80a86d 78cf652 68f4970 733b01b f2a1fcc 40183e6 73402fe",
     "tools/intents.py": "b5c8d30 b63c133 fed6dc8 942e656 fb12787 8a113f1 1369e59 ee5bcc5 d30b912 a840f5f eee0bbb 58c4437 9da7498 142f440"
    }
+  },
+  {
+   "id": "claude-2026-11-11-agents-know-intents",
+   "at": "2026-11-11T18:27:41.113Z",
+   "source": "transcript",
+   "said": "fine. next",
+   "why": "New agents are started with the list of standing decisions and a canvas_intent tool, so they follow what was already decided and file each turn under the decision it served, or state a new one in the user's voice. The store gained assign for that link.",
+   "intent": "intent-first",
+   "changes": {
+    "application.h": "4ff9eec ec7d8e6 1cebedf",
+    "application_chat_input.cpp": "7d657be 2ae937b",
+    "application_intent_margin.cpp": "bb7f301 0e4fce4 900dcfd 5bea796 dbadcb7 4176175 3f5f269 27cff33 d25840e 267f5ce c41e1a6 1d697b1 ded3ba0 6a4f4d3 fa1ad3f c9b00bc 42b9089 2b9a934 c7e52e1 aa9e5fa 1f24b58 b830fd0 636f01e 07b3110 319b43a e54db45 2dcc150 66e5339",
+    "application_walkthrough.cpp": "d9037df 3757ffc 9efa469 7027e4f 616e6c4 0bdf20a b19fc60 c5fe093 c9ce09e 9d996f5 0aa0ebd 57d6332 f2def38 ea04545 844c893 3f11ed3 ed0c6d4 7987f60 970520a ee360d1 cd6bc45",
+    "canvas_tools.cpp": "2452705 51b1b07 c618309 6658cf4 7ad7279 523dc62 b959869 8b1b831 979d01c 75bd6f7 c2d947a b71e2c5 a0c7f0c 749f874 e04a691 9d6c4f7 b32f1ce",
+    "conversation.cpp": "8209230 550f6f7 03e2ad6 4f56a30 19651c7 88a8598 ab460a6 d9ecab8 844c893",
+    "conversation.h": "1c7f33f",
+    "intent_margin.cpp": "f145f9e 22debbd 35b8f2e a4148e9 9f917a1 33f5f23 73d9b78 d1738fc 8379e39",
+    "intent_margin.h": "d9eb40b 4376b3f",
+    "tests/conversation_test.cpp": "15cc565 6f0bb58 c0a1d17 6304f65",
+    "tests/test_intents.py": "3c255c1 8adb587 2435c48 d581648 761c9c8 57c5bb1 2d4bff8 5f53f5b 9c9b83d 565b6fc 2b39a1c 65cb937",
+    "tools/intents.py": "7ac1afe aea9cac 461abe5 eb0c702 da9da4c 92fc521 544bf79 7462741 22b61ed 61d063e b1f2807 a71d417 0c282e4 e1bf86b 43fc930 eb90865 aac964a eab4aab ae48954 7cb0e3b f8b3f06 4d05547 16ec1cc 0043633 0bda96b a88b9fd afe5db4 758db15 6b19a36 5d1f80c c901ca7 3ee1910 9f41412 f9f19e0 c5afecc 604e7ca"
+   }
   }
  ]
 }

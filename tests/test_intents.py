@@ -93,6 +93,19 @@ class IntentStoreTest(unittest.TestCase):
                 "notes.txt": intents.hashes(["quarterly_totals = sum(all_the_rows)"])})]}
             self.assertEqual(intents.blame(folder, store), {"notes.txt": [0]})
 
+    def test_an_agent_can_file_its_turn_under_an_old_or_new_intent(self):
+        self.write("a.py", "value_of_interest = 42\n")
+        intents.save(self.root, {"version": 2, "intents": [{"id": "old", "statement": "Old."}],
+                                 "commits": {}, "turns": [turn("t1"), turn("t2")]})
+        self.assertEqual(intents.assign(self.root, [], "t1", "old", None), "old")
+        created = intents.assign(self.root, [], "t2", None, "Wheel zooms, never scrolls.")
+        self.assertEqual(created, "wheel-zooms-never-scrolls")
+        self.assertEqual(intents.assign(self.root, [], "t1", None, "wheel zooms, never scrolls."),
+                         created)
+        store = intents.load(self.root)
+        self.assertEqual([item["id"] for item in store["intents"]], ["old", created])
+        self.assertEqual([item["intent"] for item in store["turns"]], [created, created])
+
     def test_canvas_context_is_where_not_what_was_said(self):
         context = json.dumps({"path": "camera.h", "line": 42, "workspace": "/x"})
         said, where = intents.human_text([

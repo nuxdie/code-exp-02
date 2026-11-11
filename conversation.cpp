@@ -332,12 +332,15 @@ bool Conversation::submit(const std::string& text)
     sending = true;
     error.clear();
     submitted = text;
-    if (thread_id.empty())
-        request("thread/start", {{"cwd", root},
-                                 {"approvalPolicy", "never"},
-                                 {"sandbox", "danger-full-access"},
-                                 {"dynamicTools", canvas_tools()}});
-    else
+    if (thread_id.empty()) {
+        Json start{{"cwd", root},
+                   {"approvalPolicy", "never"},
+                   {"sandbox", "danger-full-access"},
+                   {"dynamicTools", canvas_tools()}};
+        if (!instructions.empty())
+            start["developerInstructions"] = instructions;
+        request("thread/start", std::move(start));
+    } else
         send_prompt();
     return true;
 }

@@ -84,7 +84,8 @@ void Application::chat_action(const ChatHit& hit, Vec2 world)
         if (!chat->conversation.questions.empty() &&
             chat->conversation.questions.front().method == "item/tool/requestUserInput")
             respond_chat_question(chat->input.text);
-        else if (chat->conversation.submit(chat->input.text) && chat->composing) {
+        else if (chat->conversation.instructions = intent_instructions(intent_margin.view);
+                 chat->conversation.submit(chat->input.text) && chat->composing) {
             chat->composing = false;
             chat->bounds.origin = {chat->editor.origin.x - 20, chat->editor.origin.y - 788};
             chat->bounds.size = {760, 900};

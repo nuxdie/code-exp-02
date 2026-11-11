@@ -24,6 +24,7 @@ class Conversation {
     using Json = nlohmann::json;
     std::string thread_id, active_turn, title = "Conversation", status = "Connecting…", error;
     std::string accepted_text, canvas_context;
+    std::string instructions; // standing guidance given to a thread when it is created
     bool fresh = false;
     std::vector<ConversationEntry> entries;
     std::vector<Json> threads;

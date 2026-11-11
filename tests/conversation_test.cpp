@@ -109,8 +109,12 @@ void test_contextual_conversation()
         {{"id", request["id"]}, {"result", {{"data", Json::array({{{"id", "recent-thread"}}})}}}});
     expect(model.thread_id.empty(),
            "Listing old conversations must not attach a fresh card without a selection");
+    model.instructions = "- wheel-zooms: The wheel zooms everywhere.";
     expect(model.submit("Make this smoother"), "A connected fresh card must accept a prompt");
     request = take_request(model, "thread/start");
+    expect(request["params"]["developerInstructions"] == model.instructions &&
+               request["params"]["dynamicTools"][1]["name"] == "canvas_intent",
+           "New agents must be told the standing decisions and be able to file their turn");
     expect(request["params"]["cwd"] == "/project", "New cards must retain the project workspace");
     expect(request["params"]["approvalPolicy"] == "never" &&
                request["params"]["sandbox"] == "danger-full-access",

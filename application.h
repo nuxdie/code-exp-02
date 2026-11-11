@@ -107,6 +107,7 @@ class Application {
     std::vector<std::unique_ptr<ChatCanvas>> chat_windows;
     std::unique_ptr<CodeWalkthrough> walkthrough;
     IntentMargin intent_margin;
+    std::vector<std::future<void>> intent_writes;
     int dragged_walkthrough_step = -1;
     std::unique_ptr<SystemTheme> system_theme;
     XIM input_method = nullptr;
@@ -283,6 +284,7 @@ class Application {
     void handle_build_result(const BuildResult& result);
     void request_reload();
     void load_intent_margin();
+    std::string record_turn_intent(const lsp::Json& call);
     void poll_intent_margin();
     std::optional<SourceHit> source_line_at(Vec2 screen);
     CanvasRect intent_run_bounds(const SourcePanel& panel, const IntentRun& run);
@@ -322,6 +324,7 @@ class Application {
     void show_shortcuts();
     bool shortcuts_key(KeySym key);
     bool handle_canvas_tool(const lsp::Json& message);
+    std::string walkthrough_tool(const lsp::Json& call);
     void show_walkthrough(const lsp::Json& specification, bool restoring = false);
     void release_walkthrough();
     void focus_walkthrough();

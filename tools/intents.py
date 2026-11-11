@@ -144,7 +144,7 @@ def codex_turns(root, sessions):
         turn["changes"] = {path: hashes(lines) for path, lines in turn["changes"].items()}
         turn["changes"] = {path: values for path, values in turn["changes"].items() if values}
         result.append(turn)
-    return sorted(result, key=lambda turn: turn["at"] or "")
+    return sorted(result, key=lambda turn: turn.get("at") or "")
 
 
 def git(root, *arguments):
@@ -238,7 +238,7 @@ def rebuild(root, sessions):
             turns.append({key: value for key, value in turn.items()
                           if key not in ("committed", "milestone", "commits")})
     add_commits(root, turns, store.get("commits", {}))
-    turns.sort(key=lambda turn: turn["at"] or "")
+    turns.sort(key=lambda turn: turn.get("at") or "")
     for turn in turns:
         turn["intent"], also = previous.get(turn["id"], (None, None))
         turn.pop("also", None)
@@ -283,9 +283,38 @@ def record(root, said, why, intent, base, identifier):
     turns.append({"id": identifier, "thread": previous.get("thread"),
                   "at": previous.get("at", stamp), "source": "transcript", "said": said,
                   "why": why, "changes": working_changes(root, base), "intent": intent or None})
-    store["turns"] = sorted(turns, key=lambda turn: turn["at"] or "")
+    store["turns"] = sorted(turns, key=lambda turn: turn.get("at") or "")
     save(root, store)
     return identifier
+
+
+def slug(statement, taken):
+    words = re.findall(r"[a-z0-9]+", statement.lower())
+    base = "-".join(words[:5]) or "intent"
+    name, count = base, 2
+    while name in taken:
+        name, count = f"{base}-{count}", count + 1
+    return name
+
+
+def assign(root, sessions, turn_id, intent, statement):
+    """Link a turn to the intent it served, creating the intent from a statement if new."""
+    store = rebuild(root, sessions)
+    known = {item["id"]: item for item in store["intents"]}
+    if statement:
+        same = [item["id"] for item in store["intents"]
+                if normalize(item["statement"]).lower() == normalize(statement).lower()]
+        intent = same[0] if same else slug(statement, known)
+        if not same:
+            store["intents"].append({"id": intent, "statement": statement.strip()})
+    elif intent not in known:
+        raise SystemExit("Unknown intent: " + str(intent))
+    turns = [turn for turn in store["turns"] if turn["id"] == turn_id]
+    if not turns:
+        raise SystemExit("Unknown turn: " + turn_id)
+    turns[0]["intent"] = intent
+    save(root, store)
+    return intent
 
 
 def tracked_files(root):
@@ -407,9 +436,11 @@ def coverage(root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("command", choices=["rebuild", "view", "coverage", "turns", "record"])
+    parser.add_argument("command", choices=["rebuild", "view", "coverage", "turns", "record", "assign"])
     parser.add_argument("--refresh", action="store_true",
                         help="view: re-read transcripts first, so turns in progress appear")
+    parser.add_argument("--turn", help="assign: id of the turn to link")
+    parser.add_argument("--statement", help="assign: a new decision, when no intent fits")
     parser.add_argument("--said", help="record: the human's words, verbatim")
     parser.add_argument("--why", default="", help="record: the agent's reasoning for this turn")
     parser.add_argument("--intent", help="record: id of the intent this turn serves")
@@ -422,6 +453,11 @@ def main():
     if options.command == "rebuild":
         rebuild(options.root, options.sessions or [os.path.expanduser("~/.codex/sessions")])
         print(json.dumps(coverage(options.root)))
+    elif options.command == "assign":
+        if not options.turn or bool(options.intent) == bool(options.statement):
+            parser.error("assign needs --turn and either --intent or --statement")
+        print(assign(options.root, options.sessions or [os.path.expanduser("~/.codex/sessions")],
+                     options.turn, options.intent, options.statement))
     elif options.command == "record":
         if not options.said:
             parser.error("record needs --said")

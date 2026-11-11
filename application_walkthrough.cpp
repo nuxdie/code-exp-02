@@ -144,6 +144,28 @@ void Application::focus_walkthrough()
     schedule_save();
 }
 
+std::string Application::walkthrough_tool(const lsp::Json& call)
+{
+    if (call.value("tool", "") != "canvas_walkthrough" ||
+        (call.contains("namespace") && !call["namespace"].is_null()))
+        throw std::runtime_error("Unknown canvas tool");
+    const auto& arguments = call.at("arguments");
+    const auto action = arguments.at("action").get<std::string>();
+    if (action == "show")
+        show_walkthrough(arguments);
+    else if (action == "focus")
+        focus_walkthrough();
+    else if (action == "clear") {
+        release_walkthrough();
+        redraw = true;
+        schedule_save();
+    } else
+        throw std::runtime_error("Action must be show, focus or clear");
+    return walkthrough ? "Walkthrough visible: " + walkthrough->title + " (" +
+                             std::to_string(walkthrough->steps.size()) + " excerpts)"
+                       : "Walkthrough cleared";
+}
+
 bool Application::handle_canvas_tool(const lsp::Json& message)
 {
     if (message.value("method", "") != "item/tool/call" || !message.contains("id"))
@@ -154,25 +176,9 @@ bool Application::handle_canvas_tool(const lsp::Json& message)
     bool success = false;
     std::string result;
     try {
-        if (params.value("tool", "") != "canvas_walkthrough" ||
-            (params.contains("namespace") && !params["namespace"].is_null()))
-            throw std::runtime_error("Unknown canvas tool");
-        const auto& arguments = params.at("arguments");
-        const auto action = arguments.at("action").get<std::string>();
-        if (action == "show")
-            show_walkthrough(arguments);
-        else if (action == "focus")
-            focus_walkthrough();
-        else if (action == "clear") {
-            release_walkthrough();
-            redraw = true;
-            schedule_save();
-        } else
-            throw std::runtime_error("Action must be show, focus or clear");
+        result = params.value("tool", "") == "canvas_intent" ? record_turn_intent(params)
+                                                             : walkthrough_tool(params);
         success = true;
-        result = walkthrough ? "Walkthrough visible: " + walkthrough->title + " (" +
-                                   std::to_string(walkthrough->steps.size()) + " excerpts)"
-                             : "Walkthrough cleared";
     } catch (const std::exception& error) {
         result = error.what();
     }

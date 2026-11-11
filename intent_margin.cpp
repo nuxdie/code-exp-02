@@ -96,3 +96,15 @@ std::string intent_note(const IntentView& view, const IntentRun& run, bool detai
         note += "\n" + clipped(turn.why, 900);
     return note;
 }
+
+std::string intent_instructions(const IntentView& view)
+{
+    if (view.statements.empty())
+        return "";
+    std::string text = "The user has already made these decisions about this project. Follow "
+                       "them without being asked again, and say so if a request conflicts with "
+                       "one.\n";
+    for (const auto& [id, statement] : view.statements)
+        text += "- " + id + ": " + statement + "\n";
+    return text + "When a turn changes files, call canvas_intent once with the id it served.";
+}
