@@ -217,6 +217,8 @@ def save(root, store):
             if evidence in turn:
                 turn[evidence] = {name: " ".join(values)
                                   for name, values in sorted(turn[evidence].items()) if values}
+                if not turn[evidence] and evidence != "changes":
+                    del turn[evidence]
         turns.append(turn)
     text = json.dumps({**store, "turns": turns}, ensure_ascii=False, indent=1) + "\n"
     # The canvas watches the project; rewriting an unchanged store would wake it for nothing.
