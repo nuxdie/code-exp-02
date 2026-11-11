@@ -3110,6 +3110,18 @@
     "application_view.cpp": "19818e8 6dfdbb2 dd297d2 0754d3a",
     "tests/integration_test.cpp": "8b36c8b db32541 532e087 45049f8 bfdfd21 7491726 805d755 84b452b 1958b0a c9d8418"
    }
+  },
+  {
+   "id": "claude-2026-11-11-literal-in-emphasis",
+   "at": "2026-11-11T19:10:29.550Z",
+   "source": "transcript",
+   "said": "the intent gutter doesnt draw things like &#45; propely",
+   "why": "Your quoted words are escaped so punctuation is not read as markup, then shown in italics. The markup parser decoded escapes everywhere except inside emphasis, so they appeared as raw codes. Fixed in the parser, which covers every place that quotes text in italics or bold.",
+   "intent": "intent-first",
+   "changes": {
+    "popup_markup.cpp": "b2ec6ab 01a145b 4159cfd 3abd11b",
+    "tests/popup_test.cpp": "01b6df8 7aa674f b9efd11 d02bb44 56e9252"
+   }
   }
  ]
 }

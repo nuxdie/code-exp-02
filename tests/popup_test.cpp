@@ -142,6 +142,14 @@ struct Camera {}
 
 int main()
 {
+    {
+        const auto quoted =
+            popup_document("*" + popup_literal("ctrl-o opens a_dir *now*") + "*", true);
+        if (quoted.text != "ctrl-o opens a_dir *now*" || quoted.styles.size() != 1 ||
+            quoted.styles[0].length != quoted.text.size())
+            throw std::runtime_error("Quoted words must render exactly as written inside emphasis");
+    }
+
     try {
         test_html();
         test_typography();
