@@ -124,6 +124,10 @@
   {
    "id": "public-and-quiet",
    "statement": "The project is public with a proper README, and the repository doesn't send me noise."
+  },
+  {
+   "id": "useful-legible-contextual",
+   "statement": "Everything drawn on screen must be useful, legible and contextual: a live game-like HUD that gives immediate utility, not a static map. Arrows never just point off screen."
   }
  ],
  "commits": {
@@ -3121,6 +3125,31 @@
    "changes": {
     "popup_markup.cpp": "b2ec6ab 01a145b 4159cfd 3abd11b",
     "tests/popup_test.cpp": "01b6df8 7aa674f b9efd11 d02bb44 56e9252"
+   }
+  },
+  {
+   "id": "claude-2026-11-11-hud-arrows",
+   "at": "2026-11-11T19:32:52.867Z",
+   "source": "transcript",
+   "said": "regarding arrows. think of great realtime strategy games. the idea for arrows to not simply point offscreen, but to provide useful information. each thing we draw on screen must be useful, legible and contextual. thats the key. think how call of duty hud allows players quickly read of a grenade landed near. same idea here. dont think of it as static drawing of terra incognita era maps. think of this as live game like hud that provides immediate utility no matter what happens",
+   "why": "Arrows ran off the edge of the window with no hint of what they led to. A target in view now gets an arrow; targets out of view become one marker per file on the window edge in their direction, naming what is used there, clickable to fly to it. An agent editing out of view is announced the same way.",
+   "intent": "useful-legible-contextual",
+   "changes": {
+    "CMakeLists.txt": "a21a331 e375384",
+    "README.md": "e1fb3b1",
+    "application.cpp": "af65339 f2def38 36009da d5c44f7",
+    "application.h": "3c80d4a 809121f 18cdb82 340c41a 96c2f3b 7e7e9e2 07ae5d9 969fd29 685829e dab7320 3114af4 3bd8b01 1952b1b 05e5fc6 7e43019 c3baac8 9e13ff2 9640a2e 4dc5755 df7a6aa 3dddcc7 7be589a 95c453f f93decc e5edcba 9950fd1",
+    "application_agent_activity.cpp": "af90560",
+    "application_connection_hud.cpp": "a98af7f 715f3c3 f485dd2 8246aff da6809d 7f9ef24 05bb381 486050a fb1240c 15b29e5 711755d d9145bc 60a70ff 2287063 c41bf3f a0c044a f517da6 88320de 17d7757 0b8b0e1 6780218 1ae3fde 8adf98d dee4596 7540514 445e4cb 9cc21d3 4a5775a 9cd0ae7 d1fc769 b4d9b0c 64bbb05 c4b6667 8c4ecef 9091e19 6f7d632 8e81fa5 037ba7a 17f2d68 1745073 f83b6b5 0863293 f061635 d0500d0 575772b 8ed8527 7d7f767 19818e8 d566cd3 574b077 39b39ac e3a6356 736c9ae 5ab62e4 fbd636a 5748f25 e5a8c97 8de2936 81bbdc8 0754d3a 9b30e00 855efa3 6ace064 2fd8192 14e9ef8 8aa3adb 9f0885a a2423da a740c3f 876c3e6 600d637 0b0ad00 45e9e56 92f6255 8e46566 7f09109 96ca538 c1e6076 f75f9ed 36dbed9 2626ac3 28f51d4 a7db1e5 de43dd5 c9d8043 6517f47 a61215f 2d6590b 4b230b6 ec18093 b4abe97 9ec5c48 0cc495d 0d3c92b b004161 f5bb1f1 6fbb5f5 88f8011 beead11 7c86581 95ba672 7acaad4 1416b1f 2d708d3 66f362b 2764430 bcc93b0 722746c b6b8183 4963298 8a23617 111b339 42d82a0 0b32332 ada964f fc515b1 c068e48 d8ff0d8 f948bd4 34abad6 ba87867 7181bb0 c805e36 3753b37 62ed91e 8a34660 7817db8 2893392 e966102 aad2ed8 f40e98a 7bb7d9f cef2a46 711c794 19f2443 04cdc0d 93750c7 09088f5 4863021 4f77362 107fa9c 71bd17b 31f06e8 a31bb59 3e112c7 3850ade 77c8edf 36f158a 5c53077 7082674 c274e2e ffdc01b",
+    "application_connections.cpp": "364645e 09c7e5d 4090af7 d1a71e5 8e51236 6a9ad8a f4b9127 613079b 547007a 176d403 add8776 44f1cd4 ede98a4 280b1b0 6080b82 b6ab9bc 773dcb8 eb5b42b 0f369be 8ed8527 f002e3b b26ac3f 6136fa9 6eca9cc e1fa60d 209c69d 0d22033 9a96eff f71395a a2c6a22 e62c966 213982f f0606c8 5c5b92c 46b20cc c136e76 4d38972 66ef1f7 78e4d3a fa699a2 5c132db 3753b37 a28a74f 1a74b2a 59ce025 dac496a 75aa638 b0a0e70 e5e03ef e36a7af ad6f348 6ca58bf ccb135e b8a21d4 da9da2a 3c87f28 b01d9a5 4365d12 3b4847d 4f5f426 d36fbbc 1f8b31a 4a9b3b5 2309969 52c58e3 cf18afb a615184 680879a 701816f 579ce96 8adf98d 7801658 82753c4 997f61b dc53d17 601127d a63c265 5f70d32 246e47f d12b059 a2423da",
+    "application_events.cpp": "c487450 ccc9457 4a6acd8",
+    "application_pointer.cpp": "f20991e 5f59418",
+    "application_view.cpp": "218824e",
+    "connection_hud.cpp": "3c80d4a ad576cd d2707ee 002eb16 d5220a1 31ffcbc 2962838 8437a3d 5d00972 f9389ed 166a1d1 5021859 5293180 6bf165e b7e203a 7d840bd a814629 f714c1a ca5435e e30c0c3 f4192f6 583ab39 60faf9f 8520aed f8f20a3 e7f2743 35b8f2e 4332bf2 84a3721 e219529 e3fe04a 6b161d0 4c50ed3 d553b03 84c0bb2 befaf99 6f353c9 25d4d2d 4a118c6 5081667 6653a82 a0a2721 5415dc9 687b17d 01df3e8 95bf702 3706025 7c86581 8df9d61 d1663af 12b84d8 b8196ff 8adf98d f22b23b 4feaacc 5b084ef 377c9a8 79eeb71 fe31cc4 73b60e4 98fde5d 0941279 ffec513 a00931e f671392 4303165 8319015 93b8c0c 2e68e44 8e8ec3b e847880 e871133 e72841f 00684cb 7403f2e",
+    "connection_hud.h": "d261915 c10ca66 7ca5f02 6bb664b dd030bb 9a50b17 8a4bb5f ede773f 710529c 161c573 9ccc213 815d215 7d97b3b 3ba1a71 9797870 d526ea4 6f0f5d0 573af69 dab7320 66428c1 70f02c1 377c9a8 a0ddcce a54fa5c 79dc71b 623d0c8 74dfb12 f628e7b b3b3643 713bde8 4881b2b 55f5536 8b02a56",
+    "tests/agent_activity_test.cpp": "cdb92a7 e28c5b8 fef9007 77df0d2 eddca5a f6f32f5 9438038 f1927a6 304241f 80efd11 2ba7646 b436df4 1085575 d3ba4ac 5b4ed8e 4232ed4 1101f87",
+    "tests/agent_windows_test.cpp": "9cd3e1f 9eae298",
+    "tests/integration_test.cpp": "00ae624 ca7c068 c1d74c0 23a2f37 8ec5d3f ab0f849 253d92e fef9007 5dde614 681f368 9f3ff67 5a21456 f867d00 f1876b7 23c6e55 d186f02 73bbb3d f7fb3a3 7322e32 7a08304"
    }
   }
  ]
