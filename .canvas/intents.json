@@ -159,8 +159,7 @@
     ".gitignore": "adf3b9a",
     "CMakeLists.txt": "806b610 34ae22f fa5a5ba 8fbd375 2992e45 bdbe71e",
     "main.cpp": "fffcc2e a037d2b 1b1ee4f d93448f 88c2938 80cbeeb 8a7fff7 a782dad 9556659 77cdec7 4ba0129 8ecbbb0 6ff1632 7b0427c 27dce89 30b64ce fc118bf 349fda2 933e5af 9dbc022 614968c 685288a cad4d63 04ea18c 07510cb 78f5926 645188d 3f5bb97 6e2e783 60ccdb5 b56c553 c0235ba 8e108f8 c5ac1e3"
-   },
-   "committed": {}
+   }
   },
   {
    "id": "01a1bff2-bfee-7760-b633-2fc0ca8a760a",
@@ -177,8 +176,7 @@
     "CMakeLists.txt": "5d05a40 022859f 7b7ec5f 22a832e 4a5b9fc ebae139",
     "main.cpp": "a5b45ad ad576cd aa77c50 7ca5f02 6bb664b 3782937 dad860f 053db74 a43b210 39ec37c 70aa1fa 304724b 88ab3f0 60ccdb5 8e108f8 a782dad 1360349 0bef448 bbe921e a3f1d08 e1e42ab 7c590b3 bb72144 29b879c 6ea5d74 bee33a7 df1955a 4551ced 489608a dc83d21 a708c0d 620b378 3701d11 f89f546 f2b7e83 47dfd07 ea3a848 2d55280 1b73903 71717d2 07510cb 8c0cb1d a0c2f88 0928de2 db2eeaf 60c0f88 93ad0e9 1781d73 1bf2369 2b77bea 6f6bf3e f9cadbe 97285df 9fe7160 3c25776 8a3b9de 2fd3c22 9e19977 8146cd6 8a2c825 3563c6c 24ca29e 18449fa feaa6a2 dd5c2aa 3a18ae8 e172796 19770d3 2e3102a 01d9818 7f8ef7d fdbd4af",
     "source_text.h.in": "d261915 b3dcce9"
-   },
-   "committed": {}
+   }
   },
   {
    "id": "01a1bff4-3a44-7350-a7bf-a83025bb3fca",
@@ -193,8 +191,7 @@
    ],
    "changes": {
     "main.cpp": "208c610 50651ff f18c6d4 0078314 ce326bc e75f186 0d80ee3 3b273ca 8e6e78f 033acce 0d8cf6f 2656790 c0a960a 7e222fe 32c6289 66f8227 53cf06a 62ca092 7271c39 45856bd b934e79 ab30382 3edd367 7455e54 d54135b 7108cfd 9e34061 8c411f6 df959b8 34e342d 4738f46 3e76611 d631090 df22b54 ae4628f 0f4db0f 027467c d1cec98 d9ab0ff 9aee7b5 a84d849 1669c21 7ddcdb0 c8a32ce cefbf8c d9367c2 51e257e 590899d 1298af7 6928356 c6ba403 bdcaeb4 01e988b 125fba7 e2bf8c1 b490c36 d09a24c ea4f989 d0213d0 a77b945 2108460 e5d754a 061341b f72b470 a4b0a46 95b1f36 db2eeaf 991e561 e475f25 05240d9 b85592a d5de04c 0539ed3 5888531 68f0ca7 86c2453 df7adf6 5892a2b 5e8b49b 517530f 3ba04d7 d7764e9 2004b66 ecfe7e9 5e86c3c 7ee7294 c71e068 18039fe 9235251 7eb48c1 1094073 b54a16c 312aa88 fca0a31 04e5543 0d6af3a 26a4a5f 67b9290 a14105e accb296 973ef19 0459737 5959760 f84bfe6 e7a6903 1c5acfe abc0225 67306f9 fc9bbd1 3310a64 646e5a4 92f611c 5665eb2 8942607 05acb06"
-   },
-   "committed": {}
+   }
   },
   {
    "id": "01a1bff7-047e-7942-8776-1c754fcb4233",
@@ -1938,8 +1935,7 @@
    "changes": {
     "README.md": "c754009 f4da1f9 93f6401 acdee5c dbf1268 ab1a178 afeba2d 6f96461 2764b79 04a9c07 c0154f5 170cce5 0cdc7c1 cf81bcb 9034fb3 84b2808 a4f6d5e 22985e0 38eaaa5 ac71f1c b950390 65600f0 38e6cec 3749d3d 4457667 d16ff20 8272d43 6a3dbc2 bbc53f7 778c1fc ddb53d1 caa0eb2 66162bb c1e20d6 1c72750 1a98dfc 8dc414a 45c69dc 303f23e 70c36fb 4271cde 6ba0297 5959d95 83edc54 877e9f3 e4d83ab efec38d 15c2200 7d97551 d639394 84315a3 464e051 574624d 8524d85 0235df9 59e030c 7ade3b5 2f8a357 a664b68 c17a442 a62ecf8 f8ab584 0a072d7 7e9533b d4c26c1 02d6dbb cc9a7cd 73ff786 a290071 f863201 716a015 94f2b09 e6586cf 6d45d04 7f6fc7f a9e10f2 ef4488a fa930c2 dd9b535 d896410 d411a61 7e53564 57233e8 bb70653 344dcd5 6b5db33 28e9baf d80957c 7f49168 b7cc92e a48fa0c ce8d4ca 5adc5d5 5b2dd33 e34e89b 940bafb 3d8832d c1c2fd0 55e6d6c 18ef785 1e58428 4c6a4cf d065d9f b27bb13 1e09746 5627de6 f47c26f 70c0439 2e23d3b 6e7c92d 359140c 5ba1382",
     "docs/media/banner.svg": "b7b94df e43fb27 7413463 fc62caa e165e69 4906c30 cfc1997 43c78ec ff0036d d8146f4 aceabdb 6977956 f38e33b 131ef0f 62f5180 47032c0 c6bcd1e 3d21afd 91d6e7b 3055668 d90dca0 2242602 fcf80bd 3d203b3 b70b38e 3c4bb19 0ff1fbf 028eb52 509b21c 898cac7 85245e1 d714041 921aec6 b8060e5 f7f76d6 fa7f839 e55682c 36569d8 d8e4952 3b4a948 809a2b3 1f91e39 b533e23 fd97652 ded3d78 5032dbe 314eacb 6beeb86 07eb17e ec36e70"
-   },
-   "committed": {}
+   }
   },
   {
    "id": "01a1c27d-ab4f-7d02-bc60-458cb1ee1d5b",
@@ -1954,8 +1950,7 @@
    ],
    "changes": {
     "AGENTS.md": "3847855 ea6cbee 9cc1dee"
-   },
-   "committed": {}
+   }
   },
   {
    "id": "01a1c2b5-9db4-7a32-8f33-d4bf15863b8d",
@@ -2891,8 +2886,7 @@
     "README.md": "59f6ef3",
     "tests/agent_windows_test.cpp": "924f69a da9e157 b7ad207 debd41b",
     "tests/live_canvas_test.cpp": "5ba1d53"
-   },
-   "committed": {}
+   }
   },
   {
    "id": "claude-2026-11-11-audit",
@@ -2930,6 +2924,18 @@
     "intent-first"
    ],
    "changes": {}
+  },
+  {
+   "id": "claude-2026-11-11-note-on-canvas",
+   "at": "2026-11-11T17:54:00.617Z",
+   "source": "transcript",
+   "said": "good. but notice that margin intent has fixed placement relative to window now. zooming and panning does nothing to it. so that breaks a bit the idea that everything is layed out on a single canvas. for some reason the intent gutter has its own layer and behavior. i dont like that part of it. the rest is fine",
+   "why": "The note was drawn in window coordinates at a fixed size and clamped to the window edge. It is now placed in canvas coordinates beside the line it explains and drawn at the camera's zoom, so it pans, zooms and scrolls away like the code. A pinned note also survives file edits while its line still serves the same intent.",
+   "intent": "one-window-manager",
+   "changes": {
+    "application_intent_margin.cpp": "06cd58c 717832d b94b6ea 01dcb98 761b21e 807276e ae050f5 dd9cb56 a724b25 116cb41 dab9a63 928ee0e 51748a8 3ff1202 db86907 b3de06d c8a680c e3b0017 f46f3bd 6053820 579de2e d45ff32 0d805d9 a662fe2 41ca9e9 155cc84 a6fc15c b28b744 6b00754 37ad049 1f513c3 ea39433 96ca538 42c48e9 672e1bf",
+    "intent_margin.h": "4efde5f f23df86"
+   }
   }
  ]
 }

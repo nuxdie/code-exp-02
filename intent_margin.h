@@ -44,8 +44,9 @@ struct IntentMargin {
     std::future<std::string> loading;
     bool stale = false;
     std::string selected; // the intent lit up across the canvas
-    std::string pinned_path;
+    std::string pinned_path, hover_path;
     std::optional<IntentRun> pinned;
+    int pinned_line = 0, hover_line = 0, hover_first = -1; // the line a note sits beside
     DocumentView note;
     CanvasRect note_bounds{};
 };

@@ -49,7 +49,14 @@ void Application::poll_intent_margin()
         return;
     const auto view = nlohmann::json::parse(loading.get(), nullptr, false);
     intent_margin.view = parse_intent_view(view);
-    intent_margin.pinned.reset();
+    // A pinned note survives edits as long as its line still serves the same intent.
+    auto& margin = intent_margin;
+    const auto* run =
+        margin.pinned ? margin.view.run_at(margin.pinned_path, margin.pinned_line) : nullptr;
+    if (run && margin.view.intent_of(*run) == margin.selected)
+        margin.pinned = *run;
+    else
+        clear_intent_selection();
     redraw = true;
     if (std::exchange(intent_margin.stale, false))
         load_intent_margin();
@@ -128,44 +135,49 @@ void Application::draw_intent_margin(const Viewport& view)
     }
 }
 
+// The note is a thing on the canvas: it sits left of the lines it explains and moves,
+// zooms and scrolls away with them like everything else.
 void Application::draw_intent_note()
 {
     auto& margin = intent_margin;
     margin.note_bounds = {};
-    const SourcePanel* panel = nullptr;
     std::optional<IntentRun> run = margin.pinned;
-    if (run) {
-        const auto found = std::find_if(panels.begin(), panels.end(), [&](const auto& source) {
-            return source.path == margin.pinned_path;
-        });
-        panel = found == panels.end() ? nullptr : &*found;
-    } else if (!drag_button && popup_text.empty() && camera.zoom >= readable_zoom) {
+    std::string path = margin.pinned_path;
+    int line = margin.pinned_line;
+    if (!run && !drag_button && popup_text.empty() && camera.zoom >= readable_zoom) {
         if (const auto hit = source_line_at(mouse_position)) {
-            panel = &panels[hit->panel];
-            if (const auto* found = margin.view.run_at(panel->path, hit->line))
+            path = panels[hit->panel].path;
+            if (const auto* found = margin.view.run_at(path, hit->line))
                 run = *found;
+            // Stay where the note first appeared while the pointer moves within its lines.
+            const bool same = run && path == margin.hover_path && run->first == margin.hover_first;
+            line = same ? margin.hover_line : hit->line;
+            margin.hover_path = path;
+            margin.hover_first = run ? run->first : -1;
+            margin.hover_line = line;
         }
     }
-    if (!panel || !run)
+    const auto panel = std::find_if(panels.begin(), panels.end(),
+                                    [&](const auto& source) { return source.path == path; });
+    if (!run || panel == panels.end() ||
+        line >= static_cast<int>(panel->folded.display_lines.size()))
         return;
     const auto text = intent_note(margin.view, *run, margin.pinned.has_value());
     if (text.empty())
         return;
     update_document(margin.note, text, static_cast<int>(note_width));
-    const auto code = intent_run_bounds(*panel, *run);
     const Vec2 size{note_width + 28, margin.note.size.y + 20};
-    // A sidenote: left of the card, else right of it, else the window's right edge.
-    double x = code.origin.x - size.x - 12;
-    if (x < 8)
-        x = code.origin.x + code.size.x + 12;
-    if (x + size.x > width - 8)
-        x = width - size.x - 8;
-    const double y = std::clamp(code.origin.y, 8.0, std::max(8.0, height - size.y - 8));
-    margin.note_bounds = {{x, y}, size};
+    const Vec2 world{panel->bounds.origin.x - size.x - 12,
+                     panel->bounds.origin.y + header_height +
+                         panel->folded.display_lines[line] * line_height};
+    const auto origin = camera.world_to_screen(world, viewport());
+    const double zoom = camera.zoom;
+    margin.note_bounds = {origin, {size.x * zoom, size.y * zoom}};
     const auto color = intent_color(margin.view.intent_of(*run), 0.5);
     renderer->rectangle(margin.note_bounds, {1, 1, 1, 0.97f});
-    renderer->rectangle({{x, y}, {3, size.y}}, {color[0], color[1], color[2], 1});
-    renderer->draw(margin.note.mesh, {x + 16, y + 10}, 1);
+    renderer->rectangle({origin, {std::max(2.0, 3 * zoom), size.y * zoom}},
+                        {color[0], color[1], color[2], 1});
+    renderer->draw(margin.note.mesh, {origin.x + 16 * zoom, origin.y + 10 * zoom}, zoom);
 }
 
 // Select the intent behind a source line, or clear the selection when asked again.
@@ -189,6 +201,7 @@ void Application::select_intent_at(Vec2 pointer)
     margin.selected = intent;
     margin.pinned = *run;
     margin.pinned_path = panels[hit->panel].path;
+    margin.pinned_line = hit->line;
     redraw = true;
 }
 
