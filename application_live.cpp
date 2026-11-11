@@ -149,7 +149,7 @@ void Application::refresh_project_geometry(bool settle)
         file_sizes.push_back(panel.bounds.size);
     }
     dependencies = file_dependencies(files);
-    reset_symbol_connections();
+    connections_dirty = true;
     if (settle)
         graph.routes.clear();
     graph.files.clear();

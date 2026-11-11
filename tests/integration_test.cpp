@@ -145,11 +145,15 @@ struct ApplicationTestAccess {
         expect(app.definition_at_pointer(),
                "A class definition must be recognized from semantic metadata");
         app.handle_button(click(point, ControlMask));
-        expect(app.list_request > 0, "Ctrl+click on a definition must request a usages jump list");
-        wait_for(app, [&]() { return !app.jump_rows.empty(); });
-        expect(!app.popup_locations.empty() && app.list_title.empty() &&
-                   app.popup_text.find(app.jump_rows.front().label) == 0,
-               "The usages response must show clickable destinations without a title or tip");
+        expect(app.connection_subject.active && app.connection_subject.name == "Camera" &&
+                   app.popup_text.empty(),
+               "Ctrl+click on a symbol must make it the subject of arrows, not open a list");
+        wait_for(app, [&]() {
+            return !app.connection_requests.second && !app.connection_links.empty();
+        });
+        expect(std::any_of(app.connection_links.begin(), app.connection_links.end(),
+                           [](const auto& link) { return !link.defines; }),
+               "A definition's arrows must lead to the places that use it");
         int usage = -1;
         for (std::size_t i = 0; i < panel.text.size(); ++i)
             if (panel.text[i].find("const Camera&") != std::string::npos) {
@@ -158,113 +162,19 @@ struct ApplicationTestAccess {
             }
         expect(usage >= 0, "Expected a real Camera type usage");
         const auto use_byte = panel.text[usage].find("Camera");
-        app.hide_popup();
         const auto use_point = point_at(app, index, usage, use_byte);
         expect(!app.definition_at_pointer(),
                "A symbol reference must not be classified as its definition");
         app.handle_button(click(use_point, ControlMask));
-        expect(app.navigation_request > 0, "Ctrl+click on a usage must request its definition");
-        wait_for(app, [&]() { return app.focused_line && app.focused_line->line == camera->line; });
-    }
-
-    static void test_connections(Application& app)
-    {
-        const auto found =
-            std::find_if(app.dependencies.begin(), app.dependencies.end(),
-                         [](const auto& edge) { return !edge.build && edge.line > 1; });
-        expect(found != app.dependencies.end(), "Expected an include below the file header");
-        const auto index = static_cast<std::size_t>(found - app.dependencies.begin());
-        const auto& panel = app.panels[found->source];
-        PangoRectangle glyph{};
-        pango_layout_index_to_pos(panel.lines[found->line], static_cast<int>(found->byte), &glyph);
-        const auto path = app.dependency_path(index);
-        expect(std::abs(path.points.front().x - panel.bounds.origin.x - 32 -
-                        static_cast<double>(glyph.x) / PANGO_SCALE) < 0.001 &&
-                   std::abs(path.points.front().y - panel.bounds.origin.y - app.header_height -
-                            (panel.folded.display_lines[found->line] + 0.5) * app.line_height) <
-                       0.001,
-               "Arrows must start beside the include filename inside the source file");
-        const auto& target = app.panels[found->target];
-        expect(std::abs(path.points.back().x - target.bounds.origin.x - 16) < 0.001 &&
-                   std::abs(path.points.back().y - target.bounds.origin.y - app.header_height -
-                            app.line_height * 0.5) < 0.001,
-               "Arrows must end at the target code rather than the file title");
-        app.panels[found->source].bounds.origin.x += 75;
-        const auto moved = app.dependency_path(index);
-        expect(std::abs(moved.points.front().x - path.points.front().x - 75) < 0.001 &&
-                   moved.points.back().x == path.points.back().x,
-               "Dragging a source must move its arrow endpoint without moving the target");
-        app.panels[found->source].bounds.origin.x -= 75;
-        app.connection_focus = {};
-        app.rebuild_connections();
-        expect(app.connection_links.empty() && app.connection_mesh.vertices == 0,
-               "With nothing under the pointer the canvas must show no arrows");
-        // Symbols resolve in the background, so only the file-level links are certain here.
-        app.connection_focus = {found->source, found->line, found->line};
-        app.rebuild_connections();
-        for (const auto& link : app.connection_links)
-            expect(link.word.size.x > 0, "A link from a line must know the word it starts from");
-        app.connection_focus = {found->source, -1, -1};
-        app.rebuild_connections();
-        expect(!app.connection_links.empty(), "A file under the pointer must show its links");
-        const auto link = app.connection_links.front();
-        app.camera.center = {link.near.x, link.near.y};
-        app.camera.zoom = 4;
-        app.zoom_animation.cancel(app.camera);
-        app.layout_connections();
-        const bool far_visible = inside({{0, 0}, {double(app.width), double(app.height)}},
-                                        center(app.connection_box(link.target, link.far_file)));
-        const bool marked = std::any_of(
-            app.connection_markers.begin(), app.connection_markers.end(),
-            [&](const auto& marker) { return marker.text.find(link.file) != std::string::npos; });
-        expect(far_visible || marked,
-               "A link whose far end is off screen must become a labelled marker at the edge");
-        expect(!app.connection_markers.empty() || !app.connection_words.empty(),
-               "Every link must end somewhere readable: a highlighted word, title or marker");
-        for (const auto& marker : app.connection_markers)
-            expect(marker.bounds.origin.x >= 0 && marker.bounds.origin.y >= 0 &&
-                       marker.bounds.origin.x + marker.bounds.size.x <= app.width &&
-                       marker.bounds.origin.y + marker.bounds.size.y <= app.height,
-                   "Markers must lie wholly inside the window");
-        const auto screen = app.camera.world_to_screen(panel.bounds.origin, app.viewport());
-        XEvent motion{};
-        motion.type = MotionNotify;
-        motion.xmotion.x = static_cast<int>(screen.x + 5);
-        motion.xmotion.y = static_cast<int>(screen.y + 5);
-        app.handle_motion(motion);
-        const auto hovered = app.dependency_path(index);
-        expect(hovered.color == path.color && hovered.width == path.width && !app.connections_dirty,
-               "Hovering a file must neither highlight arrows nor rebuild their GPU mesh");
-        const auto routes = std::move(app.graph.routes);
-        const auto fallback = app.dependency_path(index);
-        expect(fallback.points.front().x == path.points.front().x &&
-                   fallback.points.back().y == path.points.back().y,
-               "Fallback curves must keep the same code endpoints without Graphviz routes");
-        app.graph.routes = routes;
-    }
-
-    static void test_folded_connections(Application& app, int index)
-    {
-        const auto original = app.dependencies.front();
-        auto& panel = app.panels[index];
-        auto& block = panel.folds.back();
-        block.collapsed = true;
-        const int hidden = block.first + 1;
-        app.dependencies.front() = {index, original.target, hidden, false,
-                                    panel.text[hidden].size()};
-        app.update_mesh(panel);
-        const auto folded = app.dependency_path(0);
-        expect(std::abs(folded.points.front().y - panel.bounds.origin.y - app.header_height -
-                        (panel.folded.display_lines[block.first] + 0.5) * app.line_height) < 0.001,
-               "Hidden references must attach to their visible collapsed block row");
-        block.collapsed = false;
-        app.connections_dirty = false;
-        app.update_mesh(panel);
-        const auto expanded = app.dependency_path(0);
-        expect(expanded.points.front().y > folded.points.front().y && app.connections_dirty,
-               "Expanding a block must refresh arrows to their newly visible reference rows");
-        app.dependencies.front() = original;
-        app.relayout();
+        wait_for(app, [&]() {
+            return std::any_of(
+                app.connection_links.begin(), app.connection_links.end(),
+                [&](const auto& link) { return link.defines && link.at.line == camera->line; });
+        });
+        app.draw();
+        expect(!app.connection_words.empty() || !app.connection_markers.empty(),
+               "A use's arrows must lead to its definition: a highlighted word or a marker");
+        app.clear_connections();
     }
 
     static void test_inline_toggles_and_cursor(Application& app, int index)
@@ -478,8 +388,6 @@ struct ApplicationTestAccess {
         wait_for(app, [&]() {
             return !app.panels[index].symbols.empty() && !app.panels[index].semantics.empty();
         });
-        test_connections(app);
-        test_folded_connections(app, index);
         test_inline_toggles_and_cursor(app, index);
         test_compact_documentation(app);
         test_typeset_documentation(app);

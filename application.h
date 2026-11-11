@@ -17,7 +17,6 @@
 #include "search_canvas.h"
 #include "source_graph.h"
 #include "source_panel.h"
-#include "symbol_graph.h"
 #include "syntax.h"
 #include "system_theme.h"
 #include "text_input.h"
@@ -150,7 +149,6 @@ class Application {
     std::vector<lsp::Document> documents;
     std::unordered_set<std::string> opened_documents;
     std::vector<Dependency> dependencies;
-    SymbolGraph symbol_graph;
     GraphLayout graph;
     Vec2 content_size;
     std::unique_ptr<lsp::LanguageServer> language_server;
@@ -180,21 +178,20 @@ class Application {
                            CanvasRect& hit, std::vector<CanvasRect>& occupied);
     bool show_connections = true;
     bool connections_dirty = true;
-    struct ConnectionFocus {
-        int panel = -1, first = -1, last = -1; // a file, or a unit of lines within it
-        bool operator==(const ConnectionFocus& other) const
-        {
-            return panel == other.panel && first == other.first && last == other.last;
-        }
-    };
-    ConnectionFocus connection_focus, connection_candidate;
-    Clock::time_point connection_focus_due = Clock::time_point::max();
+    ConnectionSubject connection_subject;
+    std::pair<int, int> connection_requests{0, 0}; // definition, references
     std::vector<ConnectionLink> connection_links;
     std::vector<ConnectionMarker> connection_markers;
     std::map<std::string, DocumentView> connection_labels;
     Camera connection_camera;
     Vec2 connection_size;
-    int connection_pointed = -1; // the marker under the pointer, whose lines stand out
+    int connection_pointed = -1; // the marker under the pointer, whose arrow stands out
+    struct ConnectionWord {
+        CanvasRect bounds; // on screen
+        std::array<float, 4> color;
+    };
+    std::vector<ConnectionWord> connection_words;
+    CanvasRect connection_subject_box{}; // on screen, empty while out of view
     struct AgentMarker {
         CanvasRect bounds;
         std::string uri;
@@ -203,27 +200,20 @@ class Application {
     std::vector<AgentMarker> agent_markers;
     std::map<std::string, DocumentView> agent_marker_labels;
     void draw_agent_markers();
-    std::optional<ConnectionFocus> connection_focus_at(Vec2 pointer);
+    void show_connections_at(Vec2 pointer);
+    bool clear_connections();
     void add_connection_link(ConnectionLink link);
-    std::string use_site_label(const SymbolConnection& edge);
-    ConnectionLink symbol_link(const SymbolConnection& edge, const GpuPath& path, bool uses);
-    void file_connections();
-    void unit_connections();
-    void layout_connections();
-    void draw_connection_markers();
-    struct ConnectionWord {
-        CanvasRect bounds; // on screen
-        std::array<float, 4> color;
-        bool title = false;
-    };
-    std::vector<ConnectionWord> connection_words;
+    void text_connections();
+    bool receive_connections(const lsp::Message& message);
     CanvasRect word_bounds(const SourcePanel& panel, int line, std::size_t begin, std::size_t end);
-    CanvasRect connection_box(const CanvasRect& word, int file);
+    CanvasRect connection_box(const ConnectionEnd& end);
     void connect_boxes(std::vector<GpuPath>& paths, const CanvasRect& from, const CanvasRect& to,
                        std::array<float, 4> color, float width);
-    void marker_connections(std::vector<GpuPath>& paths, const CanvasRect& view);
+    void layout_connections();
+    void draw_connection_markers();
     const ConnectionMarker* connection_marker_at(Vec2 pointer);
     bool connection_marker_button(const XEvent& event, Vec2 pointer);
+    bool connection_key(const XEvent& event);
     GpuMesh connection_mesh;
     std::array<GpuMesh, 2> fold_toggle_meshes;
     GpuMesh chat_icon_mesh;
@@ -523,12 +513,7 @@ class Application {
     void draw_popup();
     void style_shortcuts(int layout_width);
     void draw_shortcut_keys(Vec2 origin);
-    GpuPath dependency_path(std::size_t index);
-    GpuPath symbol_path(const SymbolConnection& edge);
-    void request_symbol_connections();
-    void reset_symbol_connections();
     void refresh_symbol_sources(const std::vector<ProjectChange>& changes);
-    Vec2 dependency_anchor(const SourcePanel& panel, int line, std::size_t byte, bool outgoing);
     void rebuild_connections();
     void update_popup_mesh(int layout_width);
     void poll_math();

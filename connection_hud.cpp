@@ -1,6 +1,7 @@
 #include "connection_hud.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 
 bool inside(const CanvasRect& view, Vec2 point)
@@ -117,4 +118,20 @@ Vec2 border_point(const CanvasRect& box, Vec2 toward)
     const double vertical = dy == 0 ? 1e9 : box.size.y / 2 / std::abs(dy);
     const double reach = std::min({horizontal, vertical, 1.0});
     return {middle.x + dx * reach, middle.y + dy * reach};
+}
+
+std::pair<std::size_t, std::size_t> word_at(const std::string& line, std::size_t byte)
+{
+    const auto part = [&](std::size_t index) {
+        const auto character = static_cast<unsigned char>(line[index]);
+        return std::isalnum(character) || character == '_' || character >= 0x80;
+    };
+    if (byte >= line.size() || !part(byte))
+        return {byte, byte};
+    auto begin = byte, end = byte;
+    while (begin > 0 && part(begin - 1))
+        --begin;
+    while (end < line.size() && part(end))
+        ++end;
+    return {begin, end};
 }

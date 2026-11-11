@@ -113,10 +113,7 @@ void Application::handle_canvas_button(const XEvent& event, Vec2 pointer, const 
     } else if (event.xbutton.button == Button1 && (event.xbutton.state & Mod1Mask)) {
         select_intent_at(pointer);
     } else if (event.xbutton.button == Button1 && (event.xbutton.state & ControlMask)) {
-        if (definition_at_pointer())
-            list_request = query_at_pointer("textDocument/references");
-        else
-            navigation_request = query_at_pointer("textDocument/definition");
+        show_connections_at(pointer);
     } else if ((event.xbutton.button == Button1 || event.xbutton.button == Button2) &&
                !drag_button && view.contains(pointer)) {
         begin_drag(event, pointer, view);
@@ -273,7 +270,8 @@ bool Application::cancel_pointer_drag(const XEvent& event)
 void Application::handle_key(const XEvent& event)
 {
     if (cancel_pointer_drag(event) || canvas_shortcut_key(event) || agent_window_key(event) ||
-        selection_key(event) || chat_key(event) || intent_margin_key(event)) {
+        selection_key(event) || chat_key(event) || intent_margin_key(event) ||
+        connection_key(event)) {
         redraw = true;
         return;
     }

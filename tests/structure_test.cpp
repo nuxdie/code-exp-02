@@ -1,6 +1,5 @@
 #include "source_graph.h"
 #include "structure.h"
-#include "symbol_graph.h"
 
 #include <filesystem>
 #include <iostream>
@@ -29,106 +28,10 @@ void check_folder_layout()
                    "Refining the folder layout must keep cards separate");
 }
 
-lsp::Json symbol_location(const std::string& uri, int line, int column)
-{
-    return {{"uri", uri}, {"range", {{"start", {{"line", line}, {"character", column}}}}}};
-}
-
-void check_symbol_connections()
-{
-    SymbolGraph graph;
-    graph.reset({"caller", "callee"});
-    graph.update("caller", 2,
-                 {{0, 4, 6, "function", 1},
-                  {1, 8, 6, "function", 0},
-                  {2, 3, 4, "variable", 0},
-                  {3, 0, 5, "comment", 0}},
-                 1);
-    const auto call = graph.next();
-    expect(call && call->line == 1 && call->begin == 8 && call->end == 14,
-           "Only symbol uses should be resolved, retaining the use's byte range");
-    graph.started(10, *call);
-    const auto variable = graph.next();
-    expect(variable && variable->line == 2 && !graph.next(),
-           "Data references should be candidates without resolving comments or declarations");
-    graph.started(11, *variable);
-    const lsp::Json link{{"targetUri", "callee"},
-                         {"targetRange", {{"start", {{"line", 3}, {"character", 0}}}}},
-                         {"targetSelectionRange", {{"start", {{"line", 4}, {"character", 7}}}}}};
-    expect(graph.complete(
-               {"textDocument/definition", "caller", 10, lsp::Json::array({link, link}), {}, 2}),
-           "Background definition responses should be consumed separately from navigation");
-    expect(graph.connections().size() == 1 && graph.connections()[0].line == 4 &&
-               graph.connections()[0].column == 7 && graph.connections()[0].source.end == 14,
-           "LocationLinks must select the symbol name, deduplicate results and retain use sites");
-    graph.complete(
-        {"textDocument/definition", "caller", 11, symbol_location("caller", 0, 0), {}, 2});
-    expect(graph.connections().size() == 1,
-           "Local variable uses must not obscure the logical graph with data arrows");
-    expect(!graph.complete({"textDocument/definition", "caller", 99, link, {}, 2}),
-           "Interactive navigation requests must remain untouched");
-}
-
-void check_symbol_refresh()
-{
-    SymbolGraph graph;
-    graph.reset({"caller", "callee"});
-    const std::vector<lsp::SemanticToken> tokens{{2, 0, 4, "method", 0}};
-    graph.update("caller", 1, tokens, 0);
-    graph.started(1, *graph.next());
-    graph.update("caller", 2, tokens, 0);
-    graph.complete(
-        {"textDocument/definition", "caller", 1, symbol_location("callee", 8, 3), {}, 1});
-    expect(graph.connections().empty(), "Edits must invalidate in-flight symbol resolutions");
-    graph.started(2, *graph.next());
-    graph.complete(
-        {"textDocument/definition", "caller", 2, symbol_location("callee", 9, 3), {}, 2});
-    expect(graph.connections().size() == 1 && graph.connections()[0].line == 9,
-           "Refreshed uses must attach to the current definition line");
-    graph.update("caller", 2, tokens, 0);
-    graph.started(3, *graph.next());
-    graph.reset({"caller"});
-    graph.complete(
-        {"textDocument/definition", "caller", 3, symbol_location("callee", 9, 3), {}, 2});
-    expect(graph.connections().empty() && graph.idle(),
-           "Deleting a file must clear its arrows and reject late target locations");
-    graph.update("caller", 2, tokens, 0);
-    graph.started(4, *graph.next());
-    graph.complete(
-        {"textDocument/definition", "caller", 4, symbol_location("external", 1, 0), {}, 2});
-    expect(graph.connections().empty(),
-           "Definitions outside the workspace have no canvas endpoint");
-}
-
-void check_symbol_request_budget()
-{
-    SymbolGraph graph;
-    graph.reset({"caller"});
-    std::vector<lsp::SemanticToken> tokens;
-    for (int line = 0; line < 20; ++line)
-        tokens.push_back({line, 0, 4, "function", 0});
-    graph.update("caller", 1, tokens, 0);
-    for (int id = 1; id <= 8; ++id) {
-        const auto query = graph.next();
-        expect(query.has_value(), "The initial background batch should be available");
-        graph.started(id, *query);
-    }
-    expect(!graph.next(), "Symbol queries must have a bounded number of in-flight requests");
-    graph.complete({"textDocument/definition", "caller", 1, {}, "Unavailable", 1});
-    expect(graph.next().has_value(), "Failed queries must release their slot for later uses");
-    graph.reset({"caller"});
-    graph.update("caller", 2, tokens, 0);
-    graph.started(9, *graph.next());
-    expect(!graph.next(), "Refreshing the graph must still respect outstanding requests");
-}
-
 int main()
 {
     try {
         check_folder_layout();
-        check_symbol_connections();
-        check_symbol_refresh();
-        check_symbol_request_budget();
         std::vector<FoldBlock> folds{{1, 8, true}, {3, 5, true}, {10, 13, false}};
         const auto view = fold_view(15, folds);
         expect(view.source_lines == std::vector<int>({0, 1, 9, 10, 11, 12, 13, 14}),

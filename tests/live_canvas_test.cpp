@@ -38,82 +38,73 @@ struct ApplicationTestAccess {
             throw std::runtime_error(std::string("Missing source panel: ") + path);
         return *found;
     }
-    static SymbolConnection connection(Application& app, const std::string& uri, int line,
-                                       const std::string& target, int target_line)
+    static void control_click(Application& app, const SourcePanel& source, int line,
+                              const std::string& word)
     {
-        const auto& edges = app.symbol_graph.connections();
-        const auto found = std::find_if(edges.begin(), edges.end(), [&](const auto& edge) {
-            return edge.source.uri == uri && edge.source.line == line &&
-                   edge.target_uri == target && edge.line == target_line;
-        });
-        if (found == edges.end())
-            throw std::runtime_error("Expected a resolved symbol connection");
-        return *found;
+        PangoRectangle glyph{};
+        const auto byte = source.text[line].find(word);
+        pango_layout_index_to_pos(source.lines[line], static_cast<int>(byte), &glyph);
+        const auto pointer = app.camera.world_to_screen(
+            {source.bounds.origin.x + 24 + static_cast<double>(glyph.x) / PANGO_SCALE + 2,
+             source.bounds.origin.y + app.header_height + (line + 0.5) * app.line_height},
+            app.viewport());
+        XEvent press{};
+        press.type = ButtonPress;
+        press.xbutton.button = Button1;
+        press.xbutton.state = ControlMask;
+        press.xbutton.x = static_cast<int>(pointer.x);
+        press.xbutton.y = static_cast<int>(pointer.y);
+        app.mouse_position = pointer;
+        app.handle_button(press);
     }
-    static void test_symbol_connections(Application& app, const std::filesystem::path& root)
+    static void test_symbol_connections(Application& app, const std::filesystem::path&)
     {
-        const auto caller_uri = panel(app, "main.cpp").uri;
-        const auto target_uri = panel(app, "widget.h").uri;
-        wait_for(app, [&] {
-            const auto& edges = app.symbol_graph.connections();
-            return std::count_if(edges.begin(), edges.end(), [&](const auto& edge) {
-                       return edge.source.uri == caller_uri;
-                   }) == 3;
-        });
-        const auto integer = connection(app, caller_uri, 1, target_uri, 1);
-        const auto floating = connection(app, caller_uri, 2, target_uri, 2);
-        const auto local = connection(app, caller_uri, 2, caller_uri, 1);
-        const auto path = app.symbol_path(integer);
         const auto& caller = panel(app, "main.cpp");
         const auto& target = panel(app, "widget.h");
-        const auto target_byte = target.text[1].find("compute");
-        expect(lsp::utf16_to_byte(target.text[1], integer.column) == target_byte,
-               "Definition columns must convert Unicode prefixes from UTF-16 to UTF-8");
-        const auto start = app.dependency_anchor(caller, 1, integer.source.end, true);
-        const auto end = app.dependency_anchor(target, 1, target_byte, false);
-        expect(
-            !path.points.empty() && path.points.front().x == start.x &&
-                path.points.front().y == start.y && path.points.back().x == end.x &&
-                path.points.back().y == end.y,
-            "Symbol arrows must join the actual call and definition rather than first file lines");
-        expect(app.symbol_path(floating).points.back().y > path.points.back().y,
-               "Overloaded calls must resolve to their distinct definitions");
-        const auto local_path = app.symbol_path(local);
-        expect(!local_path.points.empty() &&
-                   local_path.points.front().y != local_path.points.back().y,
-               "Calls within a file must connect the source and definition rows");
-        panel(app, "widget.h").bounds.origin.x += 60;
-        const auto moved = app.symbol_path(integer);
-        expect(moved.points.back().x == path.points.back().x + 60 &&
-                   moved.points.front().x == path.points.front().x,
-               "Moving a definition card must move only its own arrow endpoint");
-        panel(app, "widget.h").bounds.origin.x -= 60;
-        auto& folded = panel(app, "widget.h");
-        const auto folds = folded.folds;
-        folded.folds = {{0, 2, true}};
-        app.update_mesh(folded);
-        expect(app.symbol_path(integer).points.back().y < path.points.back().y,
-               "Folded definitions must anchor to the visible enclosing fold");
-        folded.folds = folds;
-        app.update_mesh(folded);
-        expect(app.symbol_path(integer).points.back().y == path.points.back().y,
-               "Expanding a definition must restore its exact symbol endpoint");
-        const auto updated = "// shifted definition\n" + folded.source;
-        std::ofstream(root / "widget.h") << updated;
+        wait_for(app, [&] { return app.language_ready && !caller.semantics.empty(); });
+        expect(app.connection_links.empty() && !app.connection_subject.active,
+               "Nothing is connected until a symbol is chosen");
+        app.initial_view = false;
+        app.camera.zoom = 1;
+        app.camera.center = {caller.bounds.origin.x + 200, caller.bounds.origin.y + 60};
+        app.zoom_animation.cancel(app.camera);
+        control_click(app, caller, 1, "compute");
+        expect(app.connection_subject.active && app.connection_subject.name == "compute",
+               "Ctrl+click on a symbol must make it the subject of the arrows");
         wait_for(app, [&] {
-            const auto& edges = app.symbol_graph.connections();
-            return panel(app, "widget.h").source == updated &&
-                   std::any_of(edges.begin(), edges.end(), [&](const auto& edge) {
-                       return edge.source.uri == caller_uri && edge.source.line == 1 &&
-                              edge.target_uri == target_uri && edge.line == 2;
-                   });
+            return !app.connection_requests.first && !app.connection_requests.second &&
+                   !app.connection_links.empty();
         });
-        expect(app.symbol_path(connection(app, caller_uri, 1, target_uri, 2)).points.back().y >
-                   path.points.back().y,
-               "Editing a target must re-resolve uses in unchanged caller files");
+        const auto defined = std::find_if(app.connection_links.begin(), app.connection_links.end(),
+                                          [](const auto& link) { return link.defines; });
+        expect(defined != app.connection_links.end() && defined->at.uri == target.uri &&
+                   target.text[defined->at.line].substr(
+                       defined->at.begin, defined->at.end - defined->at.begin) == "compute",
+               "The definition must be found, on the word itself, across Unicode prefixes");
+        expect(app.popup_text.empty() &&
+                   std::abs(app.camera.center.x - caller.bounds.origin.x - 200) < 0.001,
+               "Ctrl+click must draw arrows where you are, not jump away or open a list");
         app.draw();
-        expect(glGetError() == GL_NO_ERROR,
-               "Resolved symbol arrows must render without GPU errors");
+        expect(glGetError() == GL_NO_ERROR &&
+                   (!app.connection_markers.empty() || app.connection_mesh.vertices > 0),
+               "Every link must end at a highlighted word or at a marker on the window edge");
+        // Far from everything, the subject and its definition are both markers to fly back to.
+        app.camera.center.x += 60000;
+        app.zoom_animation.cancel(app.camera);
+        app.draw();
+        expect(app.connection_words.empty() && !app.connection_markers.empty() &&
+                   app.connection_mesh.vertices == 0,
+               "With every end out of view only markers remain, and no arrow runs off screen");
+        XEvent escape{};
+        escape.type = KeyPress;
+        escape.xkey.display = app.display;
+        escape.xkey.keycode = XKeysymToKeycode(app.display, XK_Escape);
+        app.handle_event(escape);
+        app.draw();
+        expect(!app.connection_subject.active && app.connection_links.empty() &&
+                   app.connection_markers.empty() &&
+                   app.options_page == Application::OptionsPage::Closed,
+               "Escape must put the arrows away before doing anything else");
     }
     static void test_live_source(Application& app, const std::filesystem::path& root)
     {
@@ -349,8 +340,7 @@ struct ApplicationTestAccess {
         expect(attributes.map_state == IsViewable, "Live canvas test window must be mapped");
         if (symbols) {
             test_symbol_connections(app, root);
-            std::cout
-                << "Symbol arrows, overloads, Unicode, folds, moves and live definitions passed.\n";
+            std::cout << "Arrows for a chosen symbol, markers out of view and dismissal passed.\n";
             return;
         }
         test_live_source(app, root);

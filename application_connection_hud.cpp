@@ -3,22 +3,20 @@
 namespace {
 constexpr std::array<float, 4> uses_color{0.20f, 0.45f, 0.85f, 0.75f};
 constexpr std::array<float, 4> used_by_color{0.85f, 0.50f, 0.15f, 0.75f};
+constexpr std::array<float, 4> subject_color{0.55f, 0.45f, 0.10f, 0.9f};
 constexpr double edge_margin = 10;
 } // namespace
 
-// Where an end of a link is on screen: the word itself, or the file's title for a whole file.
-CanvasRect Application::connection_box(const CanvasRect& word, int file)
+// Where a word is on screen right now, or nothing when its file is not on the canvas.
+CanvasRect Application::connection_box(const ConnectionEnd& end)
 {
-    if (file < 0 || file >= static_cast<int>(panels.size()))
-        return {camera.world_to_screen(word.origin, viewport()),
-                {word.size.x * camera.zoom, word.size.y * camera.zoom}};
-    // Computed for this camera rather than read from the last frame's titles.
-    const auto& panel = panels[file];
-    const double scale = CanvasWindowManager::title_scale(camera.zoom);
-    int title_width = 0;
-    pango_layout_get_pixel_size(panel.title, &title_width, nullptr);
-    return {camera.world_to_screen(panel.bounds.origin, viewport()),
-            {(title_width + 34) * scale, 27 * scale}};
+    const auto panel = std::find_if(panels.begin(), panels.end(),
+                                    [&](const auto& source) { return source.uri == end.uri; });
+    if (panel == panels.end() || end.line >= static_cast<int>(panel->text.size()))
+        return {};
+    const auto word = word_bounds(*panel, end.line, end.begin, end.end);
+    return {camera.world_to_screen(word.origin, viewport()),
+            {word.size.x * camera.zoom, word.size.y * camera.zoom}};
 }
 
 // An arrow from one box's border to another's, so it is clear which word it belongs to.
@@ -31,10 +29,10 @@ void Application::connect_boxes(std::vector<GpuPath>& paths, const CanvasRect& f
     paths.push_back(std::move(path));
 }
 
-// Place every link for the current camera. Every word an arrow starts from is highlighted.
-// A far end that is visible gets an arrow to that word. Far ends that are not are gathered
-// per file into one labelled marker on the window edge in that file's direction, and the
-// arrows go to the marker, so nothing ever just runs off the screen.
+// Place the subject's links for the current camera. Arrows run from the subject to where it
+// is defined, and from each use to the subject. An end that is in view is a highlighted
+// word. Ends that are not are gathered per file into one labelled marker on the window
+// edge in that file's direction, the subject included, so no arrow runs off the screen.
 void Application::layout_connections()
 {
     const CanvasRect view{
@@ -42,85 +40,77 @@ void Application::layout_connections()
         {std::max(1.0, width - 2 * edge_margin), std::max(1.0, height - 2 * edge_margin)}};
     connection_markers.clear();
     connection_words.clear();
-    std::vector<GpuPath> paths;
-    std::map<std::pair<bool, std::string>, std::vector<std::size_t>> hidden;
-    for (std::size_t i = 0; i < connection_links.size(); ++i) {
-        const auto& link = connection_links[i];
-        const auto color = link.uses ? uses_color : used_by_color;
-        const auto far = connection_box(link.target, link.far_file);
-        const bool visible = inside(view, center(far)) && far.size.x > 0;
-        if (visible)
-            connection_words.push_back({far, color, link.far_file >= 0});
-        else
-            hidden[{link.uses, link.uri}].push_back(i);
-        for (const auto& site : link.sites) {
-            const auto near = connection_box(site, link.near_file);
-            if (!inside(view, center(near)))
-                continue;
-            connection_words.push_back({near, color, link.near_file >= 0});
-            if (visible)
-                connect_boxes(paths, near, far, color, 1.5f);
-        }
-    }
-    for (const auto& [key, members] : hidden) {
-        const auto far = camera.world_to_screen(connection_links[members.front()].far, viewport());
-        const auto text = marker_text(connection_links, members, direction_glyph(view, far));
-        auto& label = connection_labels[text];
-        update_document(label, text, 640, false);
-        connection_markers.push_back({members,
-                                      marker_box(view, view_exit(view, center(view), far),
-                                                 {label.size.x + 22, label.size.y + 8}),
-                                      text});
-    }
-    separate_markers(view, connection_markers);
-    marker_connections(paths, view);
-    renderer->paths(connection_mesh, paths);
     connection_camera = camera;
     connection_size = {static_cast<double>(width), static_cast<double>(height)};
-}
-
-// Each word is tied to the marker that stands for where it leads. The marker under the
-// pointer has its arrows drawn strongly and the rest step back.
-void Application::marker_connections(std::vector<GpuPath>& paths, const CanvasRect& view)
-{
-    const auto* pointed = connection_marker_at(mouse_position);
-    connection_pointed = pointed ? static_cast<int>(pointed - connection_markers.data()) : -1;
-    for (const auto& marker : connection_markers) {
-        const float strength = &marker == pointed ? 0.95f : pointed ? 0.12f : 0.5f;
-        for (const auto index : marker.links) {
-            const auto& link = connection_links[index];
-            auto color = link.uses ? uses_color : used_by_color;
-            color[3] = strength;
-            for (const auto& site : link.sites) {
-                const auto near = connection_box(site, link.near_file);
-                if (inside(view, center(near)))
-                    connect_boxes(paths, near, marker.bounds, color, &marker == pointed ? 2 : 1);
-            }
+    std::vector<GpuPath> paths;
+    connection_subject_box = {};
+    if (!connection_subject.active) {
+        renderer->paths(connection_mesh, paths);
+        return;
+    }
+    auto subject = connection_box(connection_subject.at);
+    const bool subject_visible = inside(view, center(subject));
+    std::map<std::pair<bool, std::string>, std::vector<std::size_t>> hidden;
+    std::vector<std::size_t> visible;
+    for (std::size_t i = 0; i < connection_links.size(); ++i) {
+        const auto& link = connection_links[i];
+        const auto box = connection_box(link.at);
+        if (box.size.x > 0 && inside(view, center(box))) {
+            connection_words.push_back({box, link.defines ? uses_color : used_by_color});
+            visible.push_back(i);
+        } else {
+            hidden[{link.defines, link.at.uri}].push_back(i);
         }
     }
+    const auto mark = [&](std::vector<std::size_t> members, const ConnectionEnd& end,
+                          const std::string& text) {
+        const auto far = center(connection_box(end));
+        const auto label_text = std::string(direction_glyph(view, far)) + text;
+        auto& label = connection_labels[label_text];
+        update_document(label, label_text, 640, false);
+        connection_markers.push_back({std::move(members),
+                                      marker_box(view, view_exit(view, center(view), far),
+                                                 {label.size.x + 22, label.size.y + 8}),
+                                      label_text});
+    };
+    for (const auto& [key, members] : hidden)
+        mark(members, connection_links[members.front()].at,
+             marker_text(connection_links, members, ""));
+    connection_subject_box = subject_visible ? subject : CanvasRect{};
+    if (subject_visible)
+        connection_words.push_back({subject, subject_color});
+    else if (!visible.empty())
+        mark({}, connection_subject.at,
+             " " + connection_subject.file + "  " + connection_subject.name);
+    separate_markers(view, connection_markers);
+    const auto* pointed = connection_marker_at(mouse_position);
+    connection_pointed = pointed ? static_cast<int>(pointed - connection_markers.data()) : -1;
+    // Arrows meet the subject itself, or the marker standing for it while it is out of view.
+    for (const auto& marker : connection_markers)
+        if (marker.links.empty())
+            subject = marker.bounds;
+    const auto join = [&](const CanvasRect& other, bool defines, float strength, float width) {
+        auto color = defines ? uses_color : used_by_color;
+        color[3] = strength;
+        connect_boxes(paths, defines ? subject : other, defines ? other : subject, color, width);
+    };
+    for (const auto index : visible)
+        join(connection_box(connection_links[index].at), connection_links[index].defines,
+             pointed ? 0.2f : 0.8f, 1.5f);
+    for (const auto& marker : connection_markers)
+        if (!marker.links.empty() && subject_visible)
+            join(marker.bounds, connection_links[marker.links.front()].defines,
+                 &marker == pointed ? 0.95f
+                 : pointed          ? 0.2f
+                                    : 0.8f,
+                 &marker == pointed ? 2.5f : 1.5f);
+    renderer->paths(connection_mesh, paths);
 }
 
 void Application::draw_connections(const Viewport&)
 {
     if (!show_connections)
         return;
-    const auto now = Clock::now();
-    const auto focus = connection_focus_at(mouse_position);
-    if (!focus || *focus == connection_focus) {
-        connection_focus_due = Clock::time_point::max();
-    } else if (!(*focus == connection_candidate) ||
-               connection_focus_due == Clock::time_point::max()) {
-        // Passing over other code on the way to a marker must not change the subject.
-        connection_candidate = *focus;
-        connection_focus_due = now + std::chrono::milliseconds(connection_links.empty() ? 0
-                                                               : focus->panel < 0       ? 700
-                                                                                        : 220);
-    }
-    if (connection_focus_due <= now) {
-        connection_focus = connection_candidate;
-        connection_focus_due = Clock::time_point::max();
-        connections_dirty = true;
-    }
     const bool moved = connection_camera.zoom != camera.zoom ||
                        connection_camera.center.x != camera.center.x ||
                        connection_camera.center.y != camera.center.y ||
@@ -131,12 +121,11 @@ void Application::draw_connections(const Viewport&)
         rebuild_connections();
     else if (moved || pointed != connection_pointed)
         layout_connections();
-    // Words are tinted beneath the text; file titles are underlined later, above their cards.
+    // Words are tinted beneath the text so the code stays legible.
     for (const auto& word : connection_words)
-        if (!word.title)
-            renderer->rectangle(word.bounds,
-                                {0.55f + word.color[0] * 0.45f, 0.55f + word.color[1] * 0.45f,
-                                 0.55f + word.color[2] * 0.45f, 1});
+        renderer->rectangle(word.bounds,
+                            {0.55f + word.color[0] * 0.45f, 0.55f + word.color[1] * 0.45f,
+                             0.55f + word.color[2] * 0.45f, 1});
     renderer->draw(connection_mesh, {0, 0}, 1);
 }
 
@@ -144,14 +133,16 @@ void Application::draw_connection_markers()
 {
     if (!show_connections)
         return;
-    for (const auto& word : connection_words)
-        if (word.title)
-            renderer->rectangle({{word.bounds.origin.x, word.bounds.origin.y + word.bounds.size.y},
-                                 {word.bounds.size.x, 2}},
-                                {word.color[0], word.color[1], word.color[2], 1});
+    // The subject is underlined above the text, so it reads even on a highlighted line.
+    const auto& chosen = connection_subject_box;
+    if (chosen.size.x > 0)
+        renderer->rectangle({{chosen.origin.x, chosen.origin.y + chosen.size.y - 2},
+                             {chosen.size.x, std::max(2.0, 2 * camera.zoom)}},
+                            {0.95f, 0.75f, 0.1f, 1});
     for (const auto& marker : connection_markers) {
-        const auto& color =
-            connection_links[marker.links.front()].uses ? uses_color : used_by_color;
+        const auto& color = marker.links.empty()                             ? subject_color
+                            : connection_links[marker.links.front()].defines ? uses_color
+                                                                             : used_by_color;
         renderer->rectangle(marker.bounds, {1, 1, 1, 0.96f});
         renderer->rectangle({marker.bounds.origin, {3, marker.bounds.size.y}},
                             {color[0], color[1], color[2], 1});
@@ -194,9 +185,20 @@ bool Application::connection_marker_button(const XEvent& event, Vec2 pointer)
     const auto* marker = connection_marker_at(pointer);
     if (!marker || drag_button || event.xbutton.button != Button1)
         return false;
-    const auto link = connection_links[marker->links.front()];
-    const lsp::Json position{{"line", link.line}, {"character", link.column}};
-    return jump_to({{"uri", link.uri}, {"range", {{"start", position}, {"end", position}}}});
+    const auto at =
+        marker->links.empty() ? connection_subject.at : connection_links[marker->links.front()].at;
+    const auto& text = std::find_if(panels.begin(), panels.end(), [&](const auto& panel) {
+                           return panel.uri == at.uri;
+                       })->text[at.line];
+    const lsp::Json position{{"line", at.line}, {"character", lsp::byte_to_utf16(text, at.begin)}};
+    return jump_to({{"uri", at.uri}, {"range", {{"start", position}, {"end", position}}}});
+}
+
+bool Application::connection_key(const XEvent& event)
+{
+    auto key = event.xkey;
+    return XLookupKeysym(&key, 0) == XK_Escape && popup_text.empty() && !drag_button &&
+           clear_connections();
 }
 
 // An agent editing out of sight is announced on the window edge in its direction, with the

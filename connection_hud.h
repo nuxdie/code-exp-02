@@ -5,40 +5,47 @@
 #include <string>
 #include <vector>
 
-// One thing the code under the pointer relates to.
-struct ConnectionLink {
-    Vec2 near, far;   // canvas positions: in the focused code, and at the other end
-    std::string name; // what is at the far end, when it has a name
-    std::string file; // the file it lives in
-    std::string uri;  // where a click goes
-    int line = 0, column = 0;
-    bool uses = true; // the focused code uses it; otherwise it uses the focused code
-    int count = 1;
-    CanvasRect word{};                 // the word in the focused code this link starts from
-    CanvasRect target{};               // the word at the far end
-    int near_file = -1, far_file = -1; // set when an end is a whole file, shown by its title
-    std::vector<CanvasRect> sites{};   // every word in the focused code that refers to it
+// A word in a file.
+struct ConnectionEnd {
+    std::string uri;
+    int line = 0;
+    std::size_t begin = 0, end = 0;
+    bool operator==(const ConnectionEnd& other) const
+    {
+        return uri == other.uri && line == other.line && begin == other.begin;
+    }
 };
 
-// The point on a box's border facing another point: where an arrow should touch it.
-Vec2 border_point(const CanvasRect& box, Vec2 toward);
-Vec2 center(const CanvasRect& box);
+// The symbol the arrows are about: the one that was clicked.
+struct ConnectionSubject {
+    ConnectionEnd at;
+    std::string name, file;
+    bool active = false;
+};
 
-// A link's far end as drawn: on the thing itself, or on the window edge nearest to it.
+// One place related to the subject.
+struct ConnectionLink {
+    ConnectionEnd at;
+    std::string name; // what to call it: the symbol, or the function a use sits in
+    std::string file;
+    bool defines = true; // where the subject is defined; otherwise a place that uses it
+    int count = 1;
+};
+
 // What lies off screen in one file, drawn on the window edge nearest to it.
 struct ConnectionMarker {
-    std::vector<std::size_t> links;
+    std::vector<std::size_t> links; // empty for the subject's own marker
     CanvasRect bounds;
     std::string text;
 };
 
-// "camera.h  zoom ×2, pan +3": the file, then its most used names.
-std::string marker_text(const std::vector<ConnectionLink>& links,
-                        const std::vector<std::size_t>& members, const std::string& direction);
-
 GpuPath connection_curve(Vec2 start, Vec2 end, std::vector<Vec2> controls = {});
 
 bool inside(const CanvasRect& view, Vec2 point);
+Vec2 center(const CanvasRect& box);
+
+// The point on a box's border facing another point: where an arrow should touch it.
+Vec2 border_point(const CanvasRect& box, Vec2 toward);
 
 // Where the straight line from a point inside the view to a point outside it leaves the view.
 Vec2 view_exit(const CanvasRect& view, Vec2 from, Vec2 to);
@@ -51,3 +58,10 @@ CanvasRect marker_box(const CanvasRect& view, Vec2 anchor, Vec2 size);
 
 // Move overlapping boxes apart along the edge they sit on, keeping them inside the view.
 void separate_markers(const CanvasRect& view, std::vector<ConnectionMarker>& markers);
+
+// "camera.h  zoom ×2, pan +3": the file, then its most frequent names.
+std::string marker_text(const std::vector<ConnectionLink>& links,
+                        const std::vector<std::size_t>& members, const std::string& direction);
+
+// The identifier around a byte of a line, as [begin, end); empty when there is none.
+std::pair<std::size_t, std::size_t> word_at(const std::string& line, std::size_t byte);

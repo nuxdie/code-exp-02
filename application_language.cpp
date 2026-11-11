@@ -4,15 +4,8 @@ void Application::handle_message(const lsp::Message& message)
 {
     if (std::getenv("SOURCE_CANVAS_TRACE_LSP"))
         std::cerr << "LSP response " << message.method << " id=" << message.id << '\n';
-    const auto previous_connections = symbol_graph.connections().size();
-    if (symbol_graph.complete(message)) {
-        request_symbol_connections();
-        if (previous_connections != symbol_graph.connections().size()) {
-            connections_dirty = true;
-            redraw = true;
-        }
+    if (message.error.empty() && receive_connections(message))
         return;
-    }
     const auto panel = std::find_if(panels.begin(), panels.end(),
                                     [&](const auto& entry) { return entry.uri == message.uri; });
     if (message.version > 0 && (panel == panels.end() || panel->version != message.version))
@@ -128,11 +121,6 @@ void Application::language_styles(const lsp::Message& message)
         found->semantics =
             lsp::semantic_tokens(message.result.value("data", lsp::Json::array()),
                                  found->cmake ? cmake_token_legend : token_legend, found->text);
-        if (found->cpp) {
-            symbol_graph.update(found->uri, found->version, found->semantics,
-                                declaration_modifiers);
-            request_symbol_connections();
-        }
     } else if (message.method == "textDocument/publishDiagnostics")
         found->diagnostics = message.result;
     else if (message.method == "textDocument/diagnostic")
