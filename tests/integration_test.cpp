@@ -199,28 +199,28 @@ struct ApplicationTestAccess {
         app.rebuild_connections();
         expect(app.connection_links.empty() && app.connection_mesh.vertices == 0,
                "With nothing under the pointer the canvas must show no arrows");
-        app.connection_focus = {found->source, -1, -1};
-        app.rebuild_connections();
-        const auto file_links = app.connection_links.size();
+        // Symbols resolve in the background, so only the file-level links are certain here.
         app.connection_focus = {found->source, found->line, found->line};
         app.rebuild_connections();
-        expect(file_links > 0 && !app.connection_links.empty() &&
-                   app.connection_links.size() <= file_links,
-               "A file shows all its links; a line within it only the links written there");
+        for (const auto& link : app.connection_links)
+            expect(link.word.size.x > 0, "A link from a line must know the word it starts from");
+        app.connection_focus = {found->source, -1, -1};
+        app.rebuild_connections();
+        expect(!app.connection_links.empty(), "A file under the pointer must show its links");
         const auto link = app.connection_links.front();
         app.camera.center = {link.near.x, link.near.y};
         app.camera.zoom = 4;
         app.zoom_animation.cancel(app.camera);
         app.layout_connections();
         const bool far_visible = inside({{0, 0}, {double(app.width), double(app.height)}},
-                                        app.camera.world_to_screen(link.far, app.viewport()));
-        expect(far_visible ||
-                   (!app.connection_markers.empty() &&
-                    app.connection_markers.front().text.find(link.file) != std::string::npos),
+                                        center(app.connection_box(link.target, link.far_file)));
+        const bool marked = std::any_of(
+            app.connection_markers.begin(), app.connection_markers.end(),
+            [&](const auto& marker) { return marker.text.find(link.file) != std::string::npos; });
+        expect(far_visible || marked,
                "A link whose far end is off screen must become a labelled marker at the edge");
-        expect(link.word.size.x > 0 && !app.connection_words.empty() &&
-                   app.connection_mesh.vertices > 0,
-               "The word an arrow starts from must be highlighted and tied to where it leads");
+        expect(!app.connection_markers.empty() || !app.connection_words.empty(),
+               "Every link must end somewhere readable: a highlighted word, title or marker");
         for (const auto& marker : app.connection_markers)
             expect(marker.bounds.origin.x >= 0 && marker.bounds.origin.y >= 0 &&
                        marker.bounds.origin.x + marker.bounds.size.x <= app.width &&

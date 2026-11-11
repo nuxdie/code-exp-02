@@ -3151,6 +3151,23 @@
     "tests/agent_windows_test.cpp": "9cd3e1f 9eae298",
     "tests/integration_test.cpp": "00ae624 ca7c068 c1d74c0 23a2f37 8ec5d3f ab0f849 253d92e fef9007 5dde614 681f368 9f3ff67 5a21456 f867d00 f1876b7 23c6e55 d186f02 73bbb3d f7fb3a3 7322e32 7a08304"
    }
+  },
+  {
+   "id": "claude-2026-11-11-arrows-to-markers",
+   "at": "2026-11-11T21:00:48.110Z",
+   "source": "transcript",
+   "said": "it's unclear which symbols belong to which HUD element right now so maybe we can still bring back the arrows but instead of them going off screen they actually go to the HUD pointers now\nwhen they are originating like from a symbol or a file name, I want that symbol itself to be sort of highlighted because currently the arrow beginning and end sit at a weird place. It's not clear where each arrow sort of belongs to which word",
+   "why": "Markers alone did not show which words they stood for. Arrows now run from each word to the marker for where it leads, or to the word itself when that is in view. The word at each end is tinted, a file title is underlined, and arrows touch the box border. Pointing at a marker makes its arrows stand out.",
+   "intent": "useful-legible-contextual",
+   "changes": {
+    "application.h": "7ee8572 311e6cc 62f8d12 655fb6a 1f71246 a623354 1c49e62 8889566 fabf829 6782c30 8e5daac",
+    "application_connection_hud.cpp": "4435145 ef77ca0 2f71c83 75634fc 1192655 fa52e34 96276ba 7d060bc 7e157a7 9404b2e ac8fcd0 79e8064 09c8e5a 6f5a844 afeb08a f589c05 913fc8c d3e6c33 d1fc769 5b33904 c6855b1 828a140 520b1f2 84395e9 e49399d beab288 2850efd eb16de9 c909d7c ae050f5 4010ba2 938c0bd cfc9d20 40c8a71 85eba3d 82bdeb1 09088f5 17f2d68 0f5bd02 153a8a6 6a2c53d 2167c0b f75f9ed ab9fba8 36dbed9 8303610 caeb620 2d0b687 e7c7f81 fbcb7ad dee4596 7c5e2fc 5ece0a9 455cbc7 dd8108d 2577abf e98a688 ece3402 bac8884 5485202 3d255d6 e7b1d7d 39ad048 466b0d6 700d9f5 e54dd45",
+    "application_connections.cpp": "feb0d2c c660094 243340c 0c61974 e0241fd 19934a7 ef2360d 5edfdac b8c3451 fd59a11 2f43a87 0dc1416 5867f08 9fadf49 a11953a 4285161 8267e93 0eff2f5 7baa459 96b0c37 d319178 02eb8f0 002ebfb 94156fe 4e9b92e 3bf0aff 4bfb295 d666a53 7da6c80 3fc8caf 6f22407 5d0c0ba 1a2bfd8 805eca9 3019fef f9b1802 6afae90 80df02b a2aa240 939371a 5f27e00 abfb2aa 0a48f0b",
+    "application_live.cpp": "b341864 8361627",
+    "connection_hud.cpp": "a978c5f 12e46ec 554cc34 bf35830 318f9b0 e76a3c0 84b97a0 3374836 cb3166e bb5786d deae23b 01edeb9",
+    "connection_hud.h": "d211284 159d744 1a93469 f3b7665 38977a0 3fe431e 5da73c3",
+    "tests/integration_test.cpp": "cccb668 2c93dc3 a99c85b 45049f8 bfdfd21 0472e2d a40297d 949b1ea b57b05d 53164cb 7e2c05f 52a9cef 323ded6"
+   }
   }
  ]
 }

@@ -9,10 +9,16 @@ constexpr double edge_margin = 10;
 // Where an end of a link is on screen: the word itself, or the file's title for a whole file.
 CanvasRect Application::connection_box(const CanvasRect& word, int file)
 {
-    if (file >= 0 && file < static_cast<int>(header_hits.size()) && header_hits[file].size.x > 0)
-        return header_hits[file];
-    return {camera.world_to_screen(word.origin, viewport()),
-            {word.size.x * camera.zoom, word.size.y * camera.zoom}};
+    if (file < 0 || file >= static_cast<int>(panels.size()))
+        return {camera.world_to_screen(word.origin, viewport()),
+                {word.size.x * camera.zoom, word.size.y * camera.zoom}};
+    // Computed for this camera rather than read from the last frame's titles.
+    const auto& panel = panels[file];
+    const double scale = CanvasWindowManager::title_scale(camera.zoom);
+    int title_width = 0;
+    pango_layout_get_pixel_size(panel.title, &title_width, nullptr);
+    return {camera.world_to_screen(panel.bounds.origin, viewport()),
+            {(title_width + 34) * scale, 27 * scale}};
 }
 
 // An arrow from one box's border to another's, so it is clear which word it belongs to.
