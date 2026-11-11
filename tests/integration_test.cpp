@@ -195,7 +195,18 @@ struct ApplicationTestAccess {
                    moved.points.back().x == path.points.back().x,
                "Dragging a source must move its arrow endpoint without moving the target");
         app.panels[found->source].bounds.origin.x -= 75;
+        app.connection_focus = {};
         app.rebuild_connections();
+        expect(app.connection_mesh.vertices == 0,
+               "With nothing under the pointer the canvas must show no arrows");
+        app.connection_focus = {found->source, -1, -1};
+        app.rebuild_connections();
+        const int file_arrows = app.connection_mesh.vertices;
+        app.connection_focus = {found->source, found->line, found->line};
+        app.rebuild_connections();
+        expect(file_arrows > 0 && app.connection_mesh.vertices > 0 &&
+                   app.connection_mesh.vertices <= file_arrows,
+               "A file shows all its links; a line within it only the links written there");
         const auto screen = app.camera.world_to_screen(panel.bounds.origin, app.viewport());
         XEvent motion{};
         motion.type = MotionNotify;

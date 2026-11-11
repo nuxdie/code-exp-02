@@ -76,25 +76,143 @@ GpuPath Application::dependency_path(std::size_t index)
     return path;
 }
 
-void Application::rebuild_connections()
+namespace {
+constexpr double reading_zoom = 0.35;
+constexpr std::array<float, 4> uses_color{0.20f, 0.45f, 0.85f, 0.9f};
+constexpr std::array<float, 4> used_by_color{0.85f, 0.50f, 0.15f, 0.9f};
+
+const SymbolNode* innermost_symbol(const std::vector<SymbolNode>& nodes, int line, bool callable)
 {
-    std::vector<GpuPath> paths;
-    std::set<std::string> connected;
+    for (const auto& node : nodes) {
+        if (line < node.first || line > node.last)
+            continue;
+        if (const auto* inner = innermost_symbol(node.children, line, callable))
+            return inner;
+        // LSP kinds: 6 method, 9 constructor, 12 function.
+        if (!callable || node.kind == 6 || node.kind == 9 || node.kind == 12)
+            return &node;
+    }
+    return nullptr;
+}
+
+// The unit a reader thinks in around a line: its function, else its block, else the line.
+std::pair<int, int> enclosing_unit(const SourcePanel& panel, int line)
+{
+    if (const auto* symbol = innermost_symbol(panel.symbols, line, true))
+        return {symbol->first, symbol->last};
+    std::pair<int, int> unit{line, line};
+    auto opens_alone = [&](int first) {
+        return first > 0 && panel.text[first].find_first_not_of(" \t{") == std::string::npos;
+    };
+    const int limit = static_cast<int>(panel.text.size()) * 3 / 5;
+    for (const auto& fold : panel.folds)
+        if (line >= fold.first && line <= fold.last && fold.last - fold.first < limit &&
+            fold.last - fold.first > unit.second - unit.first)
+            unit = {fold.first, fold.last};
+    // A brace on its own line belongs to the declaration above it.
+    if (opens_alone(unit.first))
+        --unit.first;
+    return unit;
+}
+
+Vec2 card_port(const CanvasRect& card, const CanvasRect& other)
+{
+    const bool right = other.origin.x + other.size.x / 2 > card.origin.x + card.size.x / 2;
+    return {card.origin.x + (right ? card.size.x + 6 : -6),
+            card.origin.y + std::min(card.size.y / 2, 240.0)};
+}
+} // namespace
+
+// Arrows answer a question about what the pointer is on; they are never all shown at once.
+Application::ConnectionFocus Application::connection_focus_at(Vec2 pointer)
+{
+    if (drag_button || search.active || chat_at(pointer))
+        return connection_focus;
+    for (std::size_t i = 0; i < header_hits.size() && i < panels.size(); ++i)
+        if (CanvasWindowManager::contains(header_hits[i], pointer))
+            return {static_cast<int>(i), -1, -1};
+    const auto hit = source_line_at(pointer);
+    if (!hit)
+        return {};
+    if (camera.zoom < reading_zoom)
+        return {hit->panel, -1, -1};
+    const auto unit = enclosing_unit(panels[hit->panel], hit->line);
+    return {hit->panel, unit.first, unit.second};
+}
+
+// One arrow per pair of files, for a whole file under the pointer.
+void Application::file_connections(std::vector<GpuPath>& paths)
+{
+    std::map<std::string, int> index;
+    for (std::size_t i = 0; i < panels.size(); ++i)
+        index[panels[i].uri] = static_cast<int>(i);
+    std::map<std::pair<int, int>, int> pairs;
     for (const auto& edge : symbol_graph.connections()) {
+        const auto source = index.find(edge.source.uri), target = index.find(edge.target_uri);
+        if (source != index.end() && target != index.end() && source->second != target->second)
+            ++pairs[{source->second, target->second}];
+    }
+    const int count = static_cast<int>(panels.size());
+    for (const auto& edge : dependencies)
+        if (edge.source >= 0 && edge.target >= 0 && edge.source < count && edge.target < count &&
+            edge.source != edge.target)
+            ++pairs[{edge.source, edge.target}];
+    const int focus = connection_focus.panel;
+    for (const auto& [pair, uses] : pairs) {
+        if (pair.first != focus && pair.second != focus)
+            continue;
+        const auto& source = panels[pair.first].bounds;
+        const auto& target = panels[pair.second].bounds;
+        auto path = connection_curve(card_port(source, target), card_port(target, source));
+        path.width = static_cast<float>(1 + std::min(3.0, std::log2(1.0 + uses) / 2));
+        path.color = pair.first == focus ? uses_color : used_by_color;
+        paths.push_back(std::move(path));
+    }
+}
+
+// What the code under the pointer uses, and what uses it.
+void Application::unit_connections(std::vector<GpuPath>& paths)
+{
+    const auto& focus = connection_focus;
+    const auto& panel = panels[focus.panel];
+    auto inside = [&](const std::string& uri, int line) {
+        return uri == panel.uri && line >= focus.first && line <= focus.last;
+    };
+    bool resolved = false;
+    for (const auto& edge : symbol_graph.connections()) {
+        const bool uses = inside(edge.source.uri, edge.source.line);
+        const bool used = inside(edge.target_uri, edge.line);
+        resolved = resolved || edge.source.uri == panel.uri;
+        if (uses == used) // unrelated, or a reference within the unit itself
+            continue;
         auto path = symbol_path(edge);
         if (path.points.empty())
             continue;
-        connected.insert(edge.source.uri);
+        path.color = uses ? uses_color : used_by_color;
+        path.width = 1.6f;
         paths.push_back(std::move(path));
     }
-    for (std::size_t index = 0; index < dependencies.size(); ++index) {
-        const auto& edge = dependencies[index];
-        if (!edge.build && edge.source >= 0 && edge.source < static_cast<int>(panels.size()) &&
-            connected.count(panels[edge.source].uri))
+    // Without resolved symbols, fall back to the file-level links written on these lines.
+    for (std::size_t i = 0; i < dependencies.size() && !resolved; ++i) {
+        const auto& edge = dependencies[i];
+        if (edge.source != focus.panel || edge.line < focus.first || edge.line > focus.last)
             continue;
-        auto path = dependency_path(index);
+        auto path = dependency_path(i);
+        path.color = uses_color;
         paths.push_back(std::move(path));
     }
+}
+
+void Application::rebuild_connections()
+{
+    std::vector<GpuPath> paths;
+    const auto& focus = connection_focus;
+    if (focus.panel >= static_cast<int>(panels.size()))
+        connection_focus = {};
+    if (focus.panel >= 0 && focus.first >= 0)
+        unit_connections(paths);
+    else if (focus.panel >= 0)
+        file_connections(paths);
     renderer->paths(connection_mesh, paths);
     connections_dirty = false;
 }

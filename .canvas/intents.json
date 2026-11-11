@@ -3094,6 +3094,22 @@
     "tests/test_intents.py": "3c255c1 8adb587 2435c48 d581648 761c9c8 57c5bb1 2d4bff8 5f53f5b 9c9b83d 565b6fc 2b39a1c 65cb937",
     "tools/intents.py": "7ac1afe aea9cac 461abe5 eb0c702 da9da4c 92fc521 544bf79 7462741 22b61ed 61d063e b1f2807 a71d417 0c282e4 e1bf86b 43fc930 eb90865 aac964a eab4aab ae48954 7cb0e3b f8b3f06 4d05547 16ec1cc 0043633 0bda96b a88b9fd afe5db4 758db15 6b19a36 5d1f80c c901ca7 3ee1910 9f41412 f9f19e0 c5afecc 604e7ca"
    }
+  },
+  {
+   "id": "claude-2026-11-11-arrows-on-demand",
+   "at": "2026-11-11T18:39:02.419Z",
+   "source": "transcript",
+   "said": "fine. next",
+   "why": "Every reference was drawn at once, straight through the text. Arrows now answer a question about what the pointer is on: a function shows what it uses and what uses it; a file title, or a file when zoomed out, shows the files it depends on and that depend on it. With nothing under the pointer there are no arrows.",
+   "intent": "logic-arrows",
+   "changes": {
+    "README.md": "c162ee9 54a706f",
+    "application.h": "3c86239 6e72f57 bc9dfba a93cebb ddf17fd 8ed6583 cd75937 77ea558",
+    "application_connections.cpp": "715f3c3 6f1dc6e 0b7154e 5e41c19 01f51ee ce7b309 6611abe 8adf98d c1c4c7c 5d3f525 b57d056 860dd38 439bce8 7c86581 eba823f b0e5320 11ffe63 d30c1ed 55f8302 45dd0db ce5a663 b2d0c8e c130fe6 b314f41 76a32e3 2a4fa34 0e704a3 3f8ce9d 3dce15e 02b71f2 02adff2 1a0b9c5 e075873 389e828 7f9ef24 12b2c2b 7edc8b8 9fab962 6dfe741 ee4e8d3 1aee36b 22e7cbc f0eb4e3 a759cfb e0241fd ed725ea 289eb82 594e1cd 5febdac 0ebffc1 6055d7a 455e3d5 88462ba 01bcfc4 dfdc975 591c489 a8c059a e377767 e1fa60d 142536f 948e140 cd8e7ee 5ef0c89 6eca9cc 7016aa5 fdc1fdb 78b62d0 8f77194 8230ef8 e1e1931 44c481b d1fc769 6bad9c0 87b02ac dbad4c2 963cbe8 fed892d fd5eab7 d6216b4 9c9a5f0 af65dd3 e874486 24bd1c5 30d30f7 180e329 8634397 495d9ba 60d013f c55bc79 758bec3 07a599b 275a804 cc8ad70 a0c044a 64d28b5 76b9964 c9c4808 60995ec c68d918 afdb431",
+    "application_shortcuts.cpp": "1223ae2",
+    "application_view.cpp": "19818e8 6dfdbb2 dd297d2 0754d3a",
+    "tests/integration_test.cpp": "8b36c8b db32541 532e087 45049f8 bfdfd21 7491726 805d755 84b452b 1958b0a c9d8418"
+   }
   }
  ]
 }

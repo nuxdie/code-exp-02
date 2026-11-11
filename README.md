@@ -36,7 +36,7 @@ Live agent edits appear on the canvas as colored figures that fly from their con
 
 ### From the project to the details
 
-Pan between files and zoom around the pointer. Syntax stays sharp as the camera moves; symbol arrows connect uses to their definitions at the source lines.
+Pan between files and zoom around the pointer. Syntax stays sharp as the camera moves; arrows appear only for the code under the pointer.
 
 Use **Alt+Left / Alt+Right** or your mouse's **back / forward buttons** to revisit camera positions and zoom levels after panning, zooming, fitting, or jumping to code and conversations. Continuous movement counts as one step. Moving somewhere new after going back clears the forward history; the last 100 positions are saved with the project session.
 
@@ -54,7 +54,7 @@ Press `/` to search file names and source text. Results update as you type; use 
 
 | Capability | What you can do |
 | --- | --- |
-| **Spatial source browsing** | Move file cards, fold blocks, fit the canvas, and arrange files with Graphviz. Arrows resolve calls, types, and cross-file data uses to definitions, with include/build dependencies as a fallback. |
+| **Spatial source browsing** | Move file cards, fold blocks, fit the canvas, and arrange files with Graphviz. Arrows appear for what the pointer is on: a function shows what it uses (blue) and what uses it (orange); a file title, or a file when zoomed out, shows the files it depends on and that depend on it. |
 | **Language navigation** | Inspect documentation, definitions, references, symbols, diagnostics, and completion suggestions through `clangd` and `neocmakelsp`. |
 | **Conversations beside the code** | Open an agent conversation at the pointer. The app attaches source location, selected text, and visible-file context. Keep multiple conversation cards on the canvas. |
 | **Human intent beside the code** | A coloured bar in each file's gutter marks which of your decisions produced those lines. Hover for the decision; press `I` or click the bar to read your exact words and the agent's reasoning at the time, and to light up everything that decision touched. |

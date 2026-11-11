@@ -27,7 +27,7 @@ void Application::show_shortcuts()
                "`0`\treset camera\n"
                "`F / W`\tfit everything / fit width\n"
                "`L`\tarrange files with Graphviz\n"
-               "`G`\ttoggle connections\n"
+               "`G`\tarrows for the code under the pointer, on / off\n"
                "Drag blank space or middle-drag on source or blank canvas to pan.\n"
                "Middle-click a conversation, note, search or popup to close it.\n"
                "Drag a file or agent title to move its card.\n"

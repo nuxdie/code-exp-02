@@ -179,6 +179,17 @@ class Application {
                            CanvasRect& hit, std::vector<CanvasRect>& occupied);
     bool show_connections = true;
     bool connections_dirty = true;
+    struct ConnectionFocus {
+        int panel = -1, first = -1, last = -1; // a file, or a unit of lines within it
+        bool operator==(const ConnectionFocus& other) const
+        {
+            return panel == other.panel && first == other.first && last == other.last;
+        }
+    };
+    ConnectionFocus connection_focus;
+    ConnectionFocus connection_focus_at(Vec2 pointer);
+    void file_connections(std::vector<GpuPath>& paths);
+    void unit_connections(std::vector<GpuPath>& paths);
     GpuMesh connection_mesh;
     std::array<GpuMesh, 2> fold_toggle_meshes;
     GpuMesh chat_icon_mesh;

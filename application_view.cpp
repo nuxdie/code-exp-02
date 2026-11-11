@@ -78,6 +78,11 @@ void Application::draw_connections(const Viewport& view)
 {
     const auto screen_center = view.center();
     if (show_connections) {
+        const auto focus = connection_focus_at(mouse_position);
+        if (!(focus == connection_focus)) {
+            connection_focus = focus;
+            connections_dirty = true;
+        }
         if (connections_dirty)
             rebuild_connections();
         renderer->draw(connection_mesh,
