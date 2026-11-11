@@ -3233,6 +3233,22 @@
     "connection_hud.h": "6947de0",
     "tests/live_canvas_test.cpp": "68063df"
    }
+  },
+  {
+   "id": "claude-2026-11-12-click-arrows",
+   "at": "2026-11-11T23:42:54.298Z",
+   "source": "transcript",
+   "said": "now instead of ctrl click just do it on click on a symbol",
+   "why": "A click on a word in source now makes it the subject of the arrows; a click elsewhere in the text or Escape puts them away. Dragging still selects text and links still open.",
+   "intent": "useful-legible-contextual",
+   "changes": {
+    "README.md": "236ad48 2d847d2",
+    "application_connections.cpp": "bbd5a1c 4059421",
+    "application_shortcuts.cpp": "846118d",
+    "application_text_selection.cpp": "38689bd 78491f7 2e8d645 4f0bbd5 4e7b40f dc8abe1",
+    "tests/integration_test.cpp": "6cb8792 b40ac51 f7c42ec 236f34f 418155e 994012e aefa090 5bdccc2 908e39b",
+    "tests/live_canvas_test.cpp": "5f56b83 11b1b57 b1b4938 6f67fe4 cdd55fe 0256b00 47cbc7d 0159bc0"
+   }
   }
  ]
 }
