@@ -283,8 +283,6 @@ Application::~Application()
     save_session();
     live_build.reset();
     system_theme.reset();
-    if (intent)
-        intent->client.reset();
     if (chat)
         chat->client.reset();
     for (auto& card : chat_windows)
@@ -340,7 +338,6 @@ void Application::update_timers(Clock::time_point now)
     }
     poll_project();
     poll_agent();
-    poll_intent();
     poll_intent_margin();
     if (system_theme) {
         const auto dark = system_theme->take_change();
@@ -397,8 +394,7 @@ void Application::wait_for_work(Clock::time_point next_frame)
     }
     const auto pending =
         std::min({save_due, agent_reconnect_due(), chat_animation_due, activity_animation_due,
-                  build_running ? Clock::time_point::max() : rebuild_due, binary_check_due,
-                  intent ? intent->refresh : Clock::time_point::max()});
+                  build_running ? Clock::time_point::max() : rebuild_due, binary_check_due});
     if (pending != Clock::time_point::max()) {
         const int delay = static_cast<int>(std::max(
             0.0,
@@ -414,7 +410,6 @@ void Application::wait_for_work(Clock::time_point next_frame)
         {wake_fd(project_watcher), POLLIN, 0},
         {chat && chat->client ? chat->client->event_fd() : -1, POLLIN, 0},
         {wake_fd(live_build), POLLIN, 0},
-        {intent && intent->client ? intent->client->event_fd() : -1, POLLIN, 0},
         {wake_fd(system_theme), POLLIN, 0},
         {wake_fd(directory_picker), POLLIN, 0},
         {wake_fd(cmake_server), POLLIN, 0}};

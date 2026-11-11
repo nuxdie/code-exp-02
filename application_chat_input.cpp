@@ -29,10 +29,7 @@ bool Application::chat_button(const XEvent& event, Vec2 pointer)
                     break;
                 }
         const bool text = chat_over_text(pointer);
-        if (action.kind == ChatHit::Kind::Message && (event.xbutton.state & Mod1Mask))
-            attribute_chat_entry(action.index);
-        else if ((action.kind == ChatHit::Kind::Message || action.kind == ChatHit::Kind::Text) &&
-                 !text)
+        if ((action.kind == ChatHit::Kind::Message || action.kind == ChatHit::Kind::Text) && !text)
             chat_action({ChatHit::Kind::Title, {}}, world);
         else if (action.kind != ChatHit::Kind::Title || !text)
             chat_action(action, world);

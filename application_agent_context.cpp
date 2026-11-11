@@ -1,5 +1,4 @@
 #include "application.h"
-#include "intent_document.h"
 
 #include <cstdint>
 #include <string_view>
@@ -223,14 +222,14 @@ void Application::render_agent_context()
     const auto path = chat->context.value("path", "");
     std::string text;
     if (!path.empty())
-        text = "[" + intent_literal(path) + ":" + std::to_string(chat->context.value("line", 1)) +
+        text = "[" + popup_literal(path) + ":" + std::to_string(chat->context.value("line", 1)) +
                "](" + path + ":" + std::to_string(chat->context.value("line", 1)) + ")";
     const auto symbol = chat->context.value("symbol", "");
     if (!symbol.empty())
-        text += (text.empty() ? "" : "\n") + intent_literal(symbol);
+        text += (text.empty() ? "" : "\n") + popup_literal(symbol);
     const auto selected = chat->context.value("selected_text", "");
     if (!selected.empty())
-        text += (text.empty() ? "" : "\n\n") + intent_literal(bounded_text(selected, 500));
+        text += (text.empty() ? "" : "\n\n") + popup_literal(bounded_text(selected, 500));
     if (text.empty()) {
         if (found != entries.end())
             entries.erase(found);

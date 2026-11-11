@@ -151,7 +151,7 @@ Start with **`/`** to find a file, **`F`** to see the whole canvas, and **`F1`**
 | Go to definition / usages / back | `Ctrl+click` or `F12` / `Shift+F12` / `Alt+Left` |
 | Show symbols / collapse or expand blocks | `S` / `C` or `Shift+C` |
 | Open a contextual conversation | Right-click or `Ctrl+Shift+A` |
-| Close a conversation, intent card, search, or popup | Middle-click it |
+| Close a conversation, note, search, or popup | Middle-click it |
 | Focus the active conversation / send / insert newline | `Tab` or `Ctrl+L` / `Enter` / `Shift+Enter` |
 | Read the intent behind a line / clear | `I`, `Alt+click` or click the gutter bar / `Esc` |
 | Select / copy text | Drag / `Ctrl+C` |
@@ -162,7 +162,7 @@ At a definition, `Ctrl+click` shows usages. Letter shortcuts apply when you are 
 <details>
 <summary><strong>Workspace and session options</strong></summary>
 
-Session state normally lives in `.cache/canvas-session.json` and preserves the camera, file positions, folds, conversations, drafts, and search state. Human decisions live separately in `.canvas/decisions.json` and are versioned with the code.
+Session state normally lives in `.cache/canvas-session.json` and preserves the camera, file positions, folds, conversations, drafts, and search state. Intent lives separately in `.canvas/intents.json` and is versioned with the code.
 
 | Environment variable | Effect |
 | --- | --- |

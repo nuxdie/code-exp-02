@@ -19,8 +19,7 @@ std::string Application::text_link_at(Vec2 pointer)
                    ? ""
                    : destination_at(web_links(panels[hit.panel].text[hit.line]), hit.byte);
     }
-    if ((target.surface != TextSurface::Chat && target.surface != TextSurface::Intent) ||
-        !target.layout)
+    if (target.surface != TextSurface::Chat || !target.layout)
         return {};
     int index = 0, trailing = 0;
     if (!pango_layout_xy_to_index(
@@ -29,8 +28,6 @@ std::string Application::text_link_at(Vec2 pointer)
             static_cast<int>((pointer.y - target.origin.y) / target.scale * PANGO_SCALE), &index,
             &trailing))
         return {};
-    if (target.surface == TextSurface::Intent)
-        return destination_at(intent->document.document.styles, static_cast<std::size_t>(index));
     const auto* card = chat_at(pointer);
     const auto found = card->messages.find(target.key);
     return found == card->messages.end()

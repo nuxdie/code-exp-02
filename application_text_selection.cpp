@@ -7,8 +7,6 @@ TextInput& Application::selected_input()
         return search.query;
     if (text_selection.surface == TextSurface::Composer)
         return chat->input;
-    if (text_selection.surface == TextSurface::Rationale)
-        return intent->input;
     return text_selection.range;
 }
 bool Application::begin_text_selection(const XEvent& event, Vec2 pointer)
@@ -44,8 +42,6 @@ bool Application::begin_text_selection(const XEvent& event, Vec2 pointer)
     text_selection.extend = extend;
     selected_input().place(byte, extend);
     chat->focused = target.surface == TextSurface::Composer;
-    if (target.surface != TextSurface::Rationale && intent)
-        intent->editing = false;
     drag_button = Button1;
     dragged_panel = -1;
     last_pointer = pointer;
@@ -89,10 +85,6 @@ void Application::selection_click(const XEvent& event)
     const Vec2 pointer{static_cast<double>(event.xbutton.x), static_cast<double>(event.xbutton.y)};
     if (text_selection.surface == TextSurface::Source) {
         open_document_link(pointer);
-    } else if (text_selection.surface == TextSurface::Intent) {
-        auto click = event;
-        click.type = ButtonPress;
-        intent_button(click, pointer);
     } else if (text_selection.surface == TextSurface::Popup) {
         popup_button(event, pointer, true);
     } else if (text_selection.surface == TextSurface::Chat) {
@@ -109,8 +101,7 @@ void Application::selection_click(const XEvent& event)
 std::string Application::selected_text()
 {
     if (text_selection.surface == TextSurface::Search ||
-        text_selection.surface == TextSurface::Composer ||
-        text_selection.surface == TextSurface::Rationale)
+        text_selection.surface == TextSurface::Composer)
         return selected_input().selected();
     const auto target = active_text_target();
     if (!target.text || *target.text != text_selection.range.text)

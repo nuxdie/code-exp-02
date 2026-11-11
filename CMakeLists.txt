@@ -59,11 +59,7 @@ if(NOT CMAKE_LSP_EXECUTABLE)
 endif()
 configure_file(viewer_config.h.in viewer_config.h @ONLY)
 configure_file(tools/agent_bridge.py agent_bridge.py COPYONLY)
-foreach(provenance_file provenance.py provenance_git.py provenance_store.py
-                        intents.py
-)
-    configure_file("tools/${provenance_file}" "${provenance_file}" COPYONLY)
-endforeach()
+configure_file(tools/intents.py intents.py COPYONLY)
 execute_process(
     COMMAND "${Python3_EXECUTABLE}" -c "import websockets"
     RESULT_VARIABLE WEBSOCKETS_RESULT
@@ -239,13 +235,8 @@ add_library(
     application_text_selection.cpp
     application_text_selection_view.cpp
     system_theme.cpp
-    intent_document.cpp
-    application_intent.cpp
-    application_intent_badges.cpp
     application_intent_margin.cpp
     intent_margin.cpp
-    application_intent_view.cpp
-    application_intent_input.cpp
     application_view.cpp
     application_events.cpp
     application_language.cpp
@@ -427,12 +418,6 @@ if(BUILD_TESTING)
     target_link_libraries(cmake_canvas_tests PRIVATE application_core)
     add_test(NAME cmake_canvas COMMAND cmake_canvas_tests)
     set_tests_properties(cmake_canvas PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 45)
-    add_executable(intent_canvas_tests tests/intent_canvas_test.cpp)
-    target_link_libraries(intent_canvas_tests PRIVATE application_core)
-    add_test(NAME intent_canvas COMMAND intent_canvas_tests)
-    set_tests_properties(
-        intent_canvas PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 45
-    )
     add_executable(live_canvas_tests tests/live_canvas_test.cpp)
     target_link_libraries(live_canvas_tests PRIVATE application_core)
     if(XVFB_RUN_EXECUTABLE)
@@ -481,10 +466,6 @@ if(BUILD_TESTING)
         COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s
                 "${CMAKE_CURRENT_SOURCE_DIR}/tests" -p test_agent_bridge.py
     )
-    add_test(NAME provenance
-             COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s
-                     "${CMAKE_CURRENT_SOURCE_DIR}/tests" -p test_provenance.py
-    )
     add_test(NAME intents
              COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s
                      "${CMAKE_CURRENT_SOURCE_DIR}/tests" -p test_intents.py
@@ -518,7 +499,6 @@ if(BUILD_TESTING)
         search_tests
         navigation_tests
         cmake_canvas_tests
-        intent_canvas_tests
         system_theme_tests
         project_watch_tests
         conversation_tests

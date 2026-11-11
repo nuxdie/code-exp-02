@@ -88,19 +88,14 @@ void Application::handle_button(const XEvent& event)
         open_chat_input(pointer);
         return;
     }
-    if (event.xbutton.button == Button1 && !drag_button) {
-        if (window_at(pointer) == WindowKind::Intent)
-            intent_in_front = true;
-        else if (activate_chat(pointer))
-            intent_in_front = false;
-    }
+    if (event.xbutton.button == Button1 && !drag_button)
+        activate_chat(pointer);
     const bool in_popup =
         !popup_text.empty() && Viewport{popup_bounds.origin.x, popup_bounds.origin.y,
                                         popup_bounds.size.x, popup_bounds.size.y}
                                    .contains(pointer);
     if (intent_margin_button(event, pointer) || begin_text_selection(event, pointer) ||
-        popup_button(event, pointer, in_popup) || intent_button(event, pointer) ||
-        chat_button(event, pointer))
+        popup_button(event, pointer, in_popup) || chat_button(event, pointer))
         return;
     schedule_save();
     hide_popup();
@@ -145,12 +140,6 @@ bool Application::close_window_button(const XEvent& event, Vec2 pointer)
         if (text_selection.surface == TextSurface::Popup)
             text_selection = {};
         hide_popup();
-    } else if (target == WindowKind::Intent) {
-        intent->visible = intent->editing = false;
-        if (text_selection.surface == TextSurface::Intent ||
-            text_selection.surface == TextSurface::Rationale)
-            text_selection = {};
-        schedule_save();
     } else if (target == WindowKind::Walkthrough) {
         release_walkthrough();
         schedule_save();
@@ -166,8 +155,7 @@ void Application::zoom_wheel(unsigned button, Vec2 pointer)
     remember_view(true);
     const auto view = viewport();
     if (drag_button) {
-        if ((!chat || !chat->scrolling) && (!intent || !intent->scrolling) &&
-            !text_selection.dragging)
+        if ((!chat || !chat->scrolling) && !text_selection.dragging)
             camera.pan({pointer.x - last_pointer.x, pointer.y - last_pointer.y});
         last_pointer = pointer;
     }
@@ -203,8 +191,6 @@ void Application::handle_drag_motion(Vec2 pointer)
     drag_moved = drag_moved || std::hypot(delta.x, delta.y) > 1;
     if (chat && chat->scrolling) {
         drag_chat_scroll(camera.screen_to_world(pointer, viewport()));
-    } else if (intent && intent->scrolling) {
-        intent->drag_scroll(camera.screen_to_world(pointer, viewport()));
     } else if (window_manager.moving) {
         window_manager.move(delta, camera.zoom);
         if (dragged_panel >= 0) {
@@ -232,14 +218,8 @@ void Application::update_pointer_hover(Vec2 pointer)
     }
     if (!popup_text.empty() && popup_dismiss_due == Clock::time_point::max())
         popup_dismiss_due = Clock::now() + std::chrono::milliseconds(300);
-    const auto world = camera.screen_to_world(pointer, viewport());
-    const bool in_intent = intent && intent->visible &&
-                           Viewport{intent->bounds.origin.x, intent->bounds.origin.y,
-                                    intent->bounds.size.x, intent->bounds.size.y}
-                               .contains(world);
-    const bool in_chat = chat_at(pointer) != nullptr;
-    hover_due = in_chat || in_intent ? Clock::time_point::max()
-                                     : Clock::now() + std::chrono::milliseconds(400);
+    hover_due =
+        chat_at(pointer) ? Clock::time_point::max() : Clock::now() + std::chrono::milliseconds(400);
 }
 
 void Application::handle_release(const XEvent& event)
@@ -250,10 +230,6 @@ void Application::handle_release(const XEvent& event)
     }
     if (chat && chat->scrolling)
         drag_chat_scroll(camera.screen_to_world(
-            {static_cast<double>(event.xbutton.x), static_cast<double>(event.xbutton.y)},
-            viewport()));
-    if (intent && intent->scrolling)
-        intent->drag_scroll(camera.screen_to_world(
             {static_cast<double>(event.xbutton.x), static_cast<double>(event.xbutton.y)},
             viewport()));
     window_manager.end();
@@ -269,10 +245,6 @@ void Application::handle_release(const XEvent& event)
         chat->dragging = false;
         chat->scrolling = false;
     }
-    if (intent) {
-        intent->dragging = false;
-        intent->scrolling = false;
-    }
     if (!zoom_animation.active(camera))
         finish_view();
     schedule_save();
@@ -284,8 +256,7 @@ bool Application::cancel_pointer_drag(const XEvent& event)
 {
     auto key = event.xkey;
     if (XLookupKeysym(&key, 0) != XK_Escape ||
-        (!window_manager.moving && !text_selection.dragging && (!chat || !chat->scrolling) &&
-         (!intent || !intent->scrolling)))
+        (!window_manager.moving && !text_selection.dragging && (!chat || !chat->scrolling)))
         return false;
     text_selection.moved = true;
     drag_moved = true;
@@ -301,7 +272,7 @@ bool Application::cancel_pointer_drag(const XEvent& event)
 void Application::handle_key(const XEvent& event)
 {
     if (cancel_pointer_drag(event) || canvas_shortcut_key(event) || agent_window_key(event) ||
-        selection_key(event) || intent_key(event) || chat_key(event) || intent_margin_key(event)) {
+        selection_key(event) || chat_key(event) || intent_margin_key(event)) {
         redraw = true;
         return;
     }
@@ -351,10 +322,6 @@ void Application::handle_key(const XEvent& event)
     case XK_i:
     case XK_I:
         select_intent_at(mouse_position);
-        break;
-    case XK_d:
-    case XK_D:
-        intent_action("all:");
         break;
     case XK_k:
     case XK_K:

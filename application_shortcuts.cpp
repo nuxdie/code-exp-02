@@ -29,8 +29,8 @@ void Application::show_shortcuts()
                "`L`\tarrange files with Graphviz\n"
                "`G`\ttoggle connections\n"
                "Drag blank space or middle-drag on source or blank canvas to pan.\n"
-               "Middle-click a conversation, intent card, search or popup to close it.\n"
-               "Drag a file, agent or decision title to move its card.\n"
+               "Middle-click a conversation, note, search or popup to close it.\n"
+               "Drag a file or agent title to move its card.\n"
                "Wheel zoom continues while panning.\n\n"
                "## Code and navigation\n"
                "`Hover` or `K`\tdocumentation for the pointed symbol\n"
@@ -50,14 +50,11 @@ void Application::show_shortcuts()
                "`Esc`\tdismiss a new input or leave the message editor\n"
                "Drag the agent scrollbar to scroll; wheel still zooms the canvas.\n"
                "Use Conversations to switch threads.\n\n"
-               "## Decisions and intent\n"
-               "Click an intent label beside a file title to browse its requests.\n"
-               "Select a request for details beside the code; drag its title to detach it.\n"
-               "`D`\tbrowse all intents\n"
-               "`I / Alt+click source`\tintent and diff for that line\n"
-               "`Alt+click a human message`\tselect its intent\n"
-               "`Alt+click an agent response`\trecord its public explanation as rationale\n"
-               "In a rationale editor: Enter saves, Esc cancels, arrows move the caret.\n\n"
+               "## Intent\n"
+               "A coloured bar beside code marks the decision that produced it.\n"
+               "`I / Alt+click / click the bar`\tyour words and the agent's why; lights every line "
+               "it produced\n"
+               "`Esc / middle-click the note`\tclear\n\n"
                "## Text selection and editing\n"
                "Drag text to select; Shift+click extends a selection.\n"
                "`Ctrl+A / Ctrl+C`\tselect all / copy the active text\n"
@@ -124,7 +121,7 @@ bool Application::canvas_shortcut_key(const XEvent& event)
         show_shortcuts();
         return true;
     }
-    const bool editing = (chat && chat->focused) || (intent_in_front && intent && intent->editing);
+    const bool editing = chat && chat->focused;
     if (!editing && !drag_button && !(event.xkey.state & (ControlMask | Mod1Mask)) && length == 1) {
         if (text[0] == '/') {
             open_search();

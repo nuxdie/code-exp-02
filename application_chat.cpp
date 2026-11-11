@@ -58,7 +58,6 @@ void Application::focus_chat()
     finish_view();
     chat->visible = true;
     chat->focused = true;
-    intent_in_front = false;
     chat->follow = true;
     hide_popup();
     redraw = true;

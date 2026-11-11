@@ -53,19 +53,12 @@ Application::WindowKind Application::window_at(Vec2 pointer)
         return WindowKind::Search;
     if (!popup_text.empty() && contains(popup_bounds, pointer))
         return WindowKind::Popup;
-    const bool hit_intent =
-        intent && intent->placed && intent->visible &&
-        (contains(intent->header_bounds, pointer) || contains(intent->bounds, world));
-    if (intent_in_front && hit_intent)
-        return WindowKind::Intent;
     const auto hit_chat = [&](const auto& card) {
         return card && card->visible &&
                (contains(card->header_bounds, pointer) || contains(card->bounds, world));
     };
     if (hit_chat(chat))
         return WindowKind::Chat;
-    if (hit_intent)
-        return WindowKind::Intent;
     if (std::any_of(chat_windows.begin(), chat_windows.end(), hit_chat))
         return WindowKind::Chat;
     if (walkthrough)

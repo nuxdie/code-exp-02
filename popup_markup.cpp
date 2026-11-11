@@ -459,3 +459,15 @@ std::string hover_documentation(const std::string& markdown)
     }
     return result;
 }
+
+std::string popup_literal(const std::string& text)
+{
+    std::string escaped;
+    for (const char byte : text) {
+        if (std::string("&<>*_`[]$\\#~-+").find(byte) != std::string::npos)
+            escaped += "&#" + std::to_string(static_cast<unsigned char>(byte)) + ";";
+        else
+            escaped += byte;
+    }
+    return escaped;
+}

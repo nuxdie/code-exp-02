@@ -1,5 +1,4 @@
 #include "application.h"
-#include "intent_document.h"
 
 void Application::prepare_walkthrough_step(WalkthroughStep& step, std::size_t index)
 {
@@ -40,7 +39,7 @@ void Application::prepare_walkthrough(bool arrange)
     if (!walkthrough)
         return;
     auto& board = *walkthrough;
-    update_document(board.heading, "Walkthrough · " + intent_literal(board.title), 1000, false);
+    update_document(board.heading, "Walkthrough · " + popup_literal(board.title), 1000, false);
     // Preserve user placement when live source changes; only dimensions and excerpts refresh.
     for (std::size_t i = 0; i < board.steps.size(); ++i) {
         auto& step = board.steps[i];
@@ -110,7 +109,7 @@ void Application::draw_walkthrough()
         arrows.push_back({{from, to}, {0.2f, 0.42f, 0.72f, 0.9f}, 2, true});
         arrow_points.push_back(from);
         arrow_points.push_back(to);
-        update_document(connection.caption, intent_literal(connection.label), 136, false);
+        update_document(connection.caption, popup_literal(connection.label), 136, false);
         connection.caption_origin = {(from.x + to.x - connection.caption.size.x) / 2,
                                      (from.y + to.y - connection.caption.size.y) / 2};
     }

@@ -7,7 +7,7 @@
 #include <string>
 
 // Byte ranges use the same UTF-8 text that Pango shapes and that copying returns.
-enum class TextSurface { Inactive, Source, Popup, Chat, Intent, Composer, Rationale, Search };
+enum class TextSurface { Inactive, Source, Popup, Chat, Composer, Search };
 struct ChatCanvas;
 struct TextTarget {
     TextSurface surface = TextSurface::Inactive;

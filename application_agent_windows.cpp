@@ -71,12 +71,8 @@ void Application::draw_conversation()
         draw_chat_header(occupied);
         std::swap(chat, card);
     }
-    if (!intent_in_front)
-        draw_intent();
     draw_chat_card();
     draw_chat_header(occupied);
-    if (intent_in_front)
-        draw_intent();
 }
 void Application::poll_agent()
 {
@@ -86,15 +82,6 @@ void Application::poll_agent()
         std::swap(chat, card);
     }
     poll_agent_window();
-}
-void Application::capture_intents()
-{
-    for (auto& card : chat_windows) {
-        std::swap(chat, card);
-        capture_window_intents();
-        std::swap(chat, card);
-    }
-    capture_window_intents();
 }
 Application::Clock::time_point Application::agent_reconnect_due()
 {
@@ -130,7 +117,6 @@ void Application::spawn_agent_window(Vec2 world, lsp::Json context)
     chat->focused = chat->dragging = chat->scrolling = false;
     chat_windows.push_back(std::move(chat));
     chat = std::move(next);
-    intent_in_front = false;
     refresh_agent_context();
     chat->focused = true;
     initial_view = false;

@@ -545,32 +545,20 @@ struct ApplicationTestAccess {
     {
         app.chat->visible = true;
         app.chat->bounds = {{0, 0}, {760, 900}};
-        app.intent->placed = app.intent->visible = app.intent->editing = true;
-        app.intent->bounds = app.chat->bounds;
-        app.intent->input.set("Unfinished rationale");
-        app.focus_intent();
         app.draw();
         const auto pointer = app.viewport().center();
-        app.show_popup("Popup over intent and chat", {pointer.x - 40, pointer.y - 20});
+        app.show_popup("Popup over chat", {pointer.x - 40, pointer.y - 20});
         app.draw();
         app.text_selection.surface = TextSurface::Popup;
         middle_click(app, pointer);
-        expect(app.popup_text.empty() && app.intent->visible && app.chat->visible &&
+        expect(app.popup_text.empty() && app.chat->visible &&
                    app.text_selection.surface == TextSurface::Inactive && !app.drag_button,
                "Middle-click must dismiss only the popup above overlapping cards");
-        app.text_selection.surface = TextSurface::Rationale;
-        middle_click(app, pointer);
-        expect(!app.intent->visible && !app.intent->editing && app.chat->visible &&
-                   app.intent->input.text == "Unfinished rationale" &&
-                   app.text_selection.surface == TextSurface::Inactive && !app.drag_button,
-               "Closing intent must stop editing, preserve its draft and leave the chat open");
-        app.focus_intent();
-        expect(app.intent->visible, "The decision shortcut must reopen a closed intent card");
         app.open_search();
         app.draw();
         app.text_selection.surface = TextSurface::Search;
         middle_click(app, {app.search.bounds.origin.x + 10, app.search.bounds.origin.y + 10});
-        expect(!app.search.active && app.intent->visible && app.chat->visible &&
+        expect(!app.search.active && app.chat->visible &&
                    app.text_selection.surface == TextSurface::Inactive && !app.drag_button,
                "Middle-click must close search without affecting the windows underneath");
         app.show_shortcuts();
@@ -578,7 +566,7 @@ struct ApplicationTestAccess {
         middle_click(app, {app.popup_bounds.origin.x + 10, app.popup_bounds.origin.y + 10});
         expect(!app.shortcuts_visible && app.popup_text.empty(),
                "Middle-click must also close the shortcut guide");
-        app.intent->visible = app.chat->visible = false;
+        app.chat->visible = false;
         const auto source = source_point(app);
         XEvent pan{};
         pan.type = ButtonPress;
@@ -590,54 +578,47 @@ struct ApplicationTestAccess {
         pan.type = ButtonRelease;
         app.handle_event(pan);
     }
-    static void test_shared_windows(Application& app)
+    static void test_intent_note_lives_on_the_canvas(Application& app)
     {
         app.hide_popup();
-        app.chat->visible = true;
-        app.chat->composing = false;
-        app.intent->placed = app.intent->visible = true;
-        app.intent->bounds = app.chat->bounds;
-        app.intent->path = "a_file-name_[draft].cpp";
-        app.intent_in_front = true;
-        app.camera.zoom = 0.15;
-        app.camera.center = app.intent->bounds.origin;
+        app.chat->visible = false;
+        const auto pointer = source_point(app);
+        const auto hit = app.source_line_at(pointer);
+        expect(hit.has_value(), "The test pointer must be over a source line");
+        const auto& panel = app.panels[hit->panel];
+        auto& margin = app.intent_margin;
+        margin.view = {};
+        margin.view.statements["zoom"] = "The wheel zooms everywhere.";
+        margin.view.turns.push_back(
+            {"wheel should zoom", "Because scrolling hid the canvas.", "zoom"});
+        margin.view.files[panel.path].push_back({0, static_cast<int>(panel.text.size()) - 1, 0});
+        app.select_intent_at(pointer);
+        app.draw();
+        expect(margin.selected == "zoom" && margin.pinned && margin.note_bounds.size.x > 0,
+               "Asking about a line must pin the intent behind it");
+        const auto before = margin.note_bounds;
+        const auto card = app.camera.world_to_screen(panel.bounds.origin, app.viewport());
+        expect(before.origin.x + before.size.x <= card.x,
+               "The note must sit beside the code it explains, not over it");
+        app.camera.pan({-120, 0});
+        app.camera.zoom *= 0.5;
         app.zoom_animation.cancel(app.camera);
         app.draw();
-        expect(app.intent->title.source == app.intent->path &&
-                   std::string(pango_layout_get_text(app.intent->title.layout.get())) ==
-                       app.intent->path,
-               "Intent titles must preserve punctuation without HTML character codes");
-        expect(app.intent->header_bounds.size.y == app.chat->header_bounds.size.y &&
-                   app.intent->header_bounds.size.y >= 18,
-               "Intent and chat titles must share the minimum readable zoom scale");
-        const auto header = app.intent->header_bounds;
-        const Vec2 pointer{header.origin.x + 10, header.origin.y + 5};
-        expect(app.window_at(pointer) == Application::WindowKind::Intent &&
-                   app.chat_at(pointer) == nullptr,
-               "The painted intent title must receive input ahead of the underlying chat");
-        XEvent press{};
-        press.type = ButtonPress;
-        press.xbutton.button = Button1;
-        press.xbutton.x = static_cast<int>(pointer.x);
-        press.xbutton.y = static_cast<int>(pointer.y);
-        const auto before = app.intent->bounds.origin;
-        app.handle_button(press);
-        expect(app.window_manager.moving == &app.intent->bounds.origin,
-               "Intent titles must start a shared window drag");
-        XEvent motion{};
-        motion.type = MotionNotify;
-        motion.xmotion.x = press.xbutton.x + 30;
-        motion.xmotion.y = press.xbutton.y + 15;
-        app.handle_event(motion);
-        expect(std::abs(app.intent->bounds.origin.x - before.x - 200) < 0.01,
-               "Window movement must map screen deltas through the camera zoom");
+        const auto after = margin.note_bounds;
+        expect(std::abs(after.size.x - before.size.x * 0.5) < 1 &&
+                   std::abs(after.origin.x - before.origin.x) > 1,
+               "The note must pan and zoom with the canvas like everything else on it");
+        middle_click(app, {after.origin.x + after.size.x / 2, after.origin.y + after.size.y / 2});
+        expect(margin.selected.empty() && !margin.pinned, "Middle-click must close the note");
+        app.select_intent_at(pointer);
         XEvent escape{};
         escape.type = KeyPress;
         escape.xkey.display = app.display;
         escape.xkey.keycode = XKeysymToKeycode(app.display, XK_Escape);
         app.handle_event(escape);
-        expect(!app.window_manager.moving && !app.drag_button && !app.intent->dragging,
-               "Escape must release the pointer and clear shared drag state");
+        expect(margin.selected.empty() && app.options_page == Application::OptionsPage::Closed,
+               "Escape must clear the selected intent before anything else");
+        margin.view = {};
     }
     static void run(Application& app, bool window_policy)
     {
@@ -646,7 +627,7 @@ struct ApplicationTestAccess {
             test_chat_titles(app);
             test_chat_header_stacking(app);
             test_middle_click_overlays(app);
-            test_shared_windows(app);
+            test_intent_note_lives_on_the_canvas(app);
             return;
         }
         test_spawn_and_context(app);

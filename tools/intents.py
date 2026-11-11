@@ -163,47 +163,26 @@ def commit_lines(root, commit):
     return {path: hashes(lines) for path, lines in changes.items()}
 
 
-def statement_turn(decision):
-    return {"id": decision["origin"].get("turn_id") or decision["id"].replace("decision-", ""),
-            "thread": decision["origin"].get("thread_id"), "at": decision.get("recorded_at"),
-            "source": "statement", "said": decision["statement"],
-            "why": (decision.get("rationale") or {}).get("summary") or "", "changes": {}}
+def add_commits(root, turns, links):
+    """Fold in lines that were committed for a turn but never appear in its transcript.
 
-
-def add_legacy(root, turns, decisions, links):
-    """Fold in what transcripts cannot show: statements made elsewhere, and committed lines.
-
-    A commit names the statement it served in an Intent-ID trailer, or `links` names it
-    for commits made without one. Committed lines are weaker evidence than a transcript's
-    own edits, so they are kept apart and only claim lines no transcript explains.
+    `links` maps a commit to the turns it served. Committed lines are weaker evidence
+    than a transcript's own edits, so they are kept apart and only claim lines no
+    transcript explains.
     """
     by_id = {turn["id"]: turn for turn in turns}
-    said = {normalize(turn["said"]) for turn in turns}
-    for decision in decisions:
-        turn = statement_turn(decision)
-        if turn["id"] in by_id or any(normalize(turn["said"]) in text for text in said):
-            continue
-        by_id[turn["id"]] = turn
-        said.add(normalize(turn["said"]))
-        turns.append(turn)
-    decision_turn = {decision["id"]: statement_turn(decision)["id"] for decision in decisions}
-    log = git(root, "log", "--reverse",
-              "--format=%H%x1f%(trailers:key=Intent-ID,valueonly,separator=%x20)%x1e")
-    for entry in log.split("\x1e"):
-        fields = entry.strip("\n").split("\x1f")
-        if len(fields) < 2:
-            continue
-        commit, trailer = fields[0], fields[1]
-        targets = [decision_turn.get(value) for value in trailer.split()]
-        targets += [turn_id for sha, turn_id in links.items() if commit.startswith(sha)]
-        targets = [by_id[target] for target in targets if target in by_id]
+    for commit, turn_ids in links.items():
+        targets = [by_id[turn_id] for turn_id in turn_ids if turn_id in by_id]
         if not targets:
             continue
-        changes = commit_lines(root, commit)
+        try:
+            changes = commit_lines(root, commit)
+        except subprocess.CalledProcessError:
+            continue
         # A commit that answers many statements at once cannot say which one a line serves.
         strength = "committed" if len(targets) <= MILESTONE else "milestone"
         for turn in targets:
-            turn.setdefault("commits", []).append(commit[:8])
+            turn.setdefault("commits", []).append(commit)
             committed = turn.setdefault(strength, {})
             for path, values in changes.items():
                 own = set(turn["changes"].get(path, []))
@@ -247,12 +226,6 @@ def save(root, store):
             path.write_text(text)
 
 
-def resolve(names, prefix):
-    """Find the one turn a short id refers to; `names` maps known ids to turn ids."""
-    matches = {turn for name, turn in names.items() if name.startswith(prefix)}
-    return matches.pop() if len(matches) == 1 else None
-
-
 def rebuild(root, sessions):
     """Rebuild turns from the evidence on disk, keeping distilled intents and their links."""
     store = load(root)
@@ -261,22 +234,10 @@ def rebuild(root, sessions):
     found = {turn["id"] for turn in turns}
     # Transcripts live on the machine that ran them; keep turns imported from elsewhere.
     for turn in store["turns"]:
-        if turn["source"] == "transcript" and turn["id"] not in found:
+        if turn["id"] not in found:
             turns.append({key: value for key, value in turn.items()
                           if key not in ("committed", "milestone", "commits")})
-    legacy = Path(root) / ".canvas/decisions.json"
-    if legacy.exists():
-        decisions = json.loads(legacy.read_text())["decisions"]
-        names = {turn["id"]: turn["id"] for turn in turns}
-        for decision in decisions:
-            turn_id = statement_turn(decision)["id"]
-            names[turn_id] = names[decision["id"].replace("decision-", "")] = turn_id
-        links = {sha: resolve(names, prefix)
-                 for sha, prefix in store.get("commits", {}).items()}
-        missing = [sha for sha, turn_id in links.items() if not turn_id]
-        if missing:
-            raise SystemExit("Commit links name no single turn: " + ", ".join(missing))
-        add_legacy(root, turns, decisions, links)
+    add_commits(root, turns, store.get("commits", {}))
     turns.sort(key=lambda turn: turn["at"] or "")
     for turn in turns:
         turn["intent"], also = previous.get(turn["id"], (None, None))

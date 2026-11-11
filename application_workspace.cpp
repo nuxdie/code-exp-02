@@ -248,7 +248,6 @@ void Application::finish_workspace_load()
     initialize_cmake();
     camera.reset(viewport());
     initialize_chat();
-    initialize_intent();
     load_intent_margin();
     initialize_reload();
     for (auto& title : workspace_load->titles)

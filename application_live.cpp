@@ -160,8 +160,6 @@ void Application::refresh_project_geometry(bool settle)
     for (const auto& card : chat_windows)
         if (card->visible)
             bounds.push_back(card->bounds);
-    if (intent && intent->placed && intent->visible)
-        bounds.push_back(intent->bounds);
     content_size = canvas_size(bounds);
     std::ofstream(workspace_build + "/source-graph.dot") << graph_dot(files, dependencies);
     connections_dirty = true;

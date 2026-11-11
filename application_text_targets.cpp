@@ -96,40 +96,8 @@ TextTarget Application::text_at(Vec2 pointer)
     auto target = chat_text_target(pointer);
     if (target.surface != TextSurface::Inactive)
         return target;
-    const auto world = camera.screen_to_world(pointer, viewport());
     if (chat_at(pointer))
         return {};
-    if (window_at(pointer) == WindowKind::Intent) {
-        if (contains(intent->header_bounds, pointer))
-            return {};
-        if (intent->editing && contains(intent->editor, world)) {
-            const std::string prefix = "Human rationale · Enter saves · Esc cancels\n";
-            return {TextSurface::Rationale,
-                    "",
-                    &intent->input.text,
-                    intent->rationale.layout.get(),
-                    nullptr,
-                    camera.world_to_screen(
-                        {intent->editor.origin.x + 12, intent->editor.origin.y + 10}, viewport()),
-                    camera.zoom,
-                    prefix.size()};
-        }
-        if (!intent->editing && contains(intent->body, world))
-            return {
-                TextSurface::Intent,
-                "",
-                &intent->document.document.text,
-                intent->document.layout.get(),
-                &intent->document.document.math,
-                camera.world_to_screen(
-                    {intent->body.origin.x, intent->body.origin.y - intent->scroll}, viewport()),
-                camera.zoom};
-        return {};
-    }
-    if (intent)
-        for (const auto& badge : intent->badge_hits)
-            if (contains(badge.bounds, pointer))
-                return {};
     return source_text_target(pointer);
 }
 TextTarget Application::active_text_target()
@@ -179,15 +147,6 @@ TextTarget Application::active_text_target()
                     &popup_math,
                     {popup_bounds.origin.x + 12, popup_bounds.origin.y + 12 - popup_scroll}};
         return {};
-    case TextSurface::Intent:
-        return {TextSurface::Intent,
-                "",
-                &intent->document.document.text,
-                intent->document.layout.get(),
-                &intent->document.document.math,
-                camera.world_to_screen(
-                    {intent->body.origin.x, intent->body.origin.y - intent->scroll}, viewport()),
-                camera.zoom};
     case TextSurface::Composer:
         return {TextSurface::Composer,
                 "",
@@ -198,18 +157,6 @@ TextTarget Application::active_text_target()
                     {chat->editor.origin.x + 12, chat->editor.origin.y + 10 - chat->editor_scroll},
                     viewport()),
                 camera.zoom};
-    case TextSurface::Rationale: {
-        const std::string prefix = "Human rationale · Enter saves · Esc cancels\n";
-        return {TextSurface::Rationale,
-                "",
-                &intent->input.text,
-                intent->rationale.layout.get(),
-                nullptr,
-                camera.world_to_screen({intent->editor.origin.x + 12, intent->editor.origin.y + 10},
-                                       viewport()),
-                camera.zoom,
-                prefix.size()};
-    }
     default:
         return {};
     }
@@ -269,9 +216,8 @@ std::size_t Application::text_byte_at(const TextTarget& target, Vec2 pointer, bo
         static_cast<int>((pointer.y - target.origin.y) / target.scale * PANGO_SCALE), &index,
         &trailing);
     if (inside)
-        *inside = hit || target.surface == TextSurface::Search ||
-                  target.surface == TextSurface::Composer ||
-                  target.surface == TextSurface::Rationale;
+        *inside =
+            hit || target.surface == TextSurface::Search || target.surface == TextSurface::Composer;
     const auto* raw = pango_layout_get_text(target.layout);
     const auto byte = std::min(std::strlen(raw), static_cast<std::size_t>(std::max(0, index)));
     const auto caret =

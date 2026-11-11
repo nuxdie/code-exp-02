@@ -8,7 +8,6 @@
 #include "conversation.h"
 #include "directory_picker.h"
 #include "document_view.h"
-#include "intent_canvas.h"
 #include "intent_margin.h"
 #include "live_build.h"
 #include "math_typesetter.h"
@@ -106,11 +105,9 @@ class Application {
     int screen = 0;
     std::unique_ptr<ChatCanvas> chat;
     std::vector<std::unique_ptr<ChatCanvas>> chat_windows;
-    std::unique_ptr<IntentCanvas> intent;
     std::unique_ptr<CodeWalkthrough> walkthrough;
     IntentMargin intent_margin;
     int dragged_walkthrough_step = -1;
-    lsp::Json intent_session = lsp::Json::object();
     std::unique_ptr<SystemTheme> system_theme;
     XIM input_method = nullptr;
     XIC input_context = nullptr;
@@ -174,8 +171,7 @@ class Application {
     int dragged_panel = -1;
     CanvasWindowManager window_manager;
     std::vector<CanvasRect> window_headers;
-    bool intent_in_front = true;
-    enum class WindowKind { Canvas, Source, Walkthrough, Chat, Intent, Popup, Search };
+    enum class WindowKind { Canvas, Source, Walkthrough, Chat, Popup, Search };
     WindowKind window_at(Vec2 pointer);
     bool begin_window_drag(Vec2& origin, Vec2 pointer);
     void draw_window_title(DocumentView& title, const std::string& text, CanvasRect world,
@@ -286,19 +282,6 @@ class Application {
     void poll_reload(Clock::time_point now);
     void handle_build_result(const BuildResult& result);
     void request_reload();
-    void initialize_intent();
-    void intent_request(const std::string& method, lsp::Json params = lsp::Json::object());
-    void poll_intent();
-    void receive_intent(const lsp::Json& message);
-    void capture_intents();
-    void attribute_chat_entry(std::size_t index);
-    void focus_intent();
-    void rebuild_intent_index();
-    void show_file_intents(const std::string& path, double offset = 0);
-    void select_intent(const std::string& id);
-    void draw_intent_badges();
-    bool intent_badge_button(const XEvent& event, Vec2 pointer);
-    void inspect_intent(Vec2 pointer);
     void load_intent_margin();
     void poll_intent_margin();
     std::optional<SourceHit> source_line_at(Vec2 screen);
@@ -367,7 +350,6 @@ class Application {
     std::optional<std::pair<std::size_t, std::size_t>>
     prompt_source_range(const SourcePanel& panel) const;
     bool agents_pending();
-    void capture_window_intents();
     Clock::time_point agent_reconnect_due();
     lsp::Json save_agent_window();
     void load_agent_window(ChatCanvas& card, const lsp::Json& state);

@@ -91,7 +91,7 @@ std::string intent_note(const IntentView& view, const IntentRun& run, bool detai
     std::string note = distilled ? "**" + statement->second + "**\n\n" : "";
     std::istringstream said(clipped(turn.said, 600));
     for (std::string line; std::getline(said, line);)
-        note += line.empty() ? "\n" : "*" + line + "*\n";
+        note += line.empty() ? "\n" : "*" + popup_literal(line) + "*\n";
     if (!turn.why.empty())
         note += "\n" + clipped(turn.why, 900);
     return note;

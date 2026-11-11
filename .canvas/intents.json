@@ -127,21 +127,168 @@
   }
  ],
  "commits": {
-  "0a9ba4f": "01a1c75c-1a3e",
-  "023d88d": "01a1c752-f967",
-  "3bc4340": "01a1c755-2fe5",
-  "0916555": "01a1c750-e043",
-  "8b8bdf6": "01a1c759-b22e",
-  "9a9ef6c": "01a1c766-82a8",
-  "62137ee": "01a1c784-1226",
-  "7c006a9": "01a1c781-ad99",
-  "d5d1596": "01a1c79a-b37b",
-  "1b03ef4": "01a1c79e-08b3",
-  "0bd143f": "01a1c7d1-f4c4",
-  "e0b1d26": "01a1c7d1-f4c4",
-  "5f1bdcb": "01a1c7d1-f4c4",
-  "9a9bf8f": "01a1c7d8-d7ea",
-  "97579c1": "01a1ca86-e288"
+  "023d88da": [
+   "01a1c752-f939-7ca3-aec9-fc665ee42201"
+  ],
+  "03896902": [
+   "01a1c507-dfc2-7d71-8660-d384f5e256bd"
+  ],
+  "047792fa": [
+   "01a1c535-f2b8-7793-9353-d20830860098"
+  ],
+  "09165556": [
+   "01a1c750-dac5-74e3-bd1e-9d07ef74dd03"
+  ],
+  "0a9ba4f8": [
+   "01a1c75c-0376-7462-bdcb-e9c06c9f52b3"
+  ],
+  "0bd143ff": [
+   "01a1c7d1-efda-7ec2-851b-c71403ba99cb"
+  ],
+  "18c89301": [
+   "01a1bff2-bfee-7760-b633-2fc0ca8a760a"
+  ],
+  "1b03ef41": [
+   "01a1c79e-06a3-74e3-84b1-43104e9e1d3f"
+  ],
+  "1d349234": [
+   "01a1c27d-ab4f-7d02-bc60-458cb1ee1d5b"
+  ],
+  "22ecdbf1": [
+   "01a1c006-c54e-7162-8d2e-c3a3bf95e935"
+  ],
+  "2977615a": [
+   "01a1cb48-c53b-7022-bf11-f8ed6458c916"
+  ],
+  "2dd774b3": [
+   "01a1c72c-62f4-7ec1-a1aa-f950216ff4a5"
+  ],
+  "2e04136c": [
+   "01a1c501-e37f-7c61-84d5-0f9bce3c6b9c"
+  ],
+  "33afc22a": [
+   "01a1bff1-7ae8-72f2-ba1c-c0698e35cf93"
+  ],
+  "3bc43401": [
+   "01a1c755-2203-7171-b64c-6fc128d37ca1"
+  ],
+  "4a3c7c0e": [
+   "01a1cb5b-9c1b-7873-9d13-30f52a6458ec"
+  ],
+  "57b99f34": [
+   "01a1c502-9d16-7d03-b922-2fc99dbc1207"
+  ],
+  "5f1bdcb8": [
+   "01a1c7d1-efda-7ec2-851b-c71403ba99cb"
+  ],
+  "6159d7d5": [
+   "01a1c753-98b2-7e50-aaa9-002ae61ebb12"
+  ],
+  "62137eed": [
+   "01a1c784-02a1-7c13-b806-6eb66fff1198"
+  ],
+  "6501f6c0": [
+   "01a1c1dd-067b-7832-b3cf-0f2a966b815f"
+  ],
+  "6b59192b": [
+   "01a1c221-6ef0-7a13-b9d0-0cbcd86c5c35"
+  ],
+  "714cbcf0": [
+   "01a1c231-af34-7362-993a-da962ad1bf74",
+   "01a1c244-69ca-7290-a119-67a8a52efb10",
+   "01a1c246-b3c8-7282-9865-1c909afc82e0",
+   "01a1c24e-67b9-7132-8cd0-27571c0dc760",
+   "01a1c24f-1e12-7892-b6d8-31d050bd5821",
+   "01a1c250-318a-70e2-a698-9cd1f581b0be",
+   "01a1c254-6268-74d0-a396-96804911a7ca",
+   "01a1c255-b383-7330-9238-c4e41d23a7c7",
+   "01a1c258-bb50-7981-a461-5b4c1b71f48f",
+   "01a1c25c-a1c4-7152-96d1-61ba62fa21e3",
+   "01a1c25f-98a5-7383-9606-8b2dab0ef4ba",
+   "01a1c260-e51f-7d60-b492-4d1349f0c637",
+   "01a1c277-7235-7d23-8722-c06bbd7c5c1a",
+   "01a1c278-341d-7cb3-9be6-3d39ca933ea9"
+  ],
+  "7472bb20": [
+   "01a1c002-66fd-7de3-b3bc-05b5f721de3d",
+   "01a1c006-c54e-7162-8d2e-c3a3bf95e935",
+   "01a1c00a-e64b-7190-be8c-2a2b9fd41935",
+   "01a1c045-9617-7562-835a-d254f534ce8f",
+   "01a1c08f-62f2-7253-afee-0ee132ea6c5d"
+  ],
+  "7617546c": [
+   "01a1bff4-3a44-7350-a7bf-a83025bb3fca"
+  ],
+  "7aa6af68": [
+   "01a1bff7-047e-7942-8776-1c754fcb4233"
+  ],
+  "7c006a99": [
+   "01a1c781-ad5f-77b3-8974-79cfd6976873"
+  ],
+  "7c462969": [
+   "01a1bffc-35d5-7373-83a6-28754055a431",
+   "01a1c000-774d-7c83-a5be-9700a247d546"
+  ],
+  "806e02c3": [
+   "01a1c4fa-ea73-7461-8d3e-f2ee1db4dd1d"
+  ],
+  "81b198ba": [
+   "01a1c0af-1a0b-75e2-a51c-bdd0a8f81788"
+  ],
+  "826e5218": [
+   "01a1c0f7-8c86-7053-a6fd-bd6660fbf908"
+  ],
+  "8b108e36": [
+   "01a1c505-b5b2-7f80-b2ad-03e2624021a4"
+  ],
+  "8b8bdf6a": [
+   "01a1c759-a6d8-7842-b300-454445d00760"
+  ],
+  "91ae6546": [
+   "01a1cb5b-9c1b-7873-9d13-30f52a6458ec"
+  ],
+  "9579d58d": [
+   "01a1cb5b-9c1b-7873-9d13-30f52a6458ec"
+  ],
+  "97579c10": [
+   "01a1ca86-dd27-7aa2-af61-5aeb25a0c0e3"
+  ],
+  "98f01bdc": [
+   "01a1c194-277e-7932-9c82-d1b2a39c0818"
+  ],
+  "9a9bf8f9": [
+   "01a1c7d8-d3f8-7eb0-aa73-0313994098eb"
+  ],
+  "9a9ef6ce": [
+   "01a1c766-7208-7391-9e96-b1816092fbd6"
+  ],
+  "a29decd0": [
+   "01a1c279-9733-7730-97ec-ba6ef867258c"
+  ],
+  "a6b8d178": [
+   "01a1cb5b-9c1b-7873-9d13-30f52a6458ec"
+  ],
+  "b2bcdb9f": [
+   "01a1c797-9e8f-7010-8169-4ed3cb9130c0"
+  ],
+  "bb62ceac": [
+   "01a1c2b5-9db4-7a32-8f33-d4bf15863b8d"
+  ],
+  "c9c9d172": [
+   "01a1c18a-ff87-78a3-80f8-c4b9da3cd402"
+  ],
+  "d21cfa12": [
+   "01a1c194-277e-7932-9c82-d1b2a39c0818"
+  ],
+  "d5d15966": [
+   "01a1c79a-a8d2-7c62-96e0-9681bd996da3"
+  ],
+  "e0b1d26f": [
+   "01a1c7d1-efda-7ec2-851b-c71403ba99cb"
+  ],
+  "e13597dc": [
+   "01a1cadd-8fce-76f2-9d61-da3353e6f4bc"
+  ]
  },
  "turns": [
   {
@@ -225,9 +372,6 @@
     "no-chrome"
    ],
    "commits": [
-    "7c462969",
-    "7c462969",
-    "7c462969",
     "7c462969"
    ],
    "changes": {
@@ -236,7 +380,7 @@
     "main.cpp": "45fa2b3 d2707ee b23f5a5 f203ca1 fc676bf e1cbb28 4f26465 1a78a8e 781e7ba 11b4b88 da278ef 665e1f8 0558892 0c86515 bfb2950 4f52f4d c7ff5b7 ab96ca1 5a97007 7f5cf10 e4ed1af 81a7711 19e00d0 4a93e9a 95fe86b f449fd9 97f2dee 017daee 7d74a2e aae8c4f 8af665c e2b0337 2cf8cab 59a5284 b3a0eba 10db6ef 8db4c41 0ab6466 5ddd539 9b0a4a8 4e7982f c371f92 0c8bc34 37024de 10f96c5 522bd36 fb28a6d 80c8287 c18707f 4764cd5 f87bd7b ca8a32f 16911cf a4b17e5 dbb8733 5d59e1e 165c2a3 b2293ae 8264637 9d1972b 87859f3 64f30f1 761764d 6ae2435 44b5492 f9cadbe e95fd79 d8ec90a fd8ac47 4c106cc 7df2248 4c050ee 168d5b3 eac6baa c652dcb 7ec494b 9622c53 53871c0 550862a db2eeaf 6e90128 310fe18 28c35b7 8ae4ddc fa553a5 68a49f4 51c038f d65066b 3598670 5579e7e a8d69fb 92c7002 71bf3a5 57a2044",
     "tests/camera_test.cpp": "b23f5a5 d2707ee 62ed437 1b1ee4f 59d54cc a8d6c58 5237653 33da801 4f53a8a e171807 d93448f fb7d7b1 0c86515 39b25db 95ab760 39f4ba0 a59b6b9 f5c01c2 417cb48 20ab4b4 b4a852e 1bb7a30 64af34d 669ab7d f8d4c1e d92eac0 76ba6b5 cbc417a 28bbb22 f17692e 5ac771d 02c85ea 524c9dc 09eaf9c f484c55 c5159be 72aec64 e710310 91c7194 ce23d2a 449bf3e e246198 ffa38a4 f1b9cb3 6c0447c da0a51b 4a6d523 ba3c65e aea302f a9c7d2e 49d6cb2 7b6f500 91268bd c7eadd2 b4c420f 88cfcad 6c80940 940cb38 3caba4c"
    },
-   "milestone": {
+   "committed": {
     "main.cpp": "69fb93b f2def38 64c9518 dffe1f9 503be12 131ed51 9650636 b4acebe 1cf9969 f8c491d",
     "tests/camera_test.cpp": "a2006ab a21760b bdeac34 4c807eb 80605e0 c3902f9 677b3e5 ad96ab7 2ce8472 c4ad3cb b8d176e"
    }
@@ -256,7 +400,7 @@
     "main.cpp": "69fb93b f2def38 64c9518 44b5492 87859f3 dffe1f9 503be12 131ed51 9650636 b4acebe 1cf9969 f9cadbe f8c491d",
     "tests/camera_test.cpp": "a2006ab a21760b 39b25db bdeac34 4c807eb 80605e0 c3902f9 677b3e5 ad96ab7 2ce8472 02c85ea c4ad3cb b8d176e"
    },
-   "milestone": {
+   "committed": {
     "CMakeLists.txt": "cb4d7a7 6904982 05fd47c c596e7c a8439ce 82afb51 cf06678 ca1f67c cdc0773 bfe873f d483a83",
     "camera.h": "d261915 ad576cd ee0d6dc 1aa66e4 bd01eb7 d8752b0 df50125 e79ebc4 cb09d1a 0089f05 3c4a081 cd9f07e 306de51 f744552 f341caf 7d2c268 2f2fa4c 66ed030 518256d 76e23fb c571d77 ef61afe f682274 8fee0e2 fe3760e 0498aec 45a5116 f7772b6 3226770 9345936 e183f72 f3893fc a239382 472265c 1394135 0059371 3805b29 d5b0868 cfd4012 f069206 edba649 f526b12 5c7313d 2c518f9 0fac7f0 6436192",
     "main.cpp": "45fa2b3 d2707ee b23f5a5 f203ca1 fc676bf e1cbb28 4f26465 1a78a8e 781e7ba da278ef 71bf3a5 57a2044 0c86515 bfb2950 4f52f4d c7ff5b7 ab96ca1 5a97007 95fe86b f449fd9 97f2dee 017daee 7d74a2e aae8c4f 8af665c e2b0337 2cf8cab 59a5284 b3a0eba 10db6ef 8db4c41 0ab6466 5ddd539 f87bd7b ca8a32f 16911cf a4b17e5 5d59e1e 165c2a3 8264637 9d1972b 64f30f1 761764d 6ae2435 e95fd79 d8ec90a fd8ac47 4c106cc 7df2248 4c050ee 168d5b3 eac6baa c652dcb 7ec494b 9622c53 53871c0 550862a db2eeaf 6e90128 310fe18 28c35b7 8ae4ddc fa553a5 68a49f4 51c038f d65066b 3598670 5579e7e",
@@ -359,9 +503,8 @@
     "language-servers"
    ],
    "commits": [
-    "7472bb20",
-    "7472bb20",
-    "22ecdbf1"
+    "22ecdbf1",
+    "7472bb20"
    ],
    "changes": {
     "CMakeLists.txt": "aa832c9 dbf7eab 4722c92 466a20c 3e5c7bf 09b2853 4292402 943a2f2 e063e23 24780c2 c1c4740 2d2a3bd 126a595 d483a83 7c369ef 929cc7e 5cec41d 095ab3c cbbacc7 025dcdd f3d7663 11a4556 609df97 0a280dd 5759387 45f96b9 7e31907",
@@ -440,9 +583,6 @@
     "machine-checked-clarity"
    ],
    "commits": [
-    "7472bb20",
-    "7472bb20",
-    "7472bb20",
     "7472bb20"
    ],
    "changes": {
@@ -527,11 +667,6 @@
     "machine-checked-clarity"
    ],
    "commits": [
-    "7472bb20",
-    "7472bb20",
-    "7472bb20",
-    "7472bb20",
-    "7472bb20",
     "7472bb20"
    ],
    "changes": {
@@ -625,13 +760,6 @@
     "honest-cursor"
    ],
    "commits": [
-    "7472bb20",
-    "7472bb20",
-    "7472bb20",
-    "7472bb20",
-    "7472bb20",
-    "7472bb20",
-    "7472bb20",
     "7472bb20"
    ],
    "changes": {
@@ -718,7 +846,6 @@
     "live-code"
    ],
    "commits": [
-    "81b198ba",
     "81b198ba"
    ],
    "changes": {
@@ -787,7 +914,6 @@
     "follow-system-theme"
    ],
    "commits": [
-    "826e5218",
     "826e5218"
    ],
    "changes": {},
@@ -866,9 +992,6 @@
    ],
    "commits": [
     "98f01bdc",
-    "98f01bdc",
-    "98f01bdc",
-    "98f01bdc",
     "d21cfa12"
    ],
    "changes": {
@@ -881,63 +1004,49 @@
     "tools/quality.py": "7c22663 270186b e8d90f3 f9b93a9 e0773af bb688e0"
    },
    "committed": {
-    "CMakeLists.txt": "e2e22a9 79651d7 2ac063e 6b5155b ad51ebf d5af599 0c75fad 77f9eb3 5874e90 92425db 551392f d483a83 1ce8008 ecf01da 184bc56",
-    "application.cpp": "2eed5ba e963048 313d0e2 47c9e94 e62d304 0383bed 368a68d c8cbe34 e09dbc8 735073e 52de9ed 09a4dee 6fa4f7b 4c4020e 2a08be9 7d6d53d bed31d0 0c54eb6",
-    "application.h": "224f9da 9f900b4 e329cb8 e76e8cb 0371df5 ab679eb 7c4f421 4567952 0fb7d7c 599141e a752eef 9e7b9a2 c16c56d aa30faf a74b4df 1799dac 63d8a33 eeeb00c f46bdfb ddb9f67 2d2ce37 479d17f",
+    ".cmake-format.json": "9576b81 cd80939 e863591 f94f5f0",
+    ".github/workflows/quality.yml": "b8eced2 3b1408a 3dc9e67",
+    "CMakeLists.txt": "93fc830 93d7819 65f67f6 7a60274 8e4373b e6b4987 8ab21ec 81f5141 357468a e084b98 025e070 8797ee8 d1ca98b f884662 110f550 0b90ebc 5882020 5aefcf9 d483a83 79a8e2b 7d26c25 204a719 f5398ef 171276b c0673a2 6f0adf7 9df2c7e e04b596 30ea07a 26e5b67 614c4e3 1c86d89 a675bd9 2e1b3d2 fc2ce0f aea3207 8357935 e4222ca f4c69ac 4573a44 0e01929 b8527b5 7835bd3 0193a32 6652f36 1065e43 dc9774f 3a97919 c7e970a 7e1bf74 4cd203c 2c92887 9241b9b f8fb433 efd993a b39aee1 4559134 dd4bca6 a103eac d98be3b 0d84a20 57f2a21 653e6fa 7859876 fb62aed 77d7c71 a68bc9e 24b6a18 da5fc50 1a450a1 31f81d4 e35808d bee6100 74ee303 f67f5ba 8acd095 831921c 887d649 e21e450 82bd9e1 117457f e316131 5c4fe75 31fd561 0f8e02a f4e2420 f01f847 3a38930 70b73fe fc3fcc8 15cdb0e 0a748b7 d6d9141 1f1922f 7235d70 7641a51 0cb03ac 07aa6d7 c396774 8c88971 53e9b16 5d649f7 46a6369 c22967f aa14cc6 6b1ecdf 1b4d2e5 ad79c64 04cbcf8 3571b16 55e2542 5255f67 428e6c5 f72f1be f184b0f 47e3a4e 7678a25 46d2e90 4ee58f6 4683319 6c33b9a 85e7d09 2eb872f 2064445 5e3ec1b 9386c01 275ed07 e22a643 0320fb3 db9ca92 a8d62ec 55b840d 046817f b0d809f 0c75fad 28175eb cd3225a 92425db 415e24a 4c8330f a13d69c 852468c 9a5078c 506e188 1ce8008 d2bda31 66c5b3d c3b2a32 57675ba 2327c8d 5245665 5896a23 cc5fed6 7cdbee8 8c17438 2b227d1 cc7ad5e 94097ee 3e4835c 37d5837 f3af732 4ff18f0 2e4854d fb36070 840248f 4541409 29c43c0 d633498 ea438f8 9271b08 ea60f54 eae1105 49c7acc d5242c2 b079fc5 f13390b 618909b 3674893 68ae1bd 8c3f77a 721228d 680bed0 d6b6f18 e2e22a9 79651d7 2ac063e 6b5155b ad51ebf d5af599 77f9eb3 5874e90 551392f ecf01da 184bc56",
+    "application.cpp": "715f3c3 e388a22 cecd073 7f9ef24 45ca422 5bcfa89 44100fa 7631d4c c8cbe34 e09dbc8 735073e 09a4dee 4c4020e 2a08be9 f3381bd 2eed5ba e963048 313d0e2 47c9e94 e62d304 0383bed 368a68d 52de9ed 6fa4f7b 7d6d53d bed31d0 0c54eb6",
+    "application.h": "259ca94 279e607 b216978 d364151 07b385a 8acb141 57889ec 42351e0 7f9222f 9077a57 6b86ad9 2518a48 316f5a5 dcce218 c424e62 d437ffd b87c479 73d20ef 6dbb143 4dec5b0 d9a03b1 075ca6a ddd1012 eebf5cd 1a9d632 cb409fd aed741c bcbe093 6fa3d29 cd0e1dd 224f9da 9f900b4 e329cb8 e76e8cb 0371df5 ab679eb 7c4f421 4567952 0fb7d7c 599141e a752eef 9e7b9a2 c16c56d aa30faf a74b4df 1799dac 63d8a33 eeeb00c f46bdfb ddb9f67 2d2ce37 479d17f",
     "application_agent_context.cpp": "a98af7f ff54d80 715f3c3 2dc1cde 32c3d20 cf7008d 35e3abb 2fdfaff 7e4e601 aa81d71 183ec76 8970310 ad5dcd6 8adf98d 5d85f9b effc3e0 e0241fd d7c0c26 66428c1 cda7a54 4c5d1b1 06d4208 516ff7d 6f94bb8 7f9ef24 c14ddab 3ef85df 99944d2 1a0fd0c 49b9c18 047fe45 15c681e f7ece8e 4039491 00680cb 99e4d4f ccc5f4b 2b1af69 de4f7e6 a026435 4a95a16 eb32b53 a5c0709 cfa9a60 6d2fd48 2119ac4 9384cb8 2ee6530 c453289 467bfb5 75d5e94 b6b8e18 fd1633f bdf4f85 ecfe7e9 3f77091 3d61123 dd7b054 965fb15 9eda1ea 7d279bf 9c8d649 d76b844 0e8daa0 8ed8527 e7343a9 6b8a159 28bec8c 8f9ac9b fba9cc6 e8be669 12ffd7e 2b16aa2 b8dc48e c61bdf1 12e7939 9bb3818 1b45e08 129804f 0e113ad a34b5b3 a75930e 725b306 48ccd15 740bd23 fcd68d6 2b3e644 6927790 3916dcc d6852a5 0f2ad8c ec0e681 a9f78fa e293f1f 5d0a73a 0fe961b bddbbae 94573f5",
     "application_agent_menu.cpp": "a98af7f 3571bf1 50518de 8aa65f6 d11de7b 909b7fe 1df279c 4a5c275 42d82a0 882c448 d08ee18 abb6edf 7fe3d0b 129c887 aa7b815 466258e 13e9eba 5b68017 35a9415 0dd903f 9efd9de ecacca6 d72c1c5",
     "application_agent_session.cpp": "a98af7f c344bbd 7753165 cb54e29 69a7fb2 df78092 80ebe37 960ddf7 1b8336c 5fda4fa db2eeaf a3c6d75 4ede098 a9b1514 efb9c59 730f444 e23e01e dcbdd5b e371b16 23bb56a cbdb254 e8d549b 26369a0 655822f 5186212 aeb920e 7da78ba 6632488 759bbe3 aec96c1 7882bb3 e72d6ae 017a22f 184648f 69094d0 3d33709 bd27f90 afe23f0 dd4165c ccc775d b0279a9 4b5a271 3e9c5d4 95ef95d 0dfd2b3 c9effcb",
     "application_agent_windows.cpp": "a98af7f b9e6b92 2119ac4 860c69e 2f5d792 e4dad72 f025ab9 a273ad1 8633a6e 0dcce2c b15f5db 709d95e f00f7cf 7c86581 501fa9e 60aaa88 25616c2 2d85252 2eed5ba c495816 6c85c47 eb0966d aa7b815 42d82a0 9b0e678 336386b b54ed29 b4288f5 9ed334d 37fa576 dba55ee c2c464c 26258cb ad92039 46abe36 7a4980d a204a2c baa28af 0e653b4 5397761 b82ba22 31b88de 7d6d53d 22ccfce f4b53bb 37bae21 1253d0a 9d4d81d d1b9bd1 2338e26 5ef1fb1 f4f02c1 57ac49e 0b74a7b 1a1369b 6364a02 49f52e4 67772d6 afa036c 856ba3e fd8ac47 d8ec90a 04446c9 ad7d404 c476f62 0366ddf 965aa57 ea04545 28e9cbc 584fc29 965a971 8ed8527 bd799a0 6ecabcd db2eeaf",
-    "application_chat.cpp": "c8945c0 91ac2c3 2745615 a2ad3bb d307251 7d6d53d 0a46839 b84f046 130b56d 79935b6 b8dc48e 10b0b1b",
-    "application_chat_input.cpp": "55becbf d4df24b db2eeaf c2c464c",
-    "application_chat_view.cpp": "c9c3c4f 7a8205a f90d575 639f7dc a7896de eaabad5 e970b90 cbc0629 ea44f77 f47127b 7ccc379",
-    "application_events.cpp": "bfa2b6d 82c34de 8ed8527 e2a074a 168f465 3983911 0833ae8 5408069 2a8dce6 c02b82b f9566f0 7736603 bdabaa3 aa7b815",
+    "application_chat.cpp": "535f0ad c8945c0 91ac2c3 2745615 a2ad3bb d307251 7d6d53d 0a46839 b84f046 130b56d 79935b6 b8dc48e 10b0b1b",
+    "application_chat_input.cpp": "f108765 57f68e8 1664b3e 55becbf d4df24b db2eeaf c2c464c",
+    "application_chat_view.cpp": "580f81b 84bbfc1 7d5fa5f 6a32422 8042292 562c3d9 3d25f86 299d2d9 9e58249 bf647ca c9c3c4f 7a8205a f90d575 639f7dc a7896de eaabad5 e970b90 cbc0629 ea44f77 f47127b 7ccc379",
+    "application_cmake.cpp": "a98af7f de3f9e7 144d2a3 8ed8527 c5d8817 b52ecce 316360f 1f32c9a cac78e1 6ef5a2b 0d7807c 59bff6a 56f4f31 8023083 661019f dd2ff6c 7df1288 50739d1 977c7ac 65ae2da 42d82a0 3c939c8 2ff9e96 c0450b0 9d75b05 44a13d7 b03700c 8f8560c 55e6633 9c48971 acabc87 d194013 3d354e6 8adf98d 96326eb 7bb490a cb9f937 cca3fe6 3d9ee72 777c7d2 ec7be21 aa7b815 6ff131c f9e96e9 6b8a159 3cba66e c08d40e af0d8eb",
+    "application_events.cpp": "73c2868 e8fa691 8f7854d e92f831 8ed8527 f3d7610 96afad6 f511ebc 75eeec2 615d0a3 dbac029 3162759 f6f42cb 42d82a0 9673685 ada4a01 aa7b815 ad68ccf 49dd23d 2f537e8 db2eeaf bfa2b6d 82c34de e2a074a 168f465 3983911 0833ae8 5408069 2a8dce6 c02b82b f9566f0 7736603 bdabaa3",
+    "application_file_links.cpp": "a98af7f 0375a1c c453289 d732dd4 42d82a0 79a0b9d 6bbad21 6721972 c950d63 f277b13 28018e0 ff4daaa 4089c66 dd44f7b b15e7ad f82a9db 08c5f51 2866cfa 8adf98d 67e2f87 5ca44c6 f5351fc bca68f8 9badd3a d9058ad aaa87c1 654483a 68d4f9a 6aa1521 b914bda 80452a0 fa1b351 0084ade",
     "application_intent.cpp": "717b322",
-    "application_live.cpp": "2d16be9 7d6d53d 0a46839 b84f046",
-    "application_model.cpp": "b6452da e0f9db6 8adf98d 18d43e0 24c2cb1 ded9b4a f37ff97",
-    "application_popups.cpp": "a6312b9",
+    "application_intent_view.cpp": "1ca7134 e091ac1 bd2aa4d b80cb3a 4d37451 a51a851 777323f 4561ce7 1549a76 aa0c511 5760a98",
+    "application_language.cpp": "c68662e cf632d1 cb59fa1 39219e9 f2df439 367acb7 d22f685 955dc51 1cfc841 5e23446 b6b3b5a 4ab964e 37e76ad ecfe7e9 5082415 d6f20cf 1545e75 71d7bf1 4353587 8e9a9fa 5629909 a35df68 9d9cccd 8ed8527 3471eae 59573ab 67427d8 daece25 230a329 d3cf501 a6828db 1265eec",
+    "application_live.cpp": "89c43c5 347f7ff 3946130 9323cc3 7dc72d6 2d57cb6 480f000 2d16be9 7d6d53d 0a46839 b84f046",
+    "application_model.cpp": "db030e0 276cbcd d780556 a465cbd 3c939c8 3d9ee72 2938786 a8a711d 15ac23a b8d4b94 a9d77d8 9926474 86639ac 8c92a32 b6452da e0f9db6 8adf98d 18d43e0 24c2cb1 ded9b4a f37ff97",
+    "application_pointer.cpp": "6fd7962 a9d768a 85c6fd6 72226f5 4fec852 c626ee8 1c03f27",
+    "application_popups.cpp": "3d9ee72 86639ac a9d77d8 a6312b9",
     "application_reload.cpp": "298c415 3f40c9c",
     "application_session.cpp": "0addf62 2890687 9f8686e bcce873 9f3de4e 17faa25 96e65a0 561c3ba 2b84a6c 7426ae6 d69c860 4ce1420 26258cb eb0966d 855d66d 6d68fe2 213ad04 af5584f 54021a7 e029d12 1fe7956 ed4ba39 3b40c4c ce948d6 ade68e8 dbaf1a5 27ac096 f9440f8",
-    "application_text_selection.cpp": "2e6c8c5 7fe3d0b",
-    "application_text_targets.cpp": "80dd6d1 f471a0a f42d8e6 05b5701 bcf544d f4cfef9 c760946 e01b632 45f1ae1 f08aed2 887fdc8 dbd441c bbc6545 e0241fd 5836076",
+    "application_text_selection.cpp": "a98af7f a037d2b 65cf675 068d26c 7570119 7810358 c734a0f 69ac7ee df25a56 b71f754 9406ec9 42d82a0 d3e9f5b a9d768a 81e0412 a53c5ee d5805cf 131ed51 63f5f1d 4dd0c2b 70be74a ffa846a ce7af53 3a85342 22b72c3 cd4d3dd 52367e8 ecd8532 fe152f4 c3bbe83 1825c04 6bee47b 12542c1 f18f506 a3ebaea 0c5291d 33678ee 81eab22 87859f3 430e5fb 7232725 aa7b815 c84231d 2232a77 8bec0e5 9673685 8ed8527 32bb58b 02a99c5 735df2b 99f3f0e 9ebf7a2 f511ebc d564948 c80a63d d8ec90a fd8ac47 743efb7 8f4140e 1d8b257 21ee42e ad8feef f2def38 ea04545 35daa92 d87baf0 3db1f81 e412f2a f2ad3d5 8ec957e 5179f4e 193ab73 8e065fa d1dc533 f744732 95a68ac 2119ac4 f0b0f0f 5547c4a db2eeaf d807903 b8dff60 5bee813 22e1551 a4da25a e0241fd a76ec05 f671ef6 ae58dfd f4300c2 8adf98d 21c63a4 c81198e a693176 860b084 13e9eba 5b68017 2a70abe 6f04af7 4fcd570 69bf6d7 d439143 8c8078e 2516a38 4f4a683 6801cd1 5e3f313 5419d47 f67b7d5 2e6c8c5 7fe3d0b",
+    "application_text_selection_view.cpp": "a98af7f 8061632 61ac762 6deb7d6 aae78cf 8ed8527 0661572 7e96f27 7802cfa cfe7b4b db97f72 b90799b 35ffa22 8adf98d 0f2af13 379bd54 81a2a09 2aa38fe 7671664 90955e1 7305fc5 88d4005 42c0c3a 8900fdf b601a5f 563b91c df7f441 4107962 ea10026 d7b6ddf 37ab96d c45b918 1b67e10 179cfd7 a4ca05a c8655e6 cb76be0 e806d55 4354c56 bbce6e2 347c663 98a537f c3266aa 0fa441d cd80561 c234a55 cde78cf 568b408 e82499b",
+    "application_text_targets.cpp": "a98af7f d3f8a6e 715f3c3 0d28475 3bb2c98 7f9ef24 c1b99bb 2119ac4 1628274 e0241fd 2745f9d 07bdef0 ce392a1 27c79f8 a606c2f cfb21ea d50342e 8c07dbb acfccd4 08b8f26 84744a0 bffc8ed 1a68728 8adf98d 60eeddd 66c0bd6 a124822 6bb0bab ccb1899 eb32563 83ab313 076a5ca 8d23505 33acfb0 dd44f7b 1e98615 417e920 b553a53 f5b11af 8a0100b e28a5ba 6ef7249 7f998b4 9e8565f 552ca38 b028aef 7884eea 25110b5 13ec059 53ca687 051fc68 9538978 0bfe9c4 b711922 1b2221d 1d9c2cc b492a58 0755b71 1fb434b 4561ce7 a603a05 71c036c 702c7ca 0961862 c234a55 bf8b487 95daed3 a7b617b e4caf77 d5260b5 b6cfce0 f203777 2904e7b e68277f f2d9fcb 2b16f09 677b22c b52ecce ebdeff8 c161992 a33df59 df78092 9ece365 74f47cd 764cfde c49f224 9b32027 f42e3df 6d0e553 1df934b 4db1b98 0ae1714 3643ec2 ddf71d3 a5a6bc9 2028b79 3ef392d 7ee6f2b 02faa20 71b8221 0cfccd3 a5f9e36 c5ac1e3 9185261 013c6a3 8a93f2d 98907d5 fd71236 1f48b38 6645425 6695157 1a555da 1b67e10 0a84593 0bcfca3 ea54c4f e09c5a5 f00bf53 1b3d48e 3b98ac0 868d618 e6b4e0c 9830b0a ad69a1a 0ec1ab8 acd6bd4 b3d1ce8 9270944 e3a434a 9e4024e 6f372e5 14583e2 7c05719 34a063d 7618a7c 80dd6d1 f471a0a f42d8e6 05b5701 bcf544d f4cfef9 c760946 e01b632 45f1ae1 f08aed2 887fdc8 dbd441c bbc6545 5836076",
+    "application_view.cpp": "3d9ee72 df43347 a9d77d8 4b35737 b30a7d9 4464c44 246a1ad cd7a1ae e70520b 235894b 33d73ff edd9b21 9ce03ea 4d37451 715f3c3 4bd75b7 b2673df 7021ef1 48d13e5 ea98883 0d1ebb2 e1d618b 3f0d6f3 1e3d9f0 8adf98d ac59e22 7629b6d 3d7321b 80778e7 4975115 7c590b3 13d863e 01d40f2 25a0ee3 4607fed 7eaa45e ced83d7 87baa83 ebccbea dd7ee68 0339e8a 4b603dd cf9bedc c8490fe 568b408 111a849 0600e50 7f9ef24 34282cd",
+    "canvas_selection.h": "d261915 c10ca66 9452f7b e96db1c 7ca5f02 513cc33 cc3bb11 6209fc3 c1d5f60 4451121 0c9ca68 917e5ba 457af95 4630dc7 48519e7 fbc7af7 1bd0b7c 7f1de88 a8ae2bd ff8386c cfcbefa",
     "chat_canvas.h": "1251192 bbfa773 1f6e038 d2960a1",
     "conversation.cpp": "f1ec840 8ed8527 c1a009a 3ad74a1 8561ff3 844c893 95866b6 69a0c8d 3891ab7 25e4dbc 9cb0c5f",
     "conversation.h": "13f096b 9c6fee7",
     "live_build.cpp": "c592164 39ce1d5 7fa88a6 c62a495 b4a9bcb 788b964 4c413d6 388daac 2348d49 0c27e50",
-    "tests/agent_windows_test.cpp": "a98af7f fe5acc8 715f3c3 59d54cc 7143a84 75df2fc 7f9ef24 11a13a1 0cfa448 4f47643 a3ed6f5 3640b4a fc74d7a fef9007 8b41435 fc683bb 07b2948 b2e4e13 8923d48 2a2874c 8b68256 338fb29 af5fe15 48349e4 b89ec44 4171fe2 669a0ff 12e8311 5e50420 8c14acf 58be08c a82420d 2b24b28 dd96c10 f5c01f2 02be543 698526b 34e0f18 70b2170 d2b98eb 0d9ca47 4541052 9083812 a24c735 be7ae8f d837365 b2cb2a3 77df0d2 e0af364 4012baf 09bebd1 c640303 f209836 ceb3cfa e4954d9 e5cb79b 5ba1d53 43cca8a 90a7df3 84da02b d776faa e25ed4d 0f68ad1 62f033f 60deb4c a266935 e1f0ca2 77aca16 eed3199 a4507ba 335eb34 c8f41e9 8c6bb33 30f1548 6e1fb14 c5a727b a417753 15e7c71 638cc98 8ec957e 8b28a7d 59dc579 e12d222 088818a 06db4c3 30f6c82 ed7138b a936b6b 3503a73 b5c9fda 2d1a772 0732a92 b69bef4 8d62bab 2a1452c ca97d0e 885fe7d d15c839 409c6db 673d71a 85fac18 32f4098 0ccc1eb 7f474e3 493e967 d93448f c010c18 bc469b0 5354793 a7d7bdf 91e8722 6ef5a2b 2c8868d eacf6fe b77a9cb 75d1c34 e0d8499 41c117a 77386af 26f5132 bf2c8c6 404da2f 71f33b1 8023083 7a514b4 7e3a295 8fcb928 a693176",
-    "tests/conversation_test.cpp": "b78f944 d0b3508 e3bc9c3 9c16fc7 10def8d 0dbcf95 5ba143d bdb62a9 e7f5728 26b98b0 9e96c7d 6083b31 cb7c081 11ad4ee 436466e 694096b e593473 f3aac86 55733a1 0c79363 c1d8c61 08423d8 b2b63a2 71bf3ac 91b2eee dbf9ed1 b4237ef d68a2c6 d5a7771 138bf23 c661f50 7b4abfa 804483d 57c5421 bcd5b14 300ffca c7e7a81 2d2c91f a05d069 0dd9aa5",
-    "tests/live_build_test.cpp": "ad576cd 52109d7 13f28b8 b4de3f4 778b6ab 1c1fff2 fcd87bb 131b397 5394249 17efac3 4617a2a 61cb4e4 285986d 6b1a40e 3253d6b 0a8e5db b624be4 86fecad"
-   },
-   "milestone": {
-    ".cmake-format.json": "9576b81 cd80939 e863591 f94f5f0",
-    ".github/workflows/quality.yml": "b8eced2 3b1408a 3dc9e67",
-    "CMakeLists.txt": "93fc830 93d7819 65f67f6 7a60274 8e4373b e6b4987 8ab21ec 81f5141 357468a e084b98 025e070 8797ee8 d1ca98b f884662 110f550 0b90ebc 5882020 5aefcf9 d483a83 79a8e2b 7d26c25 204a719 f5398ef 171276b c0673a2 6f0adf7 9df2c7e e04b596 30ea07a 26e5b67 614c4e3 1c86d89 a675bd9 2e1b3d2 fc2ce0f aea3207 8357935 e4222ca f4c69ac 4573a44 0e01929 b8527b5 7835bd3 0193a32 6652f36 1065e43 dc9774f 3a97919 c7e970a 7e1bf74 4cd203c 2c92887 9241b9b f8fb433 efd993a b39aee1 4559134 dd4bca6 a103eac d98be3b 0d84a20 57f2a21 653e6fa 7859876 fb62aed 77d7c71 a68bc9e 24b6a18 da5fc50 1a450a1 31f81d4 e35808d bee6100 74ee303 f67f5ba 8acd095 831921c 887d649 e21e450 82bd9e1 117457f e316131 5c4fe75 31fd561 0f8e02a f4e2420 f01f847 3a38930 70b73fe fc3fcc8 15cdb0e 0a748b7 d6d9141 1f1922f 7235d70 7641a51 0cb03ac 07aa6d7 c396774 8c88971 53e9b16 5d649f7 46a6369 c22967f aa14cc6 6b1ecdf 1b4d2e5 ad79c64 04cbcf8 3571b16 55e2542 5255f67 428e6c5 f72f1be f184b0f 47e3a4e 7678a25 46d2e90 4ee58f6 4683319 6c33b9a 85e7d09 2eb872f 2064445 5e3ec1b 9386c01 275ed07 e22a643 0320fb3 db9ca92 a8d62ec 55b840d 046817f b0d809f 0c75fad 28175eb cd3225a 92425db 415e24a 4c8330f a13d69c 852468c 9a5078c 506e188 1ce8008 d2bda31 66c5b3d c3b2a32 57675ba 2327c8d 5245665 5896a23 cc5fed6 7cdbee8 8c17438 2b227d1 cc7ad5e 94097ee 3e4835c 37d5837 f3af732 4ff18f0 2e4854d fb36070 840248f 4541409 29c43c0 d633498 ea438f8 9271b08 ea60f54 eae1105 49c7acc d5242c2 b079fc5 f13390b 618909b 3674893 68ae1bd 8c3f77a 721228d 680bed0 d6b6f18",
-    "application.cpp": "715f3c3 e388a22 cecd073 7f9ef24 45ca422 5bcfa89 44100fa 7631d4c c8cbe34 e09dbc8 735073e 09a4dee 4c4020e 2a08be9 f3381bd",
-    "application.h": "259ca94 279e607 b216978 d364151 07b385a 8acb141 57889ec 42351e0 7f9222f 9077a57 6b86ad9 2518a48 316f5a5 dcce218 c424e62 d437ffd b87c479 73d20ef 6dbb143 4dec5b0 d9a03b1 075ca6a ddd1012 eebf5cd 1a9d632 cb409fd aed741c bcbe093 6fa3d29 cd0e1dd",
-    "application_chat.cpp": "535f0ad",
-    "application_chat_input.cpp": "f108765 57f68e8 1664b3e",
-    "application_chat_view.cpp": "580f81b 84bbfc1 7d5fa5f 6a32422 8042292 562c3d9 3d25f86 299d2d9 9e58249 bf647ca",
-    "application_cmake.cpp": "a98af7f de3f9e7 144d2a3 8ed8527 c5d8817 b52ecce 316360f 1f32c9a cac78e1 6ef5a2b 0d7807c 59bff6a 56f4f31 8023083 661019f dd2ff6c 7df1288 50739d1 977c7ac 65ae2da 42d82a0 3c939c8 2ff9e96 c0450b0 9d75b05 44a13d7 b03700c 8f8560c 55e6633 9c48971 acabc87 d194013 3d354e6 8adf98d 96326eb 7bb490a cb9f937 cca3fe6 3d9ee72 777c7d2 ec7be21 aa7b815 6ff131c f9e96e9 6b8a159 3cba66e c08d40e af0d8eb",
-    "application_events.cpp": "73c2868 e8fa691 8f7854d e92f831 8ed8527 f3d7610 96afad6 f511ebc 75eeec2 615d0a3 dbac029 3162759 f6f42cb 42d82a0 9673685 ada4a01 aa7b815 ad68ccf 49dd23d 2f537e8 db2eeaf",
-    "application_file_links.cpp": "a98af7f 0375a1c c453289 d732dd4 42d82a0 79a0b9d 6bbad21 6721972 c950d63 f277b13 28018e0 ff4daaa 4089c66 dd44f7b b15e7ad f82a9db 08c5f51 2866cfa 8adf98d 67e2f87 5ca44c6 f5351fc bca68f8 9badd3a d9058ad aaa87c1 654483a 68d4f9a 6aa1521 b914bda 80452a0 fa1b351 0084ade",
-    "application_intent_view.cpp": "1ca7134 e091ac1 bd2aa4d b80cb3a 4d37451 a51a851 777323f 4561ce7 1549a76 aa0c511 5760a98",
-    "application_language.cpp": "c68662e cf632d1 cb59fa1 39219e9 f2df439 367acb7 d22f685 955dc51 1cfc841 5e23446 b6b3b5a 4ab964e 37e76ad ecfe7e9 5082415 d6f20cf 1545e75 71d7bf1 4353587 8e9a9fa 5629909 a35df68 9d9cccd 8ed8527 3471eae 59573ab 67427d8 daece25 230a329 d3cf501 a6828db 1265eec",
-    "application_live.cpp": "89c43c5 347f7ff 3946130 9323cc3 7dc72d6 2d57cb6 480f000",
-    "application_model.cpp": "db030e0 276cbcd d780556 a465cbd 3c939c8 3d9ee72 2938786 a8a711d 15ac23a b8d4b94 a9d77d8 9926474 86639ac 8c92a32",
-    "application_pointer.cpp": "6fd7962 a9d768a 85c6fd6 72226f5 4fec852 c626ee8 1c03f27",
-    "application_popups.cpp": "3d9ee72 86639ac a9d77d8",
-    "application_text_selection.cpp": "a98af7f a037d2b 65cf675 068d26c 7570119 7810358 c734a0f 69ac7ee df25a56 b71f754 9406ec9 42d82a0 d3e9f5b a9d768a 81e0412 a53c5ee d5805cf 131ed51 63f5f1d 4dd0c2b 70be74a ffa846a ce7af53 3a85342 22b72c3 cd4d3dd 52367e8 ecd8532 fe152f4 c3bbe83 1825c04 6bee47b 12542c1 f18f506 a3ebaea 0c5291d 33678ee 81eab22 87859f3 430e5fb 7232725 aa7b815 c84231d 2232a77 8bec0e5 9673685 8ed8527 32bb58b 02a99c5 735df2b 99f3f0e 9ebf7a2 f511ebc d564948 c80a63d d8ec90a fd8ac47 743efb7 8f4140e 1d8b257 21ee42e ad8feef f2def38 ea04545 35daa92 d87baf0 3db1f81 e412f2a f2ad3d5 8ec957e 5179f4e 193ab73 8e065fa d1dc533 f744732 95a68ac 2119ac4 f0b0f0f 5547c4a db2eeaf d807903 b8dff60 5bee813 22e1551 a4da25a e0241fd a76ec05 f671ef6 ae58dfd f4300c2 8adf98d 21c63a4 c81198e a693176 860b084 13e9eba 5b68017 2a70abe 6f04af7 4fcd570 69bf6d7 d439143 8c8078e 2516a38 4f4a683 6801cd1 5e3f313 5419d47 f67b7d5",
-    "application_text_selection_view.cpp": "a98af7f 8061632 61ac762 6deb7d6 aae78cf 8ed8527 0661572 7e96f27 7802cfa cfe7b4b db97f72 b90799b 35ffa22 8adf98d 0f2af13 379bd54 81a2a09 2aa38fe 7671664 90955e1 7305fc5 88d4005 42c0c3a 8900fdf b601a5f 563b91c df7f441 4107962 ea10026 d7b6ddf 37ab96d c45b918 1b67e10 179cfd7 a4ca05a c8655e6 cb76be0 e806d55 4354c56 bbce6e2 347c663 98a537f c3266aa 0fa441d cd80561 c234a55 cde78cf 568b408 e82499b",
-    "application_text_targets.cpp": "a98af7f d3f8a6e 715f3c3 0d28475 3bb2c98 7f9ef24 c1b99bb 2119ac4 1628274 e0241fd 2745f9d 07bdef0 ce392a1 27c79f8 a606c2f cfb21ea d50342e 8c07dbb acfccd4 08b8f26 84744a0 bffc8ed 1a68728 8adf98d 60eeddd 66c0bd6 a124822 6bb0bab ccb1899 eb32563 83ab313 076a5ca 8d23505 33acfb0 dd44f7b 1e98615 417e920 b553a53 f5b11af 8a0100b e28a5ba 6ef7249 7f998b4 9e8565f 552ca38 b028aef 7884eea 25110b5 13ec059 53ca687 051fc68 9538978 0bfe9c4 b711922 1b2221d 1d9c2cc b492a58 0755b71 1fb434b 4561ce7 a603a05 71c036c 702c7ca 0961862 c234a55 bf8b487 95daed3 a7b617b e4caf77 d5260b5 b6cfce0 f203777 2904e7b e68277f f2d9fcb 2b16f09 677b22c b52ecce ebdeff8 c161992 a33df59 df78092 9ece365 74f47cd 764cfde c49f224 9b32027 f42e3df 6d0e553 1df934b 4db1b98 0ae1714 3643ec2 ddf71d3 a5a6bc9 2028b79 3ef392d 7ee6f2b 02faa20 71b8221 0cfccd3 a5f9e36 c5ac1e3 9185261 013c6a3 8a93f2d 98907d5 fd71236 1f48b38 6645425 6695157 1a555da 1b67e10 0a84593 0bcfca3 ea54c4f e09c5a5 f00bf53 1b3d48e 3b98ac0 868d618 e6b4e0c 9830b0a ad69a1a 0ec1ab8 acd6bd4 b3d1ce8 9270944 e3a434a 9e4024e 6f372e5 14583e2 7c05719 34a063d 7618a7c",
-    "application_view.cpp": "3d9ee72 df43347 a9d77d8 4b35737 b30a7d9 4464c44 246a1ad cd7a1ae e70520b 235894b 33d73ff edd9b21 9ce03ea 4d37451 715f3c3 4bd75b7 b2673df 7021ef1 48d13e5 ea98883 0d1ebb2 e1d618b 3f0d6f3 1e3d9f0 8adf98d ac59e22 7629b6d 3d7321b 80778e7 4975115 7c590b3 13d863e 01d40f2 25a0ee3 4607fed 7eaa45e ced83d7 87baa83 ebccbea dd7ee68 0339e8a 4b603dd cf9bedc c8490fe 568b408 111a849 0600e50 7f9ef24 34282cd",
-    "canvas_selection.h": "d261915 c10ca66 9452f7b e96db1c 7ca5f02 513cc33 cc3bb11 6209fc3 c1d5f60 4451121 0c9ca68 917e5ba 457af95 4630dc7 48519e7 fbc7af7 1bd0b7c 7f1de88 a8ae2bd ff8386c cfcbefa",
     "lsp.cpp": "715f3c3 b21fe31 bba5fdf c82b736 6646743 190f531 2e55045 33bd4e4 c62612e 6a6ea9e 6f423b4 72d7a4d 35fbb7c 25bc32a 3a43f0b 6935e43 2b6a9a3 44e95d8 f32bb1c a6f1ee1 46b3014 fb6e235 f170bfa b3ed88a ea25039 2ba54fc d7cf020 7860871 a079b38 ce729c6 0fcd6e1 e1d2290 1be7784 91d17c1 0728d47 5c02189 71e56d0 7ed933b eff0555 d5a22ff f5255cc",
     "lsp.h": "b429293 1b231df 801ec43 81534c3",
     "popup_markup.cpp": "c9133f9 ee17a52 d83270f",
     "project_watch.cpp": "c817b99",
     "source_panel.h": "a9dd44c 3e864a0",
+    "tests/agent_windows_test.cpp": "a98af7f fe5acc8 715f3c3 59d54cc 7143a84 75df2fc 7f9ef24 11a13a1 0cfa448 4f47643 a3ed6f5 3640b4a fc74d7a fef9007 8b41435 fc683bb 07b2948 b2e4e13 8923d48 2a2874c 8b68256 338fb29 af5fe15 48349e4 b89ec44 4171fe2 669a0ff 12e8311 5e50420 8c14acf 58be08c a82420d 2b24b28 dd96c10 f5c01f2 02be543 698526b 34e0f18 70b2170 d2b98eb 0d9ca47 4541052 9083812 a24c735 be7ae8f d837365 b2cb2a3 77df0d2 e0af364 4012baf 09bebd1 c640303 f209836 ceb3cfa e4954d9 e5cb79b 5ba1d53 43cca8a 90a7df3 84da02b d776faa e25ed4d 0f68ad1 62f033f 60deb4c a266935 e1f0ca2 77aca16 eed3199 a4507ba 335eb34 c8f41e9 8c6bb33 30f1548 6e1fb14 c5a727b a417753 15e7c71 638cc98 8ec957e 8b28a7d 59dc579 e12d222 088818a 06db4c3 30f6c82 ed7138b a936b6b 3503a73 b5c9fda 2d1a772 0732a92 b69bef4 8d62bab 2a1452c ca97d0e 885fe7d d15c839 409c6db 673d71a 85fac18 32f4098 0ccc1eb 7f474e3 493e967 d93448f c010c18 bc469b0 5354793 a7d7bdf 91e8722 6ef5a2b 2c8868d eacf6fe b77a9cb 75d1c34 e0d8499 41c117a 77386af 26f5132 bf2c8c6 404da2f 71f33b1 8023083 7a514b4 7e3a295 8fcb928 a693176",
     "tests/cmake_canvas_test.cpp": "a98af7f fe5acc8 715f3c3 59d54cc 7143a84 75df2fc 7f9ef24 11a13a1 9b67fd1 45aaa03 e31d169 09d3d75 03589cc 14140ef 3a52ac9 8b68256 338fb29 1b07a2d cffb4af 45ba070 10a1b6a 6c97be0 5c9353a 6a89239 a948e6d fec6ad1 1f052a7 26cc2ab 21fc8f2 12d2190 1e17b7a dabc645 e3ad6e6 5a6565a e387db4 d252e01 18c31f3 6b186fc bb505ad 2523e32 fef9007 8b41435 fc683bb e4d4bd1 685288a e2b1a56 fcfcbdd 03e00d8 688b265 1aa998d 7912d52 b504960 d106f67 c64fcb1 1daca83 6e4ead1 e34cef5 e2b2552 37d08d3 0f814cf 53521ce a42ba5b ed00782 7d7502d 0c06e5e 5bcbd68 d50e88e bf803dd 5912228 929cf36 801f779 6b69c76 39a987d 34f556e 10f8f10 35ac1c7 9b6e853 9e2eaf9 ea7b2f0 2ac4b99 741f69e 32d1be6 e8437fc b551598 4989608 5a6a996 d86aa10 81d0221 c3fc24f 1e455f2 5075151 5548d6d 2c2e191 0649b84 286630c 00cc40e f314ec0 627900d 8ca7c09 a3ed6f5 e7da64b 24a50c8 a991973 24a5023 db2eeaf 9581fca 6fa55c5 a3f2083 ed4bbdc eb8f388 ae39620 77df0d2 d93448f c010c18 bc469b0 b2d1e02 bbe186d 91e8722 6ef5a2b c8be5b5 1b54f7a 55728c0 5c4e827 e81256d 35c5ee8 d933d67 4fae088 209feb4 b77a9cb 75d1c34 96eeb7a e0d8499 41c117a 26f5132 1c3b559 84d1856 8023083 7a514b4 7e3a295 8fcb928 a693176",
+    "tests/conversation_test.cpp": "b78f944 d0b3508 e3bc9c3 9c16fc7 10def8d 0dbcf95 5ba143d bdb62a9 e7f5728 26b98b0 9e96c7d 6083b31 cb7c081 11ad4ee 436466e 694096b e593473 f3aac86 55733a1 0c79363 c1d8c61 08423d8 b2b63a2 71bf3ac 91b2eee dbf9ed1 b4237ef d68a2c6 d5a7771 138bf23 c661f50 7b4abfa 804483d 57c5421 bcd5b14 300ffca c7e7a81 2d2c91f a05d069 0dd9aa5",
     "tests/integration_test.cpp": "d3f8a6e 1b8c054 4e0dcb4 d53a2d4 a71cb7c 6dfce90 819b2dd 8ed8527 4be77d1 5fa7734 63b8b35 c2183a3 c95112b 87c96dd fdb1f27 1a8b49c f822e8e d231f64 34e4589 7152d1f 604315b 48bdf0d cd2ce73 20276ec d6ce6ab bae02aa 1101f87 bc8bad8 2fdf5ba b797e12 12838a4 096d9ef bef7532 77df0d2 a14b46a 6e99ef5 e8f90bb 6a02aac 1e50e40 5aedd09 fe2efd7 796a579 0cb6f59 7a8bb74 2e8d531 72b6fc1 fe9bd5a c014506 eb3906e 385abb1 14dfd84 edf6bdf 0d7e53b 13a0c19 ea7b2f0 9e05c9e",
+    "tests/live_build_test.cpp": "ad576cd 52109d7 13f28b8 b4de3f4 778b6ab 1c1fff2 fcd87bb 131b397 5394249 17efac3 4617a2a 61cb4e4 285986d 6b1a40e 3253d6b 0a8e5db b624be4 86fecad",
     "tests/selection_test.cpp": "a98af7f a037d2b fe5acc8 715f3c3 59d54cc 7143a84 75df2fc 7f9ef24 11a13a1 9d0d43c 685288a e2b1a56 7b78128 44bc1b9 735466a 7912d52 80da1d0 ad5c82c 1bf82c7 4130f27 9a9b1f7 8ee1eff b6ed308 4be77d1 0a6fe76 35e0ab5 e762f3c 01b6413 45ba070 acf019e 193d1da 835175b 6aa2a72 9d54926 b964e59 3dfa990 77df0d2 9015fd0 ccea8e0 6cc3865 f319c2b fa3c87f 1bf66b9 8008c23 4b10062 c2a4eb3 a1051e1 f860540 37504c7 4f47643 a3ed6f5 3640b4a 24a1f83 fef9007 027b3c0 0f3afb9 d442834 bde6ae9 9c37018 fbfc00e 1fe4ffc e43f482 3654060 8ffb061 4b34603 fb87b25 979df8d 3d61a3c 95d3698 41a123d a1351d2 41318f5 9d725f0 b591a18 d72c6ed 7d756b4 535e9fb 35d6958 1389bdf 5eb5846 ea7b2f0 952254b ae4aa76 1432c00 f65ba5c bf70a01 c39e5b0 0051d65 1ddf086 759540a f836f4a f2f2b44 3d289f5 b7e7148 926d833 606f6df a302355 540f5e1 3dc798f 7c4731d 7f277b4 ccf0940 c6ab2af c847b3e 097fa47 319a27f 85fac18 4cc500b 24a50c8 b6d8c4e a991973 24a5023 db2eeaf 338fb29 c04445b 43d6c8f 3dbc451 8cf741b 4cbaccd d93448f c010c18 bc469b0 b2d1e02 9af647c 91e8722 6ef5a2b 2c8868d e10fce6 b77a9cb 75d1c34 96eeb7a e0d8499 41c117a 26f5132 bf2c8c6 8023083 7a514b4 7e3a295 8fcb928 a693176",
     "tests/test_cmake_style.py": "eaa99ba c2cda42 8eed892 9ae27aa 40cae2a f55f639 c32497d 05a667e b3ba128 3ef15f7 93a330d 7be2576 bda9b29 08437e1 1c129a5 79895e2 705acce 9c12e01 35a6e36 ec91cfe 0d4836f 93c6747 4582d0c 1997487 86cb806 ed03565 4fac6ab c28e865 e43b072 c25050b 57e141a 39a13a2 8420b5f 472c913 aa32cef",
     "tools/cmake_style.py": "391912f 163fed5 d31a593 c2cda42 4d312f8 8eed892 e49efe6 8d44978 d45b454 9a6612b 9f29c9d 891a8a3 d063217 5cc7597 70fb182 310e762 c898db3 861cad3 1e23f68 63143b6 6a92b60 71b2924 0dc1f63 fc81133 472c913 a52c5e5 89e49f9 0cec94e ee5bcc5 e28816d 9ff0b63 195c0bc",
@@ -955,7 +1064,6 @@
    "why": "Live now:\n\n- `/` opens project search. Type to filter; ↑/↓ choose, Enter jumps, Esc closes.\n- `?` shows all shortcuts. `F1` also works.\n- Both characters type normally inside editors.\n\nAll 24 tests pass. Committed as `6501f6c`.",
    "intent": "search-and-help",
    "commits": [
-    "6501f6c0",
     "6501f6c0"
    ],
    "changes": {
@@ -1054,8 +1162,6 @@
     "no-chrome"
    ],
    "commits": [
-    "714cbcf0",
-    "714cbcf0",
     "714cbcf0"
    ],
    "changes": {},
@@ -2734,15 +2840,15 @@
    "intent": "machine-checked-clarity",
    "commits": [
     "0bd143ff",
-    "e0b1d26f",
-    "5f1bdcb8"
+    "5f1bdcb8",
+    "e0b1d26f"
    ],
    "changes": {
     "agent_client.cpp": "7ab8602",
     "application_window_manager.cpp": "5dae05a 2962282"
    },
    "committed": {
-    "application.h": "ea466c1 f5cb140 80c3d9e ad64b33 b216f61 06e55a9 e8ed677 bb70957",
+    "application.h": "ea466c1 f5cb140 80c3d9e ad64b33 b216f61 e8ed677 bb70957 06e55a9",
     "application_chat_input.cpp": "cd82019 0cbc111 35f2158 08b8f26 8ed8527 c634076 2a3f766 79e554f 74f47cd 9405655 814b91d f6585ae d50fcaf 988e121 ea04545",
     "application_events.cpp": "6280c86 0f07bdc 856ba3e 1f24fe2 ae050f5 ad3c569 e959172 7fe3d0b 963bf18 2e7d89f c80f664 f541c5a a68a26e 8b05719 440a6e6 99941be 67d1500 e5ac26a 33b149f 2a36a54 0754d3a 80d3197 ad96ab7 87859f3 cb851e3 f2def38 e1a943b 9aa30aa 948497d b804c01 f118130 8ed8527 efdfbc5 b54c289 2119ac4 7530e3d cff7aa4 4b7f483 a273ad1 5408069 7d66097 13c4cfd cb678d3 010e0fb 49582c2 e28a5ba e01381d f9c7d13 31ff434 a88673b 3f9061e dc32c8b f57595e f80f164 d7f47d9 1014d72 be43dd0 c55c1b8 37f2e9d a9392a6 c570554 2b32fbf d63e819",
     "application_intent_input.cpp": "380f4c3 c7c0d73 0ad658b c155c95 acc175c fa63e46 6c85c47 aa7b815 bfc278e 42d82a0 131ed51 63f5f1d 6607ac7 ad50720 841814e 951c08a 7cedd35 33678ee 81eab22 87859f3 176f9f5 f2def38 fb1496d f1e681f 5d64bfa 5256336 d308405 eb8adf1 771c3ac edde355 63a4fc0 908a499 2f7e8d5 b865d71 9caabcc 530ae52 43eb49f 851b9b4 fe34c79 0ddcb10"
@@ -2876,10 +2982,10 @@
    "why": "Every push triggered CI, and two faulty test fixtures kept failing—causing the email noise.\n\nFixed both fixtures and package installation. CI now runs only on PRs or manually.\n\nPushed `4a3c7c0`. All 30 local tests pass, and [GitHub CI is green](https://github.com/nuxdie/code-exp-02/actions/runs/43059610270).",
    "intent": "public-and-quiet",
    "commits": [
-    "9579d58d",
+    "4a3c7c0e",
     "91ae6546",
-    "a6b8d178",
-    "4a3c7c0e"
+    "9579d58d",
+    "a6b8d178"
    ],
    "changes": {
     ".github/workflows/quality.yml": "06ec363 0bd3f8a f34757a 88cd260 347c0eb f6471be a4dfa10",
@@ -2935,6 +3041,36 @@
    "changes": {
     "application_intent_margin.cpp": "06cd58c 717832d b94b6ea 01dcb98 761b21e 807276e ae050f5 dd9cb56 a724b25 116cb41 dab9a63 928ee0e 51748a8 3ff1202 db86907 b3de06d c8a680c e3b0017 f46f3bd 6053820 579de2e d45ff32 0d805d9 a662fe2 41ca9e9 155cc84 a6fc15c b28b744 6b00754 37ad049 1f513c3 ea39433 96ca538 42c48e9 672e1bf",
     "intent_margin.h": "4efde5f f23df86"
+   }
+  },
+  {
+   "id": "claude-2026-11-11-next-one-intent-system",
+   "at": "2026-11-11T18:19:14.529Z",
+   "source": "transcript",
+   "said": "fine. next",
+   "why": "Continued the plan: removed the old intent window, its title badges, the provenance service and the legacy decisions file, so intent has one home, the margin beside the code. Commit-to-turn links moved into the intent store.",
+   "intent": "intent-first",
+   "changes": {
+    "CMakeLists.txt": "c3997bd",
+    "README.md": "c38409f 144e70e",
+    "application.cpp": "d10a537",
+    "application.h": "c930e6f",
+    "application_agent_context.cpp": "bc7d6df 6515ce3 603dd1c",
+    "application_chat_input.cpp": "e728463",
+    "application_events.cpp": "e2a074a 168f465 6a25ff3 f3d7610 1bf2948 37aaaeb 9a15240 05e7c59",
+    "application_file_links.cpp": "3d44cda",
+    "application_pointer.cpp": "e2049a1",
+    "application_session.cpp": "11176c8",
+    "application_shortcuts.cpp": "de2e259 2103663 09b1a4f b7f526d 8ff6bb8 d5e21ea b996678 bbd349b",
+    "application_text_selection.cpp": "0f8bdba",
+    "application_text_targets.cpp": "c614c74 aebba8d",
+    "application_walkthrough_view.cpp": "4bf7a16 bd62db8",
+    "canvas_selection.h": "ab9a2c3",
+    "intent_margin.cpp": "f22f7d5",
+    "popup_markup.cpp": "c3c46b3 75b5d8a 7c0e7b8 aaea853 3625557 ae050f5 9a13410 81060f2",
+    "popup_markup.h": "5c3e4f7 46e832d",
+    "tests/agent_windows_test.cpp": "47347fc d8a5dd8 8dbd2c3 30f1548 eb0610d 669a0ff 148cae2 31e4afe 773b8ce b162156 0e4079e 34d859b f05b7d5 d73a27e fcb587a 5c5f7a2 77df0d2 d55e90c 7d884ab b554549 8d103e0 435bc7e 9fa6b0c 93122de 68d1d72 51206a6 fe01c47 b80a86d 78cf652 68f4970 733b01b f2a1fcc 40183e6 73402fe",
+    "tools/intents.py": "b5c8d30 b63c133 fed6dc8 942e656 fb12787 8a113f1 1369e59 ee5bcc5 d30b912 a840f5f eee0bbb 58c4437 9da7498 142f440"
    }
   }
  ]

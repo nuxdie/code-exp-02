@@ -40,7 +40,6 @@ void Application::load_session()
                 // Invalid walkthroughs must not block restoration of the rest of the session.
             }
         }
-        intent_session = state.value("intent", lsp::Json::object());
         const auto saved_search = state.value("globalSearch", lsp::Json::object());
         search.query.set(saved_search.value("query", ""));
         search.active = saved_search.value("active", false);
@@ -146,14 +145,7 @@ void Application::save_session()
          {"camera", {{"x", camera.center.x}, {"y", camera.center.y}, {"zoom", camera.zoom}}},
          {"cameraHistory", save_navigation()},
          {"window", {{"x", x}, {"y", y}, {"width", width}, {"height", height}}},
-         {"files", files},
-         {"intent", intent ? lsp::Json{{"x", intent->bounds.origin.x},
-                                       {"y", intent->bounds.origin.y},
-                                       {"selected", intent->selected},
-                                       {"overview", intent->overview},
-                                       {"path", intent->path},
-                                       {"scroll", intent->scroll}}
-                           : lsp::Json::object()}});
+         {"files", files}});
     const auto path = session_path(workspace_root);
     std::error_code error;
     std::filesystem::create_directories(path.parent_path(), error);
