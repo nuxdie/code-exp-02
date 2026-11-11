@@ -38,7 +38,7 @@ void Application::load_intent_margin()
     }
     const auto command = shell_quote(python_executable) + " " +
                          shell_quote((executable.parent_path() / "intents.py").string()) +
-                         " view --root " + shell_quote(workspace_root) + " 2>/dev/null";
+                         " view --refresh --root " + shell_quote(workspace_root) + " 2>/dev/null";
     intent_margin.loading = std::async(std::launch::async, read_intent_view, command);
 }
 
@@ -101,9 +101,11 @@ void Application::draw_intent_run(const SourcePanel& panel, const IntentRun& run
         renderer->rectangle(bounds, {tint[0], tint[1], tint[2], 1});
     }
     // Below a pixel a bar is noise, unless it is the intent being looked for.
-    if (intent.empty() || (bounds.size.y < 1.5 && !lit))
+    if (bounds.size.y < 1.5 && !lit)
         return;
-    const auto color = intent_color(intent, 0.5);
+    // Lines whose turn has not been distilled into an intent yet still show who asked.
+    const auto color =
+        intent.empty() ? std::array<float, 3>{0.55f, 0.57f, 0.6f} : intent_color(intent, 0.5);
     const float strength = selected.empty() || lit ? 1.0f : 0.25f;
     const double inset = std::min(1.0, bounds.size.y / 4);
     renderer->rectangle(

@@ -85,6 +85,14 @@ class IntentStoreTest(unittest.TestCase):
         self.assertNotIn("new.py", owners)  # untracked files appear once Git tracks them
         self.assertEqual(sorted(store["turns"][0]["changes"]), ["kept.py", "new.py"])
 
+    def test_a_folder_without_git_is_still_a_project(self):
+        with tempfile.TemporaryDirectory() as folder:
+            Path(folder, "notes.txt").write_text("quarterly_totals = sum(all_the_rows)\n")
+            Path(folder, ".hidden").write_text("ignored\n")
+            store = {"version": 2, "intents": [], "commits": {}, "turns": [turn("one", changes={
+                "notes.txt": intents.hashes(["quarterly_totals = sum(all_the_rows)"])})]}
+            self.assertEqual(intents.blame(folder, store), {"notes.txt": [0]})
+
     def test_canvas_context_is_where_not_what_was_said(self):
         context = json.dumps({"path": "camera.h", "line": 42, "workspace": "/x"})
         said, where = intents.human_text([

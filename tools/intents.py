@@ -212,6 +212,8 @@ def add_legacy(root, turns, decisions, links):
 
 
 EVIDENCE = ("changes", "committed", "milestone")
+FIELDS = ("id", "thread", "at", "source", "said", "why", "where", "intent", "also", "commits",
+          *EVIDENCE)
 
 
 def load(root):
@@ -228,16 +230,21 @@ def load(root):
 
 def save(root, store):
     path = Path(root) / STORE
-    path.parent.mkdir(exist_ok=True)
     turns = []
     for turn in store["turns"]:
-        turn = dict(turn)
+        turn = {key: turn[key] for key in FIELDS if turn.get(key) not in (None, [], {})
+                or key in ("intent", "changes")}
         for evidence in EVIDENCE:
             if evidence in turn:
                 turn[evidence] = {name: " ".join(values)
                                   for name, values in sorted(turn[evidence].items()) if values}
         turns.append(turn)
-    path.write_text(json.dumps({**store, "turns": turns}, ensure_ascii=False, indent=1) + "\n")
+    text = json.dumps({**store, "turns": turns}, ensure_ascii=False, indent=1) + "\n"
+    # The canvas watches the project; rewriting an unchanged store would wake it for nothing.
+    if not path.exists() or path.read_text() != text:
+        if turns or store["intents"]:
+            path.parent.mkdir(exist_ok=True)
+            path.write_text(text)
 
 
 def resolve(names, prefix):
@@ -321,7 +328,16 @@ def record(root, said, why, intent, base, identifier):
 
 
 def tracked_files(root):
-    return [name for name in git(root, "ls-files").splitlines() if name]
+    """The project's files: what Git tracks, or everything visible when there is no Git."""
+    try:
+        return [name for name in git(root, "ls-files").splitlines() if name]
+    except (subprocess.CalledProcessError, OSError):
+        names = []
+        for folder, folders, files in os.walk(root):
+            folders[:] = [name for name in folders if not name.startswith(".")]
+            names += [os.path.relpath(os.path.join(folder, name), root) for name in files
+                      if not name.startswith(".")]
+        return sorted(names)
 
 
 def blame_file(lines, path, same_path, anywhere, weak):
@@ -431,6 +447,8 @@ def coverage(root):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("command", choices=["rebuild", "view", "coverage", "turns", "record"])
+    parser.add_argument("--refresh", action="store_true",
+                        help="view: re-read transcripts first, so turns in progress appear")
     parser.add_argument("--said", help="record: the human's words, verbatim")
     parser.add_argument("--why", default="", help="record: the agent's reasoning for this turn")
     parser.add_argument("--intent", help="record: id of the intent this turn serves")
@@ -449,6 +467,8 @@ def main():
         print(record(options.root, options.said, options.why, options.intent, options.base,
                      options.id))
     elif options.command == "view":
+        if options.refresh:
+            rebuild(options.root, options.sessions or [os.path.expanduser("~/.codex/sessions")])
         print(json.dumps(view(options.root), ensure_ascii=False))
     elif options.command == "coverage":
         print(json.dumps(coverage(options.root)))
