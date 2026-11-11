@@ -3205,6 +3205,34 @@
     "structure.h": "10cd363 265e309 d5f17ff bbb14e0 9d41b19 db2eeaf 54d52e8 c5b1942 533c31b c31abbb 3a8a54a 16371b8 5183182 a2cd7f9 6cf5d6f 3732ab7 626774c 7807ca6 8adf98d c9f1cce 046e5c4 ea77978 955fc32 35b8f2e f8e0e8d 263d918 e3e6d7d 6a39756 47ce524 f28de63 06c72ad a6468ce cd9f413 b2fba99 9874b6b a647da4 e90b89e 8e7ae08 94db67b 96c6825 a72b3db 3e28a68 5b7a669 79ccce2 5034d4b 426929a 5e579ce c7cdf2e c1920c8 7af9147 aafef4f a97da75 a704b2e f45d499 73e7ff4 f898c96 a29309d 3b7356c a37dcf1 c96c6d5 fb7c25e 2ee04e5 546a35f 335b483 d8577ba 2d57361 1b7cd7e",
     "tests/structure_test.cpp": "e5673ce 81469ff eb14d0b f89d61d 5313c2a f4c9bff 339683b 024fc98 5bee9bd ecdec3c 5bd0254 a7fb0c6 28abe58 0a18d4b 3ccdcb6 b53de5b deaeaec b54c2ff fc42ae7 45485b1 c05ce1f 9c4790b f18bcb6 d9f2949"
    }
+  },
+  {
+   "id": "claude-2026-11-12-marker-names",
+   "at": "2026-11-11T23:27:19.703Z",
+   "source": "transcript",
+   "said": "can we make it so that if i click on a fn name in the marker i jump to that particular pace that uses symbol and not just the first one?",
+   "why": "A marker was one piece of text that always flew to its first link. Each name is now its own part with its own link, underlined under the pointer, so a click goes to the use it names.",
+   "intent": "useful-legible-contextual",
+   "changes": {
+    "application.h": "c5e71b6",
+    "application_connection_hud.cpp": "aa6a7ec 1a094ce 47f11a4 47f356a 66428c1 bea5ba3 f9153d4 c09f9de 2179fd5 a278250 59389c7 7b28a58 2ea6577 6f7d632 84a8af4 073f2e2 c8380f5 c4273b0 5597fb1 2bcea28 87ed6cb 74fe31e e8ca193 8966490 d9c1775 61ba4e3 4c7ce6d 96ca538 0aefb30 5b0c117 65474ff 853b07a f9b55c2 d13cd28 6ec7cf2 3c7b35f 1126814",
+    "connection_hud.cpp": "3c65540 e69e6ee 64eca9c b6768bc 3a3d4f4 cbecc28 7d0524e a149fab 5a87b79 8adf98d c56e185 f7093d8 5dd3713 8cc860c 3ba9214 5898a44 e01d5b6 326f4c8 29dc2e0 7c86581 2bcea28 656e9b9 3b284a8",
+    "connection_hud.h": "29f9395 eb3858d 66428c1 d626eed 36b6efb 34b937f 292116a 3c65540 bbeac2f 4c930a7 63fc9e9",
+    "tests/live_canvas_test.cpp": "83c16a2 a7eb299 e16ea57 7a57589 12a81ff eabf5d0 6420c81 b73df5c 4bb6175 07d3763 94e66e3 2179fd5 7864e68 6b4ad62 6792b87 7b35994 a34ea29 8279fd9 a76ac35"
+   }
+  },
+  {
+   "id": "claude-2026-11-12-marker-counts",
+   "at": "2026-11-11T23:31:35.934Z",
+   "source": "transcript",
+   "said": "and we dont need x2 x4 and so on",
+   "why": "The counts were noise next to the names; a marker now lists only the functions.",
+   "intent": "useful-legible-contextual",
+   "changes": {
+    "connection_hud.cpp": "27e91a3 92d57ac e1e6e11",
+    "connection_hud.h": "6947de0",
+    "tests/live_canvas_test.cpp": "68063df"
+   }
   }
  ]
 }
