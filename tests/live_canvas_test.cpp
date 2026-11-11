@@ -63,7 +63,7 @@ struct ApplicationTestAccess {
         const std::vector<ConnectionLink> links{{first, "draw", "a.cpp", false, 1},
                                                 {second, "resize", "a.cpp", false, 3}};
         ConnectionMarker marker{{0, 1}, {{100, 50}, {400, 24}}, "", marker_parts(links, {0, 1})};
-        expect(marker.parts.size() == 3 && marker.parts[1].text == "resize ×3," &&
+        expect(marker.parts.size() == 3 && marker.parts[1].text == "resize," &&
                    marker.parts[1].link == 1 && marker.parts[2].text == "draw" &&
                    marker.parts[2].link == 0,
                "A marker must name each function as its own part, most used first");

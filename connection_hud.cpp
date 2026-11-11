@@ -92,17 +92,15 @@ std::vector<MarkerPart> marker_parts(const std::vector<ConnectionLink>& links,
             continue;
         if (++total > 3) {
             // The rest share one part, which leads to the first of them.
+            const auto first = total == 4 ? index : parts.back().link;
             parts.resize(4);
-            parts.push_back({"+" + std::to_string(total - 3), order[3]});
+            parts.push_back({"+" + std::to_string(total - 3), first});
             continue;
         }
         if (parts.size() > 1)
             parts.back().text += ",";
-        parts.push_back(
-            {link.name + (link.count > 1 ? " ×" + std::to_string(link.count) : ""), index});
+        parts.push_back({link.name, index});
     }
-    if (total == 0 && links[order.front()].count > 1)
-        parts.front().text += " ×" + std::to_string(links[order.front()].count);
     return parts;
 }
 

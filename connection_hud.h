@@ -67,7 +67,7 @@ CanvasRect marker_box(const CanvasRect& view, Vec2 anchor, Vec2 size);
 // Move overlapping boxes apart along the edge they sit on, keeping them inside the view.
 void separate_markers(const CanvasRect& view, std::vector<ConnectionMarker>& markers);
 
-// "camera.h  zoom ×2, pan +3": the file, then its most frequent names, each its own part.
+// "camera.h  zoom, pan +3": the file, then its most frequent names, each its own part.
 std::vector<MarkerPart> marker_parts(const std::vector<ConnectionLink>& links,
                                      const std::vector<std::size_t>& members);
 
