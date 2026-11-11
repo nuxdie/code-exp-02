@@ -1,0 +1,404 @@
+#!/usr/bin/env python3
+"""Intent store: who asked for each line, in their words, and why it was written that way.
+
+The store is language-agnostic. It knows three things:
+
+  intent  a short durable decision, close to the human's own wording
+  turn    one thing the human said, what the agent answered, and the lines that turn added
+  blame   for a line in the working tree, the turn (and so the intent) that introduced it
+
+Lines are identified by a hash of their text with whitespace removed, so attribution
+survives reformatting, moves between files, and edits around them.
+"""
+
+import argparse
+import glob
+import hashlib
+import json
+import os
+import re
+import subprocess
+from pathlib import Path
+
+STORE = ".canvas/intents.json"
+MILESTONE = 3  # a commit serving more statements than this is weak evidence for any one
+DISTINCTIVE = 24  # normalized characters before a line may be matched across files
+CONTEXT = re.compile(r"<external_source-canvas>(.*?)</external_source-canvas>", re.S)
+
+
+def normalize(line):
+    return "".join(line.split())
+
+
+def line_hash(line):
+    text = normalize(line)
+    if len(text) < 4:
+        return None
+    return hashlib.sha1(text.encode("utf-8", "replace")).hexdigest()[:7]
+
+
+def added_lines(change):
+    if change.get("type") == "add":
+        return change.get("content", "").splitlines()
+    return [line[1:] for line in change.get("unified_diff", "").splitlines()
+            if line.startswith("+") and not line.startswith("+++")]
+
+
+def hashes(lines):
+    seen, result = set(), []
+    for line in lines:
+        value = line_hash(line)
+        if value and value not in seen:
+            seen.add(value)
+            result.append(value)
+    return result
+
+
+def human_text(content):
+    """Split a recorded user message into what the human typed and where they were."""
+    said, where = [], None
+    for part in content:
+        text = part.get("text", "") if isinstance(part, dict) else ""
+        found = CONTEXT.search(text)
+        if found:
+            try:
+                context = json.loads(found.group(1))
+                if context.get("path"):
+                    where = {"path": context["path"], "line": context.get("line", 1)}
+            except ValueError:
+                pass
+            text = CONTEXT.sub("", text)
+        if text.startswith(("<environment_context", "# AGENTS.md", "<turn_aborted",
+                            "<user_instructions")):
+            continue
+        if text.strip():
+            said.append(text.strip())
+    return "\n".join(said), where
+
+
+def question_reply(text):
+    found = re.search(r"<send_user_message_question_reply>\s*(.*?)\s*</send_user", text, re.S)
+    if not found:
+        return text
+    try:
+        return "; ".join(f"{item['question']} → {item['answer']}"
+                         for item in json.loads(found.group(1)))
+    except (ValueError, KeyError):
+        return text
+
+
+def codex_turns(root, sessions):
+    """Read every Codex transcript recorded in this project and return its turns."""
+    root = str(Path(root).resolve())
+    turns = {}
+    names = [name for folder in sessions
+             for name in glob.glob(os.path.join(folder, "**", "*.jsonl"), recursive=True)]
+    for name in sorted(names, key=os.path.basename):
+        with open(name, encoding="utf-8", errors="replace") as stream:
+            try:
+                meta = json.loads(stream.readline()).get("payload", {})
+            except ValueError:
+                continue
+            if meta.get("cwd") != root:
+                continue
+            for raw in stream:
+                try:
+                    record = json.loads(raw)
+                except ValueError:
+                    continue
+                if record.get("type") != "event_msg":
+                    continue
+                payload = record.get("payload", {})
+                turn_id = payload.get("turn_id")
+                if not turn_id:
+                    continue
+                turn = turns.setdefault(turn_id, {
+                    "id": turn_id, "thread": meta.get("id"), "at": record.get("timestamp"),
+                    "source": "transcript", "said": "", "why": "", "changes": {}})
+                if payload.get("type") == "task_complete":
+                    turn["why"] = payload.get("last_agent_message") or turn["why"]
+                    continue
+                if payload.get("type") != "item_completed":
+                    continue
+                item = payload.get("item", {})
+                if item.get("type") == "UserMessage":
+                    said, where = human_text(item.get("content", []))
+                    if said:
+                        turn["said"] = (turn["said"] + "\n" + question_reply(said)).strip()
+                    if where:
+                        turn["where"] = where
+                elif item.get("type") == "AgentMessage" and item.get("phase") == "final_answer":
+                    turn["why"] = "".join(part.get("text", "") for part in item["content"])
+                elif item.get("type") == "FileChange":
+                    for path, change in item.get("changes", {}).items():
+                        for target in {path, change.get("move_path") or path}:
+                            if not target.startswith(root + "/"):
+                                continue
+                            relative = target[len(root) + 1:]
+                            turn["changes"].setdefault(relative, []).extend(added_lines(change))
+    result = []
+    for turn in turns.values():
+        if not turn["said"]:
+            continue
+        turn["changes"] = {path: hashes(lines) for path, lines in turn["changes"].items()}
+        turn["changes"] = {path: values for path, values in turn["changes"].items() if values}
+        result.append(turn)
+    return sorted(result, key=lambda turn: turn["at"] or "")
+
+
+def git(root, *arguments):
+    return subprocess.run(["git", "-C", str(root), *arguments], check=True, capture_output=True,
+                          text=True, errors="replace").stdout
+
+
+def commit_lines(root, commit):
+    """Added lines per path for one commit, ignoring the store itself."""
+    changes, path = {}, None
+    for line in git(root, "show", "--format=", "--unified=0", commit).splitlines():
+        if line.startswith("+++ "):
+            path = line[6:] if line.startswith("+++ b/") else None
+        elif path and line.startswith("+") and not path.startswith(".canvas/"):
+            changes.setdefault(path, []).append(line[1:])
+    return {path: hashes(lines) for path, lines in changes.items()}
+
+
+def statement_turn(decision):
+    return {"id": decision["origin"].get("turn_id") or decision["id"].replace("decision-", ""),
+            "thread": decision["origin"].get("thread_id"), "at": decision.get("recorded_at"),
+            "source": "statement", "said": decision["statement"],
+            "why": (decision.get("rationale") or {}).get("summary") or "", "changes": {}}
+
+
+def add_legacy(root, turns, decisions, links):
+    """Fold in what transcripts cannot show: statements made elsewhere, and committed lines.
+
+    A commit names the statement it served in an Intent-ID trailer, or `links` names it
+    for commits made without one. Committed lines are weaker evidence than a transcript's
+    own edits, so they are kept apart and only claim lines no transcript explains.
+    """
+    by_id = {turn["id"]: turn for turn in turns}
+    said = {normalize(turn["said"]) for turn in turns}
+    for decision in decisions:
+        turn = statement_turn(decision)
+        if turn["id"] in by_id or any(normalize(turn["said"]) in text for text in said):
+            continue
+        by_id[turn["id"]] = turn
+        said.add(normalize(turn["said"]))
+        turns.append(turn)
+    decision_turn = {decision["id"]: statement_turn(decision)["id"] for decision in decisions}
+    log = git(root, "log", "--reverse",
+              "--format=%H%x1f%(trailers:key=Intent-ID,valueonly,separator=%x20)%x1e")
+    for entry in log.split("\x1e"):
+        fields = entry.strip("\n").split("\x1f")
+        if len(fields) < 2:
+            continue
+        commit, trailer = fields[0], fields[1]
+        targets = [decision_turn.get(value) for value in trailer.split()]
+        targets += [turn_id for sha, turn_id in links.items() if commit.startswith(sha)]
+        targets = [by_id[target] for target in targets if target in by_id]
+        if not targets:
+            continue
+        changes = commit_lines(root, commit)
+        # A commit that answers many statements at once cannot say which one a line serves.
+        strength = "committed" if len(targets) <= MILESTONE else "milestone"
+        for turn in targets:
+            turn.setdefault("commits", []).append(commit[:8])
+            committed = turn.setdefault(strength, {})
+            for path, values in changes.items():
+                own = set(turn["changes"].get(path, []))
+                committed[path] = list(dict.fromkeys(
+                    committed.get(path, []) + [value for value in values if value not in own]))
+
+
+EVIDENCE = ("changes", "committed", "milestone")
+
+
+def load(root):
+    path = Path(root) / STORE
+    if not path.exists():
+        return {"version": 2, "intents": [], "commits": {}, "turns": []}
+    store = json.loads(path.read_text())
+    for turn in store["turns"]:
+        for evidence in EVIDENCE:
+            if evidence in turn:
+                turn[evidence] = {name: text.split() for name, text in turn[evidence].items()}
+    return store
+
+
+def save(root, store):
+    path = Path(root) / STORE
+    path.parent.mkdir(exist_ok=True)
+    turns = []
+    for turn in store["turns"]:
+        turn = dict(turn)
+        for evidence in EVIDENCE:
+            if evidence in turn:
+                turn[evidence] = {name: " ".join(values)
+                                  for name, values in sorted(turn[evidence].items()) if values}
+        turns.append(turn)
+    path.write_text(json.dumps({**store, "turns": turns}, ensure_ascii=False, indent=1) + "\n")
+
+
+def resolve(names, prefix):
+    """Find the one turn a short id refers to; `names` maps known ids to turn ids."""
+    matches = {turn for name, turn in names.items() if name.startswith(prefix)}
+    return matches.pop() if len(matches) == 1 else None
+
+
+def rebuild(root, sessions):
+    """Rebuild turns from the evidence on disk, keeping distilled intents and their links."""
+    store = load(root)
+    previous = {turn["id"]: (turn.get("intent"), turn.get("also")) for turn in store["turns"]}
+    turns = codex_turns(root, sessions)
+    found = {turn["id"] for turn in turns}
+    # Transcripts live on the machine that ran them; keep turns imported from elsewhere.
+    for turn in store["turns"]:
+        if turn["source"] == "transcript" and turn["id"] not in found:
+            turns.append({key: value for key, value in turn.items()
+                          if key not in ("committed", "milestone", "commits")})
+    legacy = Path(root) / ".canvas/decisions.json"
+    if legacy.exists():
+        decisions = json.loads(legacy.read_text())["decisions"]
+        names = {turn["id"]: turn["id"] for turn in turns}
+        for decision in decisions:
+            turn_id = statement_turn(decision)["id"]
+            names[turn_id] = names[decision["id"].replace("decision-", "")] = turn_id
+        links = {sha: resolve(names, prefix)
+                 for sha, prefix in store.get("commits", {}).items()}
+        missing = [sha for sha, turn_id in links.items() if not turn_id]
+        if missing:
+            raise SystemExit("Commit links name no single turn: " + ", ".join(missing))
+        add_legacy(root, turns, decisions, links)
+    turns.sort(key=lambda turn: turn["at"] or "")
+    for turn in turns:
+        turn["intent"], also = previous.get(turn["id"], (None, None))
+        turn.pop("also", None)
+        if also:
+            turn["also"] = also
+    store["turns"] = turns
+    save(root, store)
+    return store
+
+
+def tracked_files(root):
+    return [name for name in git(root, "ls-files").splitlines() if name]
+
+
+def blame_file(lines, path, same_path, anywhere, weak):
+    """Attribute each line to the turn that first introduced its text."""
+    owners, unsure = [], []
+    for line in lines:
+        value = line_hash(line)
+        owner = None
+        if value:
+            owner = same_path.get((path, value))
+            if owner is None and len(normalize(line)) >= DISTINCTIVE:
+                owner = anywhere.get(value)
+        owners.append(owner)
+        unsure.append(owner is None and value is not None and (path, value) in weak)
+    # Lines known only from a many-statement commit belong with the code around them.
+    for order in (range(len(lines)), range(len(lines) - 1, -1, -1)):
+        last = None
+        for index in order:
+            if owners[index] is not None:
+                last = owners[index]
+            elif unsure[index] and last is not None:
+                owners[index] = last
+    for index, line in enumerate(lines):
+        if unsure[index] and owners[index] is None:
+            owners[index] = weak[(path, line_hash(line))]
+    # So do lines too short to identify: braces and the like.
+    last = None
+    for index, line in enumerate(lines):
+        if owners[index] is not None:
+            last = owners[index]
+        elif last is not None and line.strip() and not line_hash(line):
+            owners[index] = last
+    return owners
+
+
+def blame(root, store=None):
+    """Return {path: [turn index or None per line]} for every tracked text file."""
+    store = store or load(root)
+    same_path, anywhere, weak = {}, {}, {}
+    for evidence in ("changes", "committed"):  # a transcript's own edits win over commits
+        for index, turn in enumerate(store["turns"]):
+            for path, values in turn.get(evidence, {}).items():
+                for value in values:
+                    same_path.setdefault((path, value), index)
+        for index, turn in enumerate(store["turns"]):
+            for values in turn.get(evidence, {}).values():
+                for value in values:
+                    anywhere.setdefault(value, index)
+    for index, turn in enumerate(store["turns"]):
+        for path, values in turn.get("milestone", {}).items():
+            for value in values:
+                weak.setdefault((path, value), index)
+    result = {}
+    for path in tracked_files(root):
+        try:
+            lines = (Path(root) / path).read_text().splitlines()
+        except (UnicodeDecodeError, OSError):
+            continue
+        result[path] = blame_file(lines, path, same_path, anywhere, weak)
+    return result
+
+
+def ranges(owners):
+    """Collapse per-line owners into [first_line, last_line, turn] runs (1-based)."""
+    result, start = [], 0
+    for index in range(1, len(owners) + 1):
+        if index == len(owners) or owners[index] != owners[start]:
+            if owners[start] is not None:
+                result.append([start + 1, index, owners[start]])
+            start = index
+    return result
+
+
+def view(root):
+    """Everything the canvas needs: intents, turns without hashes, and line ranges per file."""
+    store = load(root)
+    attribution = blame(root, store)
+    turns = [{key: value for key, value in turn.items() if key not in EVIDENCE}
+             for turn in store["turns"]]
+    return {"intents": store["intents"], "turns": turns,
+            "files": {path: ranges(owners) for path, owners in attribution.items()
+                      if any(owner is not None for owner in owners)}}
+
+
+def coverage(root):
+    store = load(root)
+    total = attributed = with_intent = 0
+    for owners in blame(root, store).values():
+        total += len(owners)
+        attributed += sum(owner is not None for owner in owners)
+        with_intent += sum(owner is not None and bool(store["turns"][owner].get("intent"))
+                           for owner in owners)
+    return {"lines": total, "attributed": attributed, "with_intent": with_intent,
+            "turns": len(store["turns"]), "intents": len(store["intents"]),
+            "turns_without_intent": sum(not turn.get("intent") for turn in store["turns"])}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("command", choices=["rebuild", "view", "coverage", "turns"])
+    parser.add_argument("--root", default=".")
+    parser.add_argument("--sessions", action="append", default=[],
+                        help="transcript folder; repeat to add folders copied from other machines")
+    options = parser.parse_args()
+    if options.command == "rebuild":
+        rebuild(options.root, options.sessions or [os.path.expanduser("~/.codex/sessions")])
+        print(json.dumps(coverage(options.root)))
+    elif options.command == "view":
+        print(json.dumps(view(options.root), ensure_ascii=False))
+    elif options.command == "coverage":
+        print(json.dumps(coverage(options.root)))
+    else:
+        for turn in load(options.root)["turns"]:
+            print(f"{turn['id'][:13]} {turn['source'][:1]} {len(turn['changes']):3} "
+                  f"{len(turn.get('committed', {})):3} {len(turn.get('milestone', {})):3} "
+                  f"{turn.get('intent') or '-':28} {turn['said'][:110]!r}")
+
+
+if __name__ == "__main__":
+    main()

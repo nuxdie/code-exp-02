@@ -481,6 +481,10 @@ if(BUILD_TESTING)
              COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s
                      "${CMAKE_CURRENT_SOURCE_DIR}/tests" -p test_provenance.py
     )
+    add_test(NAME intents
+             COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s
+                     "${CMAKE_CURRENT_SOURCE_DIR}/tests" -p test_intents.py
+    )
     add_test(NAME cmake_style
              COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s
                      "${CMAKE_CURRENT_SOURCE_DIR}/tests" -p test_cmake_style.py
