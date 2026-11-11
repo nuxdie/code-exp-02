@@ -31,16 +31,26 @@ void Application::connect_boxes(std::vector<GpuPath>& paths, const CanvasRect& f
 
 // A labelled marker on the window edge, in the direction of a word that is out of view.
 void Application::mark_connection(const CanvasRect& view, std::vector<std::size_t> members,
-                                  const ConnectionEnd& end, const std::string& text)
+                                  const ConnectionEnd& end, std::vector<MarkerPart> parts)
 {
     const auto far = center(connection_box(end));
-    const auto label_text = std::string(direction_glyph(view, far)) + text;
-    auto& label = connection_labels[label_text];
-    update_document(label, label_text, 640, false);
-    connection_markers.push_back({std::move(members),
-                                  marker_box(view, view_exit(view, center(view), far),
-                                             {label.size.x + 22, label.size.y + 8}),
-                                  label_text});
+    parts.front().text = std::string(direction_glyph(view, far)) + " " + parts.front().text;
+    // Each part is its own piece of text, so each can be pointed at.
+    double right = 12, tall = 0;
+    std::string text;
+    for (auto& part : parts) {
+        auto& label = connection_labels[part.text];
+        update_document(label, part.text, 640, false);
+        part.offset = right;
+        part.width = label.size.x;
+        right += label.size.x + (&part == &parts.front() ? 14 : 8);
+        tall = std::max(tall, label.size.y);
+        text += part.text + " ";
+    }
+    connection_markers.push_back(
+        {std::move(members),
+         marker_box(view, view_exit(view, center(view), far), {right + 2, tall + 8}),
+         std::move(text), std::move(parts)});
 }
 
 // Sort the links into words that are in view, highlighted, and markers for the rest.
@@ -60,7 +70,7 @@ std::vector<std::size_t> Application::place_connection_ends(const CanvasRect& vi
     }
     for (const auto& [key, members] : hidden)
         mark_connection(view, members, connection_links[members.front()].at,
-                        marker_text(connection_links, members, ""));
+                        marker_parts(connection_links, members));
     return visible;
 }
 
@@ -112,7 +122,7 @@ void Application::layout_connections()
         connection_words.push_back({subject, subject_color});
     } else if (!visible.empty()) {
         mark_connection(view, {}, connection_subject.at,
-                        " " + connection_subject.file + "  " + connection_subject.name);
+                        {{connection_subject.file + "  " + connection_subject.name}});
     }
     separate_markers(view, connection_markers);
     // Arrows meet the subject itself, or the marker standing for it while it is out of view.
@@ -162,14 +172,23 @@ void Application::draw_connection_markers()
         renderer->rectangle(marker.bounds, {1, 1, 1, 0.96f});
         renderer->rectangle({marker.bounds.origin, {3, marker.bounds.size.y}},
                             {color[0], color[1], color[2], 1});
-        renderer->draw(connection_labels[marker.text].mesh,
-                       {marker.bounds.origin.x + 12, marker.bounds.origin.y + 4}, 1);
+        for (const auto& part : marker.parts)
+            renderer->draw(connection_labels[part.text].mesh,
+                           {marker.bounds.origin.x + part.offset, marker.bounds.origin.y + 4}, 1);
+        // The word a click would fly to.
+        if (const auto* part = marker_part_at(marker, mouse_position))
+            renderer->rectangle({{marker.bounds.origin.x + part->offset,
+                                  marker.bounds.origin.y + marker.bounds.size.y - 4},
+                                 {part->width, 1.5}},
+                                {color[0], color[1], color[2], 1});
     }
     // Labels are cached by their text; forget the ones no longer shown.
     for (auto label = connection_labels.begin(); label != connection_labels.end();) {
-        const bool shown =
-            std::any_of(connection_markers.begin(), connection_markers.end(),
-                        [&](const auto& marker) { return marker.text == label->first; });
+        const bool shown = std::any_of(
+            connection_markers.begin(), connection_markers.end(), [&](const auto& marker) {
+                return std::any_of(marker.parts.begin(), marker.parts.end(),
+                                   [&](const auto& part) { return part.text == label->first; });
+            });
         if (shown) {
             ++label;
             continue;
@@ -201,8 +220,11 @@ bool Application::connection_marker_button(const XEvent& event, Vec2 pointer)
     const auto* marker = connection_marker_at(pointer);
     if (!marker || drag_button || event.xbutton.button != Button1)
         return false;
-    const auto at =
-        marker->links.empty() ? connection_subject.at : connection_links[marker->links.front()].at;
+    // The word under the pointer decides where to go; elsewhere on the marker, its first.
+    const auto* part = marker_part_at(*marker, pointer);
+    const auto at = marker->links.empty()
+                        ? connection_subject.at
+                        : connection_links[(part ? *part : marker->parts.front()).link].at;
     const auto& text = std::find_if(panels.begin(), panels.end(), [&](const auto& panel) {
                            return panel.uri == at.uri;
                        })->text[at.line];

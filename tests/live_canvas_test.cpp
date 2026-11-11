@@ -57,6 +57,27 @@ struct ApplicationTestAccess {
         app.mouse_position = pointer;
         app.handle_button(press);
     }
+    static void test_marker_parts()
+    {
+        const ConnectionEnd first{"file:///a.cpp", 4, 0, 3}, second{"file:///a.cpp", 90, 0, 3};
+        const std::vector<ConnectionLink> links{{first, "draw", "a.cpp", false, 1},
+                                                {second, "resize", "a.cpp", false, 3}};
+        ConnectionMarker marker{{0, 1}, {{100, 50}, {400, 24}}, "", marker_parts(links, {0, 1})};
+        expect(marker.parts.size() == 3 && marker.parts[1].text == "resize ×3," &&
+                   marker.parts[1].link == 1 && marker.parts[2].text == "draw" &&
+                   marker.parts[2].link == 0,
+               "A marker must name each function as its own part, most used first");
+        double right = 12;
+        for (auto& part : marker.parts) {
+            part.offset = right;
+            part.width = 60;
+            right += 70;
+        }
+        const auto* pointed = marker_part_at(marker, {100 + marker.parts[2].offset + 5, 60});
+        expect(pointed && pointed->link == 0 && !marker_part_at(marker, {100 + right + 40, 60}) &&
+                   !marker_part_at(marker, {130, 10}),
+               "Pointing at a name in a marker must pick that use, not the first one");
+    }
     static void test_symbol_connections(Application& app, const std::filesystem::path&)
     {
         const auto& caller = panel(app, "main.cpp");
@@ -339,6 +360,7 @@ struct ApplicationTestAccess {
         } while (Application::Clock::now() < deadline);
         expect(attributes.map_state == IsViewable, "Live canvas test window must be mapped");
         if (symbols) {
+            test_marker_parts();
             test_symbol_connections(app, root);
             std::cout << "Arrows for a chosen symbol, markers out of view and dismissal passed.\n";
             return;

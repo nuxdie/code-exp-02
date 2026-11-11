@@ -78,28 +78,43 @@ void separate_markers(const CanvasRect& view, std::vector<ConnectionMarker>& mar
     }
 }
 
-std::string marker_text(const std::vector<ConnectionLink>& links,
-                        const std::vector<std::size_t>& members, const std::string& direction)
+std::vector<MarkerPart> marker_parts(const std::vector<ConnectionLink>& links,
+                                     const std::vector<std::size_t>& members)
 {
     auto order = members;
     std::stable_sort(order.begin(), order.end(),
                      [&](auto a, auto b) { return links[a].count > links[b].count; });
-    std::string text = direction + " " + links[order.front()].file;
-    std::size_t named = 0, total = 0;
+    std::vector<MarkerPart> parts{{links[order.front()].file, order.front()}};
+    std::size_t total = 0;
     for (const auto index : order) {
         const auto& link = links[index];
-        total += link.name.empty() ? 0 : 1;
-        if (link.name.empty() || named == 3)
+        if (link.name.empty())
             continue;
-        text += (named++ ? ", " : "  ") + link.name;
-        if (link.count > 1)
-            text += " ×" + std::to_string(link.count);
+        if (++total > 3) {
+            // The rest share one part, which leads to the first of them.
+            parts.resize(4);
+            parts.push_back({"+" + std::to_string(total - 3), order[3]});
+            continue;
+        }
+        if (parts.size() > 1)
+            parts.back().text += ",";
+        parts.push_back(
+            {link.name + (link.count > 1 ? " ×" + std::to_string(link.count) : ""), index});
     }
-    if (total > named)
-        text += " +" + std::to_string(total - named);
     if (total == 0 && links[order.front()].count > 1)
-        text += " ×" + std::to_string(links[order.front()].count);
-    return text;
+        parts.front().text += " ×" + std::to_string(links[order.front()].count);
+    return parts;
+}
+
+const MarkerPart* marker_part_at(const ConnectionMarker& marker, Vec2 point)
+{
+    const double x = point.x - marker.bounds.origin.x;
+    if (point.y < marker.bounds.origin.y || point.y > marker.bounds.origin.y + marker.bounds.size.y)
+        return nullptr;
+    for (const auto& part : marker.parts)
+        if (x >= part.offset - 4 && x < part.offset + part.width + 4)
+            return &part;
+    return nullptr;
 }
 
 Vec2 center(const CanvasRect& box)
