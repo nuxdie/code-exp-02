@@ -329,6 +329,8 @@ class Application {
     void prepare_walkthrough(bool arrange);
     void prepare_walkthrough_step(WalkthroughStep& step, std::size_t index);
     void draw_walkthrough();
+    void draw_walkthrough_selection(const WalkthroughStep& step);
+    const WalkthroughStep* walkthrough_code_at(Vec2 pointer);
     bool walkthrough_event(const XEvent& event, Vec2 pointer);
     void drag_walkthrough(Vec2 pointer);
     lsp::Json save_walkthrough();

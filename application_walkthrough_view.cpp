@@ -10,7 +10,8 @@ void Application::prepare_walkthrough_step(WalkthroughStep& step, std::size_t in
                                     [&](const auto& panel) { return panel.path == step.path; });
     step.available = found != panels.end() && step.last <= static_cast<int>(found->text.size());
     auto location = step.path + ":" + std::to_string(step.first) + "–" + std::to_string(step.last);
-    location += step.available ? " · click code to open source" : " · source range unavailable";
+    if (!step.available)
+        location += " · source range unavailable";
     update_document(step.location, location, text_width, false);
     step.code_y = step.heading.size.y + step.explanation.size.y + step.location.size.y + 44;
     step.bounds.size = {text_width + 32.0,
@@ -39,10 +40,7 @@ void Application::prepare_walkthrough(bool arrange)
     if (!walkthrough)
         return;
     auto& board = *walkthrough;
-    update_document(board.heading,
-                    "Walkthrough · " + intent_literal(board.title) +
-                        "\nDrag titles to arrange · middle-click to dismiss",
-                    1000, false);
+    update_document(board.heading, "Walkthrough · " + intent_literal(board.title), 1000, false);
     // Preserve user placement when live source changes; only dimensions and excerpts refresh.
     for (std::size_t i = 0; i < board.steps.size(); ++i) {
         auto& step = board.steps[i];
@@ -140,6 +138,7 @@ void Application::draw_walkthrough()
         renderer->draw(step.explanation.mesh, point(origin), camera.zoom);
         origin.y += step.explanation.size.y + 8;
         renderer->draw(step.location.mesh, point(origin), camera.zoom);
+        draw_walkthrough_selection(step);
         renderer->draw(step.code,
                        point({step.bounds.origin.x + 16, step.bounds.origin.y + step.code_y}),
                        camera.zoom);
@@ -150,5 +149,31 @@ void Application::draw_walkthrough()
         rectangle({{origin.x - 4, origin.y - 4}, {caption.size.x + 8, caption.size.y + 8}},
                   {0.94f, 0.96f, 0.99f, 1});
         renderer->draw(caption.mesh, point(origin), camera.zoom);
+    }
+}
+
+void Application::draw_walkthrough_selection(const WalkthroughStep& step)
+{
+    if (text_selection.surface == TextSurface::Source && text_selection.key == step.path) {
+        const auto found = std::find_if(panels.begin(), panels.end(),
+                                        [&](const auto& panel) { return panel.path == step.path; });
+        if (step.available && found != panels.end() && text_selection.range.text == found->source) {
+            const auto [begin, end] = text_selection.range.selection();
+            std::size_t offset = 0;
+            for (int line = 0; line < step.last; ++line) {
+                const auto length = found->text[line].size();
+                if (line >= step.first - 1 && begin < offset + length + 1 && end > offset)
+                    draw_selection_layout(
+                        found->lines[line],
+                        camera.world_to_screen(
+                            {step.bounds.origin.x + 80, step.bounds.origin.y + step.code_y +
+                                                            (line - step.first + 1) * line_height},
+                            viewport()),
+                        camera.zoom,
+                        {begin > offset ? begin - offset : 0, std::min(length, end - offset)},
+                        {0.70f, 0.81f, 0.98f, 0.85f});
+                offset += length + 1;
+            }
+        }
     }
 }

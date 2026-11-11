@@ -230,9 +230,39 @@ struct ApplicationTestAccess {
         click.xbutton.x = static_cast<int>(pointer.x);
         click.xbutton.y = static_cast<int>(pointer.y);
         app.handle_button(click);
-        expect(app.focused_line && app.panels[app.focused_line->panel].path == "main.cpp" &&
-                   app.focused_line->line == 1,
-               "Clicking excerpt code must open the exact original source line");
+        expect(app.text_selection.surface == TextSurface::Source && app.drag_button == Button1,
+               "Excerpt code must start source selection without opening another view");
+        const auto symbol_pointer = app.camera.world_to_screen(
+            {step.bounds.origin.x + 100, step.bounds.origin.y + step.code_y + app.line_height + 4},
+            app.viewport());
+        auto hit = app.hit_test(symbol_pointer);
+        expect(hit.panel >= 0 && app.panels[hit.panel].path == "main.cpp" && hit.line == 1,
+               "Excerpt hit testing must map to the underlying source line");
+        expect(app.panel_at(symbol_pointer) == hit.panel,
+               "Excerpt outline and source context must use the underlying file");
+        const auto& later = app.walkthrough->steps[2];
+        const auto later_pointer = app.camera.world_to_screen(
+            {later.bounds.origin.x + 82, later.bounds.origin.y + later.code_y + 4}, app.viewport());
+        expect(app.hit_test(later_pointer).line == 2,
+               "Separate excerpts of the same file must retain their own source ranges");
+        const auto folded = app.panels[hit.panel].folded.source_lines;
+        app.panels[hit.panel].folded.source_lines = {2};
+        expect(app.hit_test(symbol_pointer).line == 1,
+               "Excerpt navigation must stay independent of folds in the original source view");
+        app.panels[hit.panel].folded.source_lines = folded;
+        expect(app.source_byte_at(app.panels[hit.panel], pointer) ==
+                   app.panels[hit.panel].text[0].size() + 1,
+               "Excerpt selection must use the original source byte offsets");
+        click.type = ButtonRelease;
+        app.handle_event(click);
+        click.type = ButtonPress;
+        click.xbutton.state = ControlMask;
+        expect(!app.walkthrough_event(click, pointer),
+               "Excerpt navigation must reach the shared canvas event handler");
+        const auto blank = app.camera.world_to_screen(
+            {step.bounds.origin.x + 20, step.bounds.origin.y + step.code_y - 4}, app.viewport());
+        expect(app.hit_test(blank).panel < 0,
+               "Explanatory text must not hit source code underneath the board");
         app.replace_source(0, "int changed = 73;\nint next = 42;\nint last = 0;\n");
         app.prepare_walkthrough(false);
         expect(step.cached_source.find("changed = 73") != std::string::npos,

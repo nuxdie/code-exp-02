@@ -1,5 +1,20 @@
 #include "application.h"
 
+namespace {
+std::optional<std::size_t> source_line_hit(PangoLayout* layout, const std::string& text, double x,
+                                           int font_height)
+{
+    int index = 0, trailing = 0;
+    if (!pango_layout_xy_to_index(layout, static_cast<int>(x * PANGO_SCALE),
+                                  font_height * PANGO_SCALE / 2, &index, &trailing))
+        return {};
+    if (index < 0 || index >= static_cast<int>(text.size()) ||
+        std::isspace(static_cast<unsigned char>(text[index])))
+        return {};
+    return static_cast<std::size_t>(index);
+}
+} // namespace
+
 SourcePanel Application::make_panel(const std::string& path, const std::string& text,
                                     ImagePreview* preview)
 {
@@ -172,27 +187,26 @@ SourceHit Application::hit_test(Vec2 screen)
     const auto world = camera.screen_to_world(screen, viewport());
     if (chat_at(screen))
         return {};
+    const auto* excerpt = walkthrough_code_at(screen);
+    if (!excerpt && window_at(screen) == WindowKind::Walkthrough)
+        return {};
     for (std::size_t i = 0; i < panels.size(); ++i) {
         const auto& panel = panels[i];
-        const double x = world.x - panel.bounds.origin.x - 24;
-        const double y = world.y - panel.bounds.origin.y - header_height;
+        if (excerpt && panel.path != excerpt->path)
+            continue;
+        const double x =
+            world.x - (excerpt ? excerpt->bounds.origin.x + 80 : panel.bounds.origin.x + 24);
+        const double y = world.y - (excerpt ? excerpt->bounds.origin.y + excerpt->code_y
+                                            : panel.bounds.origin.y + header_height);
         if (x < 0 || x >= panel.bounds.size.x || y < 0)
             continue;
         const int row = static_cast<int>(y / line_height);
-        if (row >= static_cast<int>(panel.folded.source_lines.size()))
+        if (row >= (excerpt ? excerpt->last - excerpt->first + 1
+                            : static_cast<int>(panel.folded.source_lines.size())))
             continue;
-        const int line = panel.folded.source_lines[row];
-        int index = 0, trailing = 0;
-        if (!pango_layout_xy_to_index(panel.lines[line], static_cast<int>(x * PANGO_SCALE),
-                                      font_height * PANGO_SCALE / 2, &index, &trailing))
-            continue;
-        const auto& text = panel.text[line];
-        if (index < 0 || index >= static_cast<int>(text.size()))
-            continue;
-        const auto byte = static_cast<std::size_t>(index);
-        if (byte >= text.size() || std::isspace(static_cast<unsigned char>(text[byte])))
-            continue;
-        return {static_cast<int>(i), line, byte};
+        const int line = excerpt ? excerpt->first - 1 + row : panel.folded.source_lines[row];
+        if (const auto byte = source_line_hit(panel.lines[line], panel.text[line], x, font_height))
+            return {static_cast<int>(i), line, *byte};
     }
     return {};
 }
@@ -202,11 +216,20 @@ int Application::panel_at(Vec2 screen)
     const auto world = camera.screen_to_world(screen, viewport());
     if (chat_at(screen))
         return -1;
-    for (std::size_t i = 0; i < panels.size(); ++i)
+    const auto* excerpt = walkthrough_code_at(screen);
+    if (!excerpt && window_at(screen) == WindowKind::Walkthrough)
+        return -1;
+    for (std::size_t i = 0; i < panels.size(); ++i) {
+        if (excerpt) {
+            if (panels[i].path == excerpt->path)
+                return static_cast<int>(i);
+            continue;
+        }
         if (Viewport{panels[i].bounds.origin.x, panels[i].bounds.origin.y, panels[i].bounds.size.x,
                      panels[i].bounds.size.y}
                 .contains(world))
             return static_cast<int>(i);
+    }
     return -1;
 }
 
