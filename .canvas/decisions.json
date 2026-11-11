@@ -4104,6 +4104,38 @@
         "kind": "explicit_artifact_binding",
         "precision": "file"
       }
+    },
+    {
+      "id": "decision-01a1cb5b-a025-7693-a8da-ee8171dc7fe3",
+      "origin": {
+        "kind": "conversation",
+        "message_id": "01a1cb5b-a025-7693-a8da-ee8171dc7fe3",
+        "thread_id": "01a1cb5b-9a93-73d0-bef5-38170f7f32f6",
+        "turn_id": "01a1cb5b-9c1b-7873-9d13-30f52a6458ec"
+      },
+      "statement": "why do i get emails about failed gh runs on this projet? first of all, its nooize. i dont care.and second. fix",
+      "author": {
+        "role": "human",
+        "label": "User"
+      },
+      "recorded_at": "2026-11-11T16:05:42.060752+00:00",
+      "statement_hash": "fb8dd7d985e5f41f88aaaecb953752b3f73681a6a73205dbc80647f7b3918916",
+      "artifacts": [
+        ".github/workflows/quality.yml",
+        "README.md",
+        "tests/agent_windows_test.cpp",
+        "tests/live_canvas_test.cpp"
+      ],
+      "relations": [],
+      "rationale": {
+        "summary": "Stop automatic quality runs on routine pushes to remove repeated failure-email noise while retaining pull-request and manual checks. Repair the two reproduced UI test fixture failures: clear inherited source context before testing the working indicator, and enable the simulated agent before testing composer submission. Keep the complete quality gate enforced.",
+        "author_role": "agent",
+        "basis": "implementation_analysis"
+      },
+      "association": {
+        "kind": "explicit_artifact_binding",
+        "precision": "file"
+      }
     }
   ]
 }

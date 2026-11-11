@@ -288,6 +288,7 @@ struct ApplicationTestAccess {
     }
     static void test_composer_and_state(Application& app, const std::filesystem::path& root)
     {
+        app.chat->disabled = false;
         app.chat->conversation.ready = true;
         app.chat->conversation.thread_id = "fixture-thread";
         app.chat->conversation.active_turn.clear();
@@ -307,7 +308,6 @@ struct ApplicationTestAccess {
             "Enter must submit from the native composer while retaining an unacknowledged draft");
         app.chat->conversation.receive(
             {{"id", outgoing[0]["id"]}, {"result", {{"turn", {{"id", "fixture-turn"}}}}}});
-        app.chat->disabled = false;
         app.poll_agent();
         expect(app.chat->input.text.empty(), "Only an accepted message may clear the composer");
         app.chat->input.set("An unsent multiline\ndraft with λ");

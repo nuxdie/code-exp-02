@@ -191,6 +191,8 @@ The interface is built directly on X11 and OpenGL. Pango/Cairo shape text, an Op
 
 ## Development
 
+GitHub Actions runs on pull requests or manually from the Actions tab.
+
 Run the same quality gate used by GitHub Actions. It checks formatting, module size, include cycles, static analysis, and tests, including GPU checks under a virtual X display:
 
 ```bash

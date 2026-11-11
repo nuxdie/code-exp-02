@@ -433,6 +433,7 @@ struct ApplicationTestAccess {
     }
     static void test_working_indicator(Application& app)
     {
+        app.chat->context = lsp::Json::object();
         auto& model = app.chat->conversation;
         model.connected = model.ready = true;
         model.sending = false;
