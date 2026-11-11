@@ -88,8 +88,8 @@ std::string file_name(const std::string& path)
 }
 } // namespace
 
-// Ctrl+click on a symbol makes it the subject: arrows then show where it is defined and
-// every place that uses it. Ctrl+click anywhere else puts the arrows away.
+// A click on a symbol makes it the subject: arrows then show where it is defined and
+// every place that uses it. A click elsewhere in the text puts the arrows away.
 void Application::show_connections_at(Vec2 pointer)
 {
     clear_connections();

@@ -134,6 +134,15 @@ struct ApplicationTestAccess {
                "Clicking an outline chevron must expand the actual nested symbol hierarchy");
     }
 
+    static void press_and_release(Application& app, Vec2 point)
+    {
+        auto event = click(point, 0);
+        app.handle_button(event);
+        event.type = ButtonRelease;
+        event.xbutton.state = Button1Mask;
+        app.handle_event(event);
+    }
+
     static void test_context_navigation(Application& app, int index)
     {
         auto& panel = app.panels[index];
@@ -144,10 +153,10 @@ struct ApplicationTestAccess {
         const auto point = point_at(app, index, camera->line, byte);
         expect(app.definition_at_pointer(),
                "A class definition must be recognized from semantic metadata");
-        app.handle_button(click(point, ControlMask));
+        press_and_release(app, point);
         expect(app.connection_subject.active && app.connection_subject.name == "Camera" &&
                    app.popup_text.empty(),
-               "Ctrl+click on a symbol must make it the subject of arrows, not open a list");
+               "A click on a symbol must make it the subject of arrows, not open a list");
         wait_for(app, [&]() {
             return !app.connection_requests.second && !app.connection_links.empty();
         });
@@ -165,7 +174,7 @@ struct ApplicationTestAccess {
         const auto use_point = point_at(app, index, usage, use_byte);
         expect(!app.definition_at_pointer(),
                "A symbol reference must not be classified as its definition");
-        app.handle_button(click(use_point, ControlMask));
+        press_and_release(app, use_point);
         wait_for(app, [&]() {
             return std::any_of(
                 app.connection_links.begin(), app.connection_links.end(),

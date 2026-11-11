@@ -38,8 +38,8 @@ struct ApplicationTestAccess {
             throw std::runtime_error(std::string("Missing source panel: ") + path);
         return *found;
     }
-    static void control_click(Application& app, const SourcePanel& source, int line,
-                              const std::string& word)
+    static void click_word(Application& app, const SourcePanel& source, int line,
+                           const std::string& word)
     {
         PangoRectangle glyph{};
         const auto byte = source.text[line].find(word);
@@ -51,11 +51,13 @@ struct ApplicationTestAccess {
         XEvent press{};
         press.type = ButtonPress;
         press.xbutton.button = Button1;
-        press.xbutton.state = ControlMask;
         press.xbutton.x = static_cast<int>(pointer.x);
         press.xbutton.y = static_cast<int>(pointer.y);
         app.mouse_position = pointer;
         app.handle_button(press);
+        press.type = ButtonRelease;
+        press.xbutton.state = Button1Mask;
+        app.handle_event(press);
     }
     static void test_marker_parts()
     {
@@ -89,9 +91,9 @@ struct ApplicationTestAccess {
         app.camera.zoom = 1;
         app.camera.center = {caller.bounds.origin.x + 200, caller.bounds.origin.y + 60};
         app.zoom_animation.cancel(app.camera);
-        control_click(app, caller, 1, "compute");
+        click_word(app, caller, 1, "compute");
         expect(app.connection_subject.active && app.connection_subject.name == "compute",
-               "Ctrl+click on a symbol must make it the subject of the arrows");
+               "A click on a symbol must make it the subject of the arrows");
         wait_for(app, [&] {
             return !app.connection_requests.first && !app.connection_requests.second &&
                    !app.connection_links.empty();
@@ -104,7 +106,7 @@ struct ApplicationTestAccess {
                "The definition must be found, on the word itself, across Unicode prefixes");
         expect(app.popup_text.empty() &&
                    std::abs(app.camera.center.x - caller.bounds.origin.x - 200) < 0.001,
-               "Ctrl+click must draw arrows where you are, not jump away or open a list");
+               "A click must draw arrows where you are, not jump away or open a list");
         app.draw();
         expect(glGetError() == GL_NO_ERROR &&
                    (!app.connection_markers.empty() || app.connection_mesh.vertices > 0),

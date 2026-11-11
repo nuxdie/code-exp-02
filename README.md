@@ -54,7 +54,7 @@ Press `/` to search file names and source text. Results update as you type; use 
 
 | Capability | What you can do |
 | --- | --- |
-| **Spatial source browsing** | Move file cards, fold blocks, fit the canvas, and arrange files with Graphviz. `Ctrl+click` a symbol to draw arrows to where it is defined (blue) and from every place that uses it (orange), project-wide. An end in view is a highlighted word; ends out of view become one marker per file on the window edge in their direction. Click a marker to fly there; `Esc` puts the arrows away. Without a language server the arrows connect other occurrences of the word. An agent editing out of view is announced on the edge the same way. |
+| **Spatial source browsing** | Move file cards, fold blocks, fit the canvas, and arrange files with Graphviz. Click a symbol to draw arrows to where it is defined (blue) and from every place that uses it (orange), project-wide. An end in view is a highlighted word; ends out of view become one marker per file on the window edge in their direction. Click a marker to fly there; `Esc` puts the arrows away. Without a language server the arrows connect other occurrences of the word. An agent editing out of view is announced on the edge the same way. |
 | **Language navigation** | Inspect documentation, definitions, references, symbols, diagnostics, and completion suggestions through `clangd` and `neocmakelsp`. |
 | **Conversations beside the code** | Open an agent conversation at the pointer. The app attaches source location, selected text, and visible-file context. Keep multiple conversation cards on the canvas. |
 | **Human intent beside the code** | A coloured bar in each file's gutter marks which of your decisions produced those lines. Hover for the decision; press `I` or click the bar to read your exact words and the agent's reasoning at the time, and to light up everything that decision touched. |
@@ -148,7 +148,7 @@ Start with **`/`** to find a file, **`F`** to see the whole canvas, and **`F1`**
 | Arrange files / hide arrows | `L` / `G` |
 | Search the project | `/`, then `↑` / `↓` and `Enter` |
 | Read symbol documentation | Hover or `K` |
-| Arrows for a symbol / put them away | `Ctrl+click` / `Esc` |
+| Arrows for a symbol / put them away | Click / `Esc` |
 | Go to definition / usages / back | `F12` / `Shift+F12` / `Alt+Left` |
 | Show symbols / collapse or expand blocks | `S` / `C` or `Shift+C` |
 | Open a contextual conversation | Right-click or `Ctrl+Shift+A` |

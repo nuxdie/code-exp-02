@@ -112,8 +112,6 @@ void Application::handle_canvas_button(const XEvent& event, Vec2 pointer, const 
         zoom_wheel(event.xbutton.button, pointer);
     } else if (event.xbutton.button == Button1 && (event.xbutton.state & Mod1Mask)) {
         select_intent_at(pointer);
-    } else if (event.xbutton.button == Button1 && (event.xbutton.state & ControlMask)) {
-        show_connections_at(pointer);
     } else if ((event.xbutton.button == Button1 || event.xbutton.button == Button2) &&
                !drag_button && view.contains(pointer)) {
         begin_drag(event, pointer, view);

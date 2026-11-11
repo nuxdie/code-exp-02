@@ -84,7 +84,9 @@ void Application::selection_click(const XEvent& event)
 {
     const Vec2 pointer{static_cast<double>(event.xbutton.x), static_cast<double>(event.xbutton.y)};
     if (text_selection.surface == TextSurface::Source) {
-        open_document_link(pointer);
+        // A click on a word asks about it; anywhere else in the text puts the arrows away.
+        if (!open_document_link(pointer))
+            show_connections_at(pointer);
     } else if (text_selection.surface == TextSurface::Popup) {
         popup_button(event, pointer, true);
     } else if (text_selection.surface == TextSurface::Chat) {
@@ -141,6 +143,9 @@ bool Application::selection_key(const XEvent& event)
     }
     if (key == XK_Escape && !text_selection.dragging) {
         selected_input().place(selected_input().cursor);
+        // The click that placed this caret also drew the arrows; one Escape undoes both.
+        if (text_selection.surface == TextSurface::Source)
+            clear_connections();
         text_selection = {};
         redraw = true;
         return true;

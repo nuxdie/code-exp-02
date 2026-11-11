@@ -35,7 +35,7 @@ void Application::show_shortcuts()
         "Wheel zoom continues while panning.\n\n"
         "## Code and navigation\n"
         "`Hover` or `K`\tdocumentation for the pointed symbol\n"
-        "`Ctrl+click`\tarrows to where a symbol is defined and used; click a marker to fly there\n"
+        "`Click`\tarrows to where a symbol is defined and used; click a marker to fly there\n"
         "`F12`\tgo to definition\n"
         "`Shift+F12`\tusages\n"
         "`Ctrl+Space`\tcompletion suggestions\n"
