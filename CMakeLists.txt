@@ -236,6 +236,8 @@ add_library(
     application_text_selection_view.cpp
     system_theme.cpp
     application_intent_margin.cpp
+    application_connection_hud.cpp
+    connection_hud.cpp
     intent_margin.cpp
     application_view.cpp
     application_events.cpp

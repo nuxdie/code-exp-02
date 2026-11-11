@@ -332,6 +332,8 @@ void Application::update_timers(Clock::time_point now)
         chat_animation_due = Clock::time_point::max();
         redraw = true;
     }
+    if (connection_focus_due <= now)
+        redraw = true;
     if (activity_animation_due <= now) {
         activity_animation_due = Clock::time_point::max();
         redraw = true;
@@ -394,7 +396,8 @@ void Application::wait_for_work(Clock::time_point next_frame)
     }
     const auto pending =
         std::min({save_due, agent_reconnect_due(), chat_animation_due, activity_animation_due,
-                  build_running ? Clock::time_point::max() : rebuild_due, binary_check_due});
+                  connection_focus_due, build_running ? Clock::time_point::max() : rebuild_due,
+                  binary_check_due});
     if (pending != Clock::time_point::max()) {
         const int delay = static_cast<int>(std::max(
             0.0,

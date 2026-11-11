@@ -65,6 +65,7 @@ void Application::draw()
     draw_headers(view);
     draw_fold_toggle();
     draw_intent_note();
+    draw_connection_markers();
     draw_walkthrough();
     draw_agent_activity();
     draw_conversation();
@@ -72,24 +73,6 @@ void Application::draw()
     draw_search();
     renderer->present();
     update_cursor();
-}
-
-void Application::draw_connections(const Viewport& view)
-{
-    const auto screen_center = view.center();
-    if (show_connections) {
-        const auto focus = connection_focus_at(mouse_position);
-        if (!(focus == connection_focus)) {
-            connection_focus = focus;
-            connections_dirty = true;
-        }
-        if (connections_dirty)
-            rebuild_connections();
-        renderer->draw(connection_mesh,
-                       {screen_center.x - camera.center.x * camera.zoom,
-                        screen_center.y - camera.center.y * camera.zoom},
-                       camera.zoom);
-    }
 }
 
 void Application::draw_files(const Viewport& view)

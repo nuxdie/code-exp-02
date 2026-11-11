@@ -149,4 +149,5 @@ void Application::draw_agent_activity()
     }
     renderer->paths(activity_mesh, paths);
     renderer->draw(activity_mesh, {0, 0}, 1);
+    draw_agent_markers();
 }

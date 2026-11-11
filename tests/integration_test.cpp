@@ -197,16 +197,32 @@ struct ApplicationTestAccess {
         app.panels[found->source].bounds.origin.x -= 75;
         app.connection_focus = {};
         app.rebuild_connections();
-        expect(app.connection_mesh.vertices == 0,
+        expect(app.connection_links.empty() && app.connection_mesh.vertices == 0,
                "With nothing under the pointer the canvas must show no arrows");
         app.connection_focus = {found->source, -1, -1};
         app.rebuild_connections();
-        const int file_arrows = app.connection_mesh.vertices;
+        const auto file_links = app.connection_links.size();
         app.connection_focus = {found->source, found->line, found->line};
         app.rebuild_connections();
-        expect(file_arrows > 0 && app.connection_mesh.vertices > 0 &&
-                   app.connection_mesh.vertices <= file_arrows,
+        expect(file_links > 0 && !app.connection_links.empty() &&
+                   app.connection_links.size() <= file_links,
                "A file shows all its links; a line within it only the links written there");
+        const auto link = app.connection_links.front();
+        app.camera.center = {link.near.x, link.near.y};
+        app.camera.zoom = 4;
+        app.zoom_animation.cancel(app.camera);
+        app.layout_connections();
+        const bool far_visible = inside({{0, 0}, {double(app.width), double(app.height)}},
+                                        app.camera.world_to_screen(link.far, app.viewport()));
+        expect(far_visible ||
+                   (!app.connection_markers.empty() &&
+                    app.connection_markers.front().text.find(link.file) != std::string::npos),
+               "A link whose far end is off screen must become a labelled marker at the edge");
+        for (const auto& marker : app.connection_markers)
+            expect(marker.bounds.origin.x >= 0 && marker.bounds.origin.y >= 0 &&
+                       marker.bounds.origin.x + marker.bounds.size.x <= app.width &&
+                       marker.bounds.origin.y + marker.bounds.size.y <= app.height,
+                   "Markers must lie wholly inside the window");
         const auto screen = app.camera.world_to_screen(panel.bounds.origin, app.viewport());
         XEvent motion{};
         motion.type = MotionNotify;

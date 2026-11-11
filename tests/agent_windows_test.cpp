@@ -610,7 +610,8 @@ struct ApplicationTestAccess {
                "The note must pan and zoom with the canvas like everything else on it");
         middle_click(app, {after.origin.x + after.size.x / 2, after.origin.y + after.size.y / 2});
         expect(margin.selected.empty() && !margin.pinned, "Middle-click must close the note");
-        app.select_intent_at(pointer);
+        app.select_intent_at(source_point(app));
+        expect(margin.pinned.has_value(), "The line must be selectable again");
         XEvent escape{};
         escape.type = KeyPress;
         escape.xkey.display = app.display;

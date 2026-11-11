@@ -1,7 +1,6 @@
 #include "application.h"
 
-namespace {
-GpuPath connection_curve(Vec2 start, Vec2 end, std::vector<Vec2> controls = {})
+GpuPath connection_curve(Vec2 start, Vec2 end, std::vector<Vec2> controls)
 {
     GpuPath path;
     path.color = {0.25f, 0.42f, 0.68f, 0.46f};
@@ -32,8 +31,6 @@ GpuPath connection_curve(Vec2 start, Vec2 end, std::vector<Vec2> controls = {})
     }
     return path;
 }
-
-} // namespace
 
 Vec2 Application::dependency_anchor(const SourcePanel& panel, int line, std::size_t byte,
                                     bool outgoing)
@@ -78,8 +75,6 @@ GpuPath Application::dependency_path(std::size_t index)
 
 namespace {
 constexpr double reading_zoom = 0.35;
-constexpr std::array<float, 4> uses_color{0.20f, 0.45f, 0.85f, 0.9f};
-constexpr std::array<float, 4> used_by_color{0.85f, 0.50f, 0.15f, 0.9f};
 
 const SymbolNode* innermost_symbol(const std::vector<SymbolNode>& nodes, int line, bool callable)
 {
@@ -121,100 +116,151 @@ Vec2 card_port(const CanvasRect& card, const CanvasRect& other)
     return {card.origin.x + (right ? card.size.x + 6 : -6),
             card.origin.y + std::min(card.size.y / 2, 240.0)};
 }
+
+std::string file_name(const std::string& path)
+{
+    return std::filesystem::path(path).filename().string();
+}
 } // namespace
 
-// Arrows answer a question about what the pointer is on; they are never all shown at once.
-Application::ConnectionFocus Application::connection_focus_at(Vec2 pointer)
+// Arrows answer a question about what the pointer is on. No answer means: keep the current one.
+std::optional<Application::ConnectionFocus> Application::connection_focus_at(Vec2 pointer)
 {
-    if (drag_button || search.active || chat_at(pointer))
-        return connection_focus;
+    if (drag_button || search.active || chat_at(pointer) || connection_marker_at(pointer))
+        return std::nullopt;
     for (std::size_t i = 0; i < header_hits.size() && i < panels.size(); ++i)
         if (CanvasWindowManager::contains(header_hits[i], pointer))
-            return {static_cast<int>(i), -1, -1};
+            return ConnectionFocus{static_cast<int>(i), -1, -1};
     const auto hit = source_line_at(pointer);
     if (!hit)
-        return {};
+        return ConnectionFocus{};
     if (camera.zoom < reading_zoom)
-        return {hit->panel, -1, -1};
+        return ConnectionFocus{hit->panel, -1, -1};
     const auto unit = enclosing_unit(panels[hit->panel], hit->line);
-    return {hit->panel, unit.first, unit.second};
+    return ConnectionFocus{hit->panel, unit.first, unit.second};
 }
 
-// One arrow per pair of files, for a whole file under the pointer.
-void Application::file_connections(std::vector<GpuPath>& paths)
+// The same destination reached several times is one link with a count.
+void Application::add_connection_link(ConnectionLink link)
+{
+    link.sites = {link.near};
+    for (auto& known : connection_links)
+        if (known.uses == link.uses && known.uri == link.uri && known.name == link.name &&
+            (!link.uses || known.line == link.line)) {
+            ++known.count;
+            known.sites.push_back(link.near);
+            return;
+        }
+    connection_links.push_back(std::move(link));
+}
+
+// One link per related file, for a whole file under the pointer.
+void Application::file_connections()
 {
     std::map<std::string, int> index;
     for (std::size_t i = 0; i < panels.size(); ++i)
         index[panels[i].uri] = static_cast<int>(i);
-    std::map<std::pair<int, int>, int> pairs;
+    const int focus = connection_focus.panel;
+    const int count = static_cast<int>(panels.size());
+    auto relate = [&](int source, int target) {
+        if (source == target || (source != focus && target != focus))
+            return;
+        const bool uses = source == focus;
+        const auto& own = panels[focus].bounds;
+        const auto& other = panels[uses ? target : source];
+        ConnectionLink link{card_port(own, other.bounds), card_port(other.bounds, own)};
+        link.file = file_name(other.path);
+        link.uri = other.uri;
+        link.uses = uses;
+        add_connection_link(std::move(link));
+    };
     for (const auto& edge : symbol_graph.connections()) {
         const auto source = index.find(edge.source.uri), target = index.find(edge.target_uri);
-        if (source != index.end() && target != index.end() && source->second != target->second)
-            ++pairs[{source->second, target->second}];
+        if (source != index.end() && target != index.end())
+            relate(source->second, target->second);
     }
-    const int count = static_cast<int>(panels.size());
     for (const auto& edge : dependencies)
-        if (edge.source >= 0 && edge.target >= 0 && edge.source < count && edge.target < count &&
-            edge.source != edge.target)
-            ++pairs[{edge.source, edge.target}];
-    const int focus = connection_focus.panel;
-    for (const auto& [pair, uses] : pairs) {
-        if (pair.first != focus && pair.second != focus)
-            continue;
-        const auto& source = panels[pair.first].bounds;
-        const auto& target = panels[pair.second].bounds;
-        auto path = connection_curve(card_port(source, target), card_port(target, source));
-        path.width = static_cast<float>(1 + std::min(3.0, std::log2(1.0 + uses) / 2));
-        path.color = pair.first == focus ? uses_color : used_by_color;
-        paths.push_back(std::move(path));
+        if (edge.source >= 0 && edge.target >= 0 && edge.source < count && edge.target < count)
+            relate(edge.source, edge.target);
+}
+
+// What a use site should be called: the function it sits in, else its line.
+std::string Application::use_site_label(const SymbolConnection& edge)
+{
+    const auto panel = std::find_if(panels.begin(), panels.end(), [&](const auto& source) {
+        return source.uri == edge.source.uri;
+    });
+    if (panel != panels.end())
+        if (const auto* symbol = innermost_symbol(panel->symbols, edge.source.line, true))
+            return symbol->name;
+    return "line " + std::to_string(edge.source.line + 1);
+}
+
+// One resolved reference, seen from the focused code.
+ConnectionLink Application::symbol_link(const SymbolConnection& edge, const GpuPath& path,
+                                        bool uses)
+{
+    ConnectionLink link{uses ? path.points.front() : path.points.back(),
+                        uses ? path.points.back() : path.points.front()};
+    link.uses = uses;
+    link.uri = uses ? edge.target_uri : edge.source.uri;
+    link.file = file_name(lsp::uri_path(link.uri));
+    link.line = uses ? edge.line : edge.source.line;
+    link.column = uses ? edge.column : 0;
+    if (!uses) {
+        link.name = use_site_label(edge);
+        return link;
     }
+    const auto& text = panels[connection_focus.panel].text[edge.source.line];
+    link.name = text.substr(edge.source.begin, edge.source.end - edge.source.begin);
+    return link;
 }
 
 // What the code under the pointer uses, and what uses it.
-void Application::unit_connections(std::vector<GpuPath>& paths)
+void Application::unit_connections()
 {
     const auto& focus = connection_focus;
     const auto& panel = panels[focus.panel];
-    auto inside = [&](const std::string& uri, int line) {
+    auto within = [&](const std::string& uri, int line) {
         return uri == panel.uri && line >= focus.first && line <= focus.last;
     };
     bool resolved = false;
     for (const auto& edge : symbol_graph.connections()) {
-        const bool uses = inside(edge.source.uri, edge.source.line);
-        const bool used = inside(edge.target_uri, edge.line);
+        const bool uses = within(edge.source.uri, edge.source.line);
+        const bool used = within(edge.target_uri, edge.line);
         resolved = resolved || edge.source.uri == panel.uri;
         if (uses == used) // unrelated, or a reference within the unit itself
             continue;
-        auto path = symbol_path(edge);
-        if (path.points.empty())
-            continue;
-        path.color = uses ? uses_color : used_by_color;
-        path.width = 1.6f;
-        paths.push_back(std::move(path));
+        const auto path = symbol_path(edge);
+        if (!path.points.empty())
+            add_connection_link(symbol_link(edge, path, uses));
     }
     // Without resolved symbols, fall back to the file-level links written on these lines.
     for (std::size_t i = 0; i < dependencies.size() && !resolved; ++i) {
         const auto& edge = dependencies[i];
         if (edge.source != focus.panel || edge.line < focus.first || edge.line > focus.last)
             continue;
-        auto path = dependency_path(i);
-        path.color = uses_color;
-        paths.push_back(std::move(path));
+        const auto path = dependency_path(i);
+        if (path.points.empty())
+            continue;
+        ConnectionLink link{path.points.front(), path.points.back()};
+        link.file = file_name(panels[edge.target].path);
+        link.uri = panels[edge.target].uri;
+        add_connection_link(std::move(link));
     }
 }
 
 void Application::rebuild_connections()
 {
-    std::vector<GpuPath> paths;
-    const auto& focus = connection_focus;
-    if (focus.panel >= static_cast<int>(panels.size()))
+    connection_links.clear();
+    if (connection_focus.panel >= static_cast<int>(panels.size()))
         connection_focus = {};
-    if (focus.panel >= 0 && focus.first >= 0)
-        unit_connections(paths);
-    else if (focus.panel >= 0)
-        file_connections(paths);
-    renderer->paths(connection_mesh, paths);
+    if (connection_focus.panel >= 0 && connection_focus.first >= 0)
+        unit_connections();
+    else if (connection_focus.panel >= 0)
+        file_connections();
     connections_dirty = false;
+    layout_connections();
 }
 
 GpuPath Application::symbol_path(const SymbolConnection& edge)

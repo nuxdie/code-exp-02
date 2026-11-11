@@ -54,7 +54,7 @@ Press `/` to search file names and source text. Results update as you type; use 
 
 | Capability | What you can do |
 | --- | --- |
-| **Spatial source browsing** | Move file cards, fold blocks, fit the canvas, and arrange files with Graphviz. Arrows appear for what the pointer is on: a function shows what it uses (blue) and what uses it (orange); a file title, or a file when zoomed out, shows the files it depends on and that depend on it. |
+| **Spatial source browsing** | Move file cards, fold blocks, fit the canvas, and arrange files with Graphviz. Arrows appear for what the pointer is on: what it uses (blue) and what uses it (orange). A target in view gets an arrow; targets out of view become one marker per file on the window edge in their direction, naming what is there. Click a marker to fly to it; point at it to see which places in the code it stands for. An agent editing out of view is announced the same way. |
 | **Language navigation** | Inspect documentation, definitions, references, symbols, diagnostics, and completion suggestions through `clangd` and `neocmakelsp`. |
 | **Conversations beside the code** | Open an agent conversation at the pointer. The app attaches source location, selected text, and visible-file context. Keep multiple conversation cards on the canvas. |
 | **Human intent beside the code** | A coloured bar in each file's gutter marks which of your decisions produced those lines. Hover for the decision; press `I` or click the bar to read your exact words and the agent's reasoning at the time, and to light up everything that decision touched. |

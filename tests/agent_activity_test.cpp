@@ -162,6 +162,26 @@ struct ApplicationTestAccess {
                "Actors, line highlights and readable labels must render and schedule frames");
         expect(app.camera.center.x == camera.center.x && app.camera.zoom == camera.zoom,
                "Activity must preserve the user's camera");
+        expect(app.agent_markers.empty(), "An agent working in view needs no edge marker");
+        app.camera.center.x += 40000;
+        app.zoom_animation.cancel(app.camera);
+        app.draw();
+        expect(app.agent_markers.size() == 1 && app.agent_markers.front().bounds.origin.x < 40 &&
+                   app.agent_markers.front().bounds.size.x > 0 &&
+                   app.agent_markers.front().line == 2,
+               "An agent editing out of sight must be announced on the edge in its direction");
+        XEvent press{};
+        press.type = ButtonPress;
+        press.xbutton.button = Button1;
+        press.xbutton.x = static_cast<int>(app.agent_markers.front().bounds.origin.x + 5);
+        press.xbutton.y = static_cast<int>(app.agent_markers.front().bounds.origin.y + 5);
+        app.handle_button(press);
+        app.zoom_animation.cancel(app.camera);
+        app.draw();
+        expect(app.agent_markers.empty(),
+               "Clicking the marker must bring the agent's work into view");
+        app.camera = camera;
+        app.zoom_animation.cancel(app.camera);
         capture(app);
         app.apply_project_change({"main.cpp", {}});
         expect(app.activity_bounds({"main.cpp", {}, {}}).has_value(),

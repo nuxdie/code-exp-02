@@ -94,8 +94,9 @@ void Application::handle_button(const XEvent& event)
         !popup_text.empty() && Viewport{popup_bounds.origin.x, popup_bounds.origin.y,
                                         popup_bounds.size.x, popup_bounds.size.y}
                                    .contains(pointer);
-    if (intent_margin_button(event, pointer) || begin_text_selection(event, pointer) ||
-        popup_button(event, pointer, in_popup) || chat_button(event, pointer))
+    if (connection_marker_button(event, pointer) || intent_margin_button(event, pointer) ||
+        begin_text_selection(event, pointer) || popup_button(event, pointer, in_popup) ||
+        chat_button(event, pointer))
         return;
     schedule_save();
     hide_popup();

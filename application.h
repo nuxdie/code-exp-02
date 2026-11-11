@@ -5,6 +5,7 @@
 #include "canvas_window.h"
 #include "chat_canvas.h"
 #include "code_walkthrough.h"
+#include "connection_hud.h"
 #include "conversation.h"
 #include "directory_picker.h"
 #include "document_view.h"
@@ -186,10 +187,32 @@ class Application {
             return panel == other.panel && first == other.first && last == other.last;
         }
     };
-    ConnectionFocus connection_focus;
-    ConnectionFocus connection_focus_at(Vec2 pointer);
-    void file_connections(std::vector<GpuPath>& paths);
-    void unit_connections(std::vector<GpuPath>& paths);
+    ConnectionFocus connection_focus, connection_candidate;
+    Clock::time_point connection_focus_due = Clock::time_point::max();
+    std::vector<ConnectionLink> connection_links;
+    std::vector<ConnectionMarker> connection_markers;
+    std::map<std::string, DocumentView> connection_labels;
+    Camera connection_camera;
+    Vec2 connection_size;
+    struct AgentMarker {
+        CanvasRect bounds;
+        std::string uri;
+        int line = 0;
+    };
+    std::vector<AgentMarker> agent_markers;
+    std::map<std::string, DocumentView> agent_marker_labels;
+    void draw_agent_markers();
+    std::optional<ConnectionFocus> connection_focus_at(Vec2 pointer);
+    void add_connection_link(ConnectionLink link);
+    std::string use_site_label(const SymbolConnection& edge);
+    ConnectionLink symbol_link(const SymbolConnection& edge, const GpuPath& path, bool uses);
+    void file_connections();
+    void unit_connections();
+    void layout_connections();
+    void draw_connection_markers();
+    void draw_marker_sites(const ConnectionMarker& marker, const std::array<float, 4>& color);
+    const ConnectionMarker* connection_marker_at(Vec2 pointer);
+    bool connection_marker_button(const XEvent& event, Vec2 pointer);
     GpuMesh connection_mesh;
     std::array<GpuMesh, 2> fold_toggle_meshes;
     GpuMesh chat_icon_mesh;
