@@ -9,6 +9,7 @@
 #include "directory_picker.h"
 #include "document_view.h"
 #include "intent_canvas.h"
+#include "intent_margin.h"
 #include "live_build.h"
 #include "math_typesetter.h"
 #include "popup_markup.h"
@@ -107,6 +108,7 @@ class Application {
     std::vector<std::unique_ptr<ChatCanvas>> chat_windows;
     std::unique_ptr<IntentCanvas> intent;
     std::unique_ptr<CodeWalkthrough> walkthrough;
+    IntentMargin intent_margin;
     int dragged_walkthrough_step = -1;
     lsp::Json intent_session = lsp::Json::object();
     std::unique_ptr<SystemTheme> system_theme;
@@ -297,6 +299,17 @@ class Application {
     void draw_intent_badges();
     bool intent_badge_button(const XEvent& event, Vec2 pointer);
     void inspect_intent(Vec2 pointer);
+    void load_intent_margin();
+    void poll_intent_margin();
+    std::optional<SourceHit> source_line_at(Vec2 screen);
+    CanvasRect intent_run_bounds(const SourcePanel& panel, const IntentRun& run);
+    void draw_intent_run(const SourcePanel& panel, const IntentRun& run);
+    void draw_intent_margin(const Viewport& view);
+    void draw_intent_note();
+    void select_intent_at(Vec2 pointer);
+    bool clear_intent_selection();
+    bool intent_margin_button(const XEvent& event, Vec2 pointer);
+    bool intent_margin_key(const XEvent& event);
     void draw_intent();
     void draw_intent_controls();
     bool intent_button(const XEvent& event, Vec2 pointer);

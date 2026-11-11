@@ -98,8 +98,9 @@ void Application::handle_button(const XEvent& event)
         !popup_text.empty() && Viewport{popup_bounds.origin.x, popup_bounds.origin.y,
                                         popup_bounds.size.x, popup_bounds.size.y}
                                    .contains(pointer);
-    if (begin_text_selection(event, pointer) || popup_button(event, pointer, in_popup) ||
-        intent_button(event, pointer) || chat_button(event, pointer))
+    if (intent_margin_button(event, pointer) || begin_text_selection(event, pointer) ||
+        popup_button(event, pointer, in_popup) || intent_button(event, pointer) ||
+        chat_button(event, pointer))
         return;
     schedule_save();
     hide_popup();
@@ -114,7 +115,7 @@ void Application::handle_canvas_button(const XEvent& event, Vec2 pointer, const 
     if (event.xbutton.button == Button4 || event.xbutton.button == Button5) {
         zoom_wheel(event.xbutton.button, pointer);
     } else if (event.xbutton.button == Button1 && (event.xbutton.state & Mod1Mask)) {
-        inspect_intent(pointer);
+        select_intent_at(pointer);
     } else if (event.xbutton.button == Button1 && (event.xbutton.state & ControlMask)) {
         if (definition_at_pointer())
             list_request = query_at_pointer("textDocument/references");
@@ -300,7 +301,7 @@ bool Application::cancel_pointer_drag(const XEvent& event)
 void Application::handle_key(const XEvent& event)
 {
     if (cancel_pointer_drag(event) || canvas_shortcut_key(event) || agent_window_key(event) ||
-        selection_key(event) || intent_key(event) || chat_key(event)) {
+        selection_key(event) || intent_key(event) || chat_key(event) || intent_margin_key(event)) {
         redraw = true;
         return;
     }
@@ -349,7 +350,7 @@ void Application::handle_key(const XEvent& event)
     }
     case XK_i:
     case XK_I:
-        inspect_intent(mouse_position);
+        select_intent_at(mouse_position);
         break;
     case XK_d:
     case XK_D:

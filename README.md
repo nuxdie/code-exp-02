@@ -57,7 +57,7 @@ Press `/` to search file names and source text. Results update as you type; use 
 | **Spatial source browsing** | Move file cards, fold blocks, fit the canvas, and arrange files with Graphviz. Arrows resolve calls, types, and cross-file data uses to definitions, with include/build dependencies as a fallback. |
 | **Language navigation** | Inspect documentation, definitions, references, symbols, diagnostics, and completion suggestions through `clangd` and `neocmakelsp`. |
 | **Conversations beside the code** | Open an agent conversation at the pointer. The app attaches source location, selected text, and visible-file context. Keep multiple conversation cards on the canvas. |
-| **Human intent and history** | Click a file's intent label for concise requests, then select one to read its explanation beside the code. Inspect line history and associate reviewed Git checkpoints with a human statement and an explicit rationale. |
+| **Human intent beside the code** | A coloured bar in each file's gutter marks which of your decisions produced those lines. Hover for the decision; press `I` or click the bar to read your exact words and the agent's reasoning at the time, and to light up everything that decision touched. |
 | **Live source updates** | Watch project files for changes. With agents enabled, the viewer can rebuild and restart itself while preserving session state. |
 | **Rich reading** | Read formatted documentation, code blocks, and LaTeX equations; select and copy text across source, conversations, and popups. The canvas follows the desktop theme. |
 
@@ -153,7 +153,7 @@ Start with **`/`** to find a file, **`F`** to see the whole canvas, and **`F1`**
 | Open a contextual conversation | Right-click or `Ctrl+Shift+A` |
 | Close a conversation, intent card, search, or popup | Middle-click it |
 | Focus the active conversation / send / insert newline | `Tab` or `Ctrl+L` / `Enter` / `Shift+Enter` |
-| Browse all intents / inspect a source line's intent | `D` / `I` or `Alt+click` |
+| Read the intent behind a line / clear | `I`, `Alt+click` or click the gutter bar / `Esc` |
 | Select / copy text | Drag / `Ctrl+C` |
 | Help / dismiss | `F1` or `?` / `Esc` |
 
@@ -186,7 +186,7 @@ The interface is built directly on X11 and OpenGL. Pango/Cairo shape text, an Op
 | Source cards, dependencies, and file watching | [`application_model.cpp`](application_model.cpp), [`source_graph.cpp`](source_graph.cpp), [`project_watch.cpp`](project_watch.cpp) |
 | Language servers and documentation | [`lsp.cpp`](lsp.cpp), [`application_language.cpp`](application_language.cpp), [`popup_markup.cpp`](popup_markup.cpp), [`math_typesetter.cpp`](math_typesetter.cpp) |
 | Agent conversations | [`conversation.cpp`](conversation.cpp), [`agent_client.cpp`](agent_client.cpp), [`tools/agent_bridge.py`](tools/agent_bridge.py) |
-| Intent and Git provenance | [`application_intent.cpp`](application_intent.cpp), [`tools/provenance_store.py`](tools/provenance_store.py), [`tools/provenance_git.py`](tools/provenance_git.py) |
+| Intent | [`tools/intents.py`](tools/intents.py), [`intent_margin.cpp`](intent_margin.cpp), [`application_intent_margin.cpp`](application_intent_margin.cpp) |
 | Build, tests, and quality policy | [`CMakeLists.txt`](CMakeLists.txt), [`tests/`](tests/), [`tools/quality.py`](tools/quality.py) |
 
 ## Development
@@ -205,7 +205,7 @@ For a test-only pass after building:
 xvfb-run -a ctest --test-dir build --output-on-failure
 ```
 
-The repository's commit hook requires an `Intent-ID` trailer linked to a recorded human decision. Changed artifacts need a matching path binding and an explicit rationale in `.canvas/decisions.json`. The intent service implements previewed checkpoints; see [`tools/provenance_store.py`](tools/provenance_store.py).
+Intent lives in `.canvas/intents.json`: distilled decisions, the verbatim turns beneath them, and the lines each turn added. Lines are matched by text, so it works in any language. `python3 tools/intents.py rebuild` re-reads Codex transcripts (`--sessions` adds folders copied from other machines); `record` captures a turn from the working tree for any other agent; `coverage` reports how much of the tree is explained.
 
 ### Credits
 

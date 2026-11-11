@@ -59,7 +59,9 @@ if(NOT CMAKE_LSP_EXECUTABLE)
 endif()
 configure_file(viewer_config.h.in viewer_config.h @ONLY)
 configure_file(tools/agent_bridge.py agent_bridge.py COPYONLY)
-foreach(provenance_file provenance.py provenance_git.py provenance_store.py)
+foreach(provenance_file provenance.py provenance_git.py provenance_store.py
+                        intents.py
+)
     configure_file("tools/${provenance_file}" "${provenance_file}" COPYONLY)
 endforeach()
 execute_process(
@@ -240,6 +242,8 @@ add_library(
     intent_document.cpp
     application_intent.cpp
     application_intent_badges.cpp
+    application_intent_margin.cpp
+    intent_margin.cpp
     application_intent_view.cpp
     application_intent_input.cpp
     application_view.cpp

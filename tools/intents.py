@@ -18,6 +18,7 @@ import json
 import os
 import re
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
 STORE = ".canvas/intents.json"
@@ -280,6 +281,45 @@ def rebuild(root, sessions):
     return store
 
 
+def working_changes(root, base):
+    """Lines added since `base`, including files Git does not track yet."""
+    changes, path = {}, None
+    for line in git(root, "diff", "--unified=0", base).splitlines():
+        if line.startswith("+++ "):
+            path = line[6:] if line.startswith("+++ b/") else None
+        elif path and line.startswith("+") and path != STORE:
+            changes.setdefault(path, []).append(line[1:])
+    for path in git(root, "ls-files", "--others", "--exclude-standard").splitlines():
+        if path == STORE:
+            continue
+        try:
+            changes[path] = (Path(root) / path).read_text().splitlines()
+        except (UnicodeDecodeError, OSError):
+            continue
+    return {path: hashes(lines) for path, lines in changes.items() if hashes(lines)}
+
+
+def record(root, said, why, intent, base, identifier):
+    """Record a turn from the working tree, for agents whose transcripts are not read here.
+
+    Recording the same id again replaces that turn, so an agent can call this after
+    every step of a long answer.
+    """
+    store = load(root)
+    if intent and intent not in {item["id"] for item in store["intents"]}:
+        raise SystemExit("Unknown intent: " + intent)
+    stamp = datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    identifier = identifier or "turn-" + hashlib.sha1((stamp + said).encode()).hexdigest()[:12]
+    turns = [turn for turn in store["turns"] if turn["id"] != identifier]
+    previous = next((turn for turn in store["turns"] if turn["id"] == identifier), {})
+    turns.append({"id": identifier, "thread": previous.get("thread"),
+                  "at": previous.get("at", stamp), "source": "transcript", "said": said,
+                  "why": why, "changes": working_changes(root, base), "intent": intent or None})
+    store["turns"] = sorted(turns, key=lambda turn: turn["at"] or "")
+    save(root, store)
+    return identifier
+
+
 def tracked_files(root):
     return [name for name in git(root, "ls-files").splitlines() if name]
 
@@ -314,6 +354,15 @@ def blame_file(lines, path, same_path, anywhere, weak):
             last = owners[index]
         elif last is not None and line.strip() and not line_hash(line):
             owners[index] = last
+    # A blank line inside one turn's code is part of it; between two turns it is a boundary.
+    index = 0
+    while index < len(lines):
+        end = index
+        while end < len(lines) and owners[end] is None and not lines[end].strip():
+            end += 1
+        if end > index and 0 < index and end < len(lines) and owners[index - 1] == owners[end]:
+            owners[index:end] = [owners[end]] * (end - index)
+        index = max(end, index + 1)
     return owners
 
 
@@ -381,7 +430,12 @@ def coverage(root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("command", choices=["rebuild", "view", "coverage", "turns"])
+    parser.add_argument("command", choices=["rebuild", "view", "coverage", "turns", "record"])
+    parser.add_argument("--said", help="record: the human's words, verbatim")
+    parser.add_argument("--why", default="", help="record: the agent's reasoning for this turn")
+    parser.add_argument("--intent", help="record: id of the intent this turn serves")
+    parser.add_argument("--base", default="HEAD", help="record: revision the turn started from")
+    parser.add_argument("--id", help="record: stable turn id; repeating it replaces the turn")
     parser.add_argument("--root", default=".")
     parser.add_argument("--sessions", action="append", default=[],
                         help="transcript folder; repeat to add folders copied from other machines")
@@ -389,6 +443,11 @@ def main():
     if options.command == "rebuild":
         rebuild(options.root, options.sessions or [os.path.expanduser("~/.codex/sessions")])
         print(json.dumps(coverage(options.root)))
+    elif options.command == "record":
+        if not options.said:
+            parser.error("record needs --said")
+        print(record(options.root, options.said, options.why, options.intent, options.base,
+                     options.id))
     elif options.command == "view":
         print(json.dumps(view(options.root), ensure_ascii=False))
     elif options.command == "coverage":

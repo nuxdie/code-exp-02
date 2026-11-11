@@ -341,6 +341,7 @@ void Application::update_timers(Clock::time_point now)
     poll_project();
     poll_agent();
     poll_intent();
+    poll_intent_margin();
     if (system_theme) {
         const auto dark = system_theme->take_change();
         if (dark) {

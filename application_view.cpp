@@ -59,11 +59,13 @@ void Application::draw()
     advance_agent_activity();
     draw_connections(view);
     draw_activity_highlights();
+    draw_intent_margin(view);
     draw_files(view);
 
     draw_headers(view);
     draw_intent_badges();
     draw_fold_toggle();
+    draw_intent_note();
     draw_walkthrough();
     draw_agent_activity();
     draw_conversation();

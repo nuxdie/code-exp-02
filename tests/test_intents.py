@@ -60,6 +60,31 @@ class IntentStoreTest(unittest.TestCase):
         exact = turn("exact", changes={"m.cpp": intents.hashes([known])})
         self.assertEqual(self.owners("m.cpp", [blob, exact]), [1, 1, 1, 1, 1, None, None])
 
+    def test_blank_lines_inside_one_turn_do_not_split_it(self):
+        first, second, other = "alpha_value = compute(1)", "beta_value = compute(2)", "gamma = 3333"
+        self.write("b.py", first + "\n\n" + second + "\n\n" + other + "\n")
+        one = turn("one", changes={"b.py": intents.hashes([first, second])})
+        two = turn("two", changes={"b.py": intents.hashes([other])})
+        self.assertEqual(self.owners("b.py", [one, two]), [0, 0, 0, None, 1])
+
+    def test_recording_a_turn_claims_the_working_tree_changes(self):
+        self.write("kept.py", "already_here = compute_everything()\n")
+        subprocess.run(["git", "-C", str(self.root), "-c", "user.name=t", "-c", "user.email=t@t",
+                        "commit", "-qm", "base"], check=True)
+        (self.root / "kept.py").write_text(
+            "already_here = compute_everything()\nadded_later = compute_more()\n")
+        (self.root / "new.py").write_text("brand_new_value = compute_fresh()\n")
+        intents.save(self.root, {"version": 2, "intents": [{"id": "grow", "statement": "Grow."}],
+                                 "commits": {}, "turns": []})
+        intents.record(self.root, "make it grow", "Added two values.", "grow", "HEAD", "t1")
+        intents.record(self.root, "make it grow", "Added two values.", "grow", "HEAD", "t1")
+        store = intents.load(self.root)
+        self.assertEqual(len(store["turns"]), 1)
+        owners = intents.blame(self.root, store)
+        self.assertEqual(owners["kept.py"], [None, 0])
+        self.assertNotIn("new.py", owners)  # untracked files appear once Git tracks them
+        self.assertEqual(sorted(store["turns"][0]["changes"]), ["kept.py", "new.py"])
+
     def test_canvas_context_is_where_not_what_was_said(self):
         context = json.dumps({"path": "camera.h", "line": 42, "workspace": "/x"})
         said, where = intents.human_text([

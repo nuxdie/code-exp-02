@@ -110,6 +110,7 @@ void Application::poll_project()
     for (const auto& change : changes)
         apply_project_change(change);
     refresh_symbol_sources(changes);
+    load_intent_margin();
     auto index_for = [&](const std::string& path) {
         const auto found = std::find_if(panels.begin(), panels.end(),
                                         [&](const auto& panel) { return panel.path == path; });

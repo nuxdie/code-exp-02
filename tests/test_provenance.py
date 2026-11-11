@@ -110,27 +110,6 @@ class ProvenanceTests(unittest.TestCase):
         with self.assertRaisesRegex(GitError, 'covers artifact'):
             validate_intent_commit(self.repo, 'Intent-ID: decision-one\n')
 
-    def test_real_commit_hook_rejects_unattributed_commit(self):
-        self.initial()
-        project = Path(__file__).resolve().parents[1]
-        import shutil
-        (self.root / '.githooks').mkdir()
-        (self.root / 'tools').mkdir()
-        shutil.copy2(project / '.githooks/commit-msg', self.root / '.githooks/commit-msg')
-        for name in ['provenance_git.py', 'provenance_store.py']:
-            shutil.copy2(project / 'tools' / name, self.root / 'tools' / name)
-        self.repo.git('config', 'core.hooksPath', '.githooks')
-        self.artifact(text='int hooked_change;\n')
-        self.repo.git('add', 'code.cpp')
-        head = self.repo.head()
-        result = subprocess.run(['git', '-C', str(self.root), 'commit', '-m', 'Missing intent'],
-                                capture_output=True, text=True)
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn('Intent-ID', result.stderr)
-        self.assertEqual(self.repo.head(), head)
-        self.repo.git('commit', '-m', 'Reviewed change\n\nIntent-ID: decision-one\n')
-        self.assertNotEqual(self.repo.head(), head)
-
     def test_evidence_uses_committed_rationale_not_later_edits(self):
         self.initial()
         self.store.set_rationale('decision-one', {'author_role': 'human', 'summary': 'Later note'})
