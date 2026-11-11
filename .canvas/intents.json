@@ -3192,6 +3192,19 @@
     "tests/integration_test.cpp": "8392e14 9f332a9 83bcab4 0c6c17c 221e44a 1d8bccf f46f02a 5a8433d 70d16e4 47b586f 7c2273e 77df0d2 76c9960 4c96ba0 30ef59f",
     "tests/live_canvas_test.cpp": "388cfc1 11b1b57 5a6565a 8989317 e387db4 9762cb8 3e073c3 c7debe7 d442834 304241f 80efd11 2ba7646 faa3453 3c3518c dd43f1d b9a5b5f d3ba4ac de413be dd16080 c6d0564 1a2762f a3ed6f5 3640b4a f42825c fef9007 0bb286e a2ff0bf 9e47b4b 04169dc 12b7f3c b6e6df2 8857ecb ced1f56 c16e5a0 c8dd53e f418a6e 9eb31cd 53afefc 2ef8d60 b843469 004b4fe 31837b1 69f2c8c 82afeee 77df0d2 7dd3ab4 f737cc2 7f01d04 c02994f c273b10 6bafcb2 9a23cd2 76b799f 4772847 9ef0344 ac2ed22 7b1b73f 2fbc76b"
    }
+  },
+  {
+   "id": "claude-2026-11-11-marker-names",
+   "at": "2026-11-11T22:18:27.436Z",
+   "source": "transcript",
+   "said": "can we do beter than \"line 222, line257...\" in markers?",
+   "why": "A usage is now named after the function it sits in. When the language server has not outlined the file yet, the name is read from the text: the nearest less indented line above that declares something, which works for C++, Python, Rust and other block languages. Repeats collapse into a count. A line number remains only for uses at the top level of a file.",
+   "intent": "useful-legible-contextual",
+   "changes": {
+    "application_connections.cpp": "7556a53 0041d06 0400def 74cc7b0 993e211 e1eafdc dd46879 e8fbf9b 77e3b63",
+    "structure.h": "10cd363 265e309 d5f17ff bbb14e0 9d41b19 db2eeaf 54d52e8 c5b1942 533c31b c31abbb 3a8a54a 16371b8 5183182 a2cd7f9 6cf5d6f 3732ab7 626774c 7807ca6 8adf98d c9f1cce 046e5c4 ea77978 955fc32 35b8f2e f8e0e8d 263d918 e3e6d7d 6a39756 47ce524 f28de63 06c72ad a6468ce cd9f413 b2fba99 9874b6b a647da4 e90b89e 8e7ae08 94db67b 96c6825 a72b3db 3e28a68 5b7a669 79ccce2 5034d4b 426929a 5e579ce c7cdf2e c1920c8 7af9147 aafef4f a97da75 a704b2e f45d499 73e7ff4 f898c96 a29309d 3b7356c a37dcf1 c96c6d5 fb7c25e 2ee04e5 546a35f 335b483 d8577ba 2d57361 1b7cd7e",
+    "tests/structure_test.cpp": "e5673ce 81469ff eb14d0b f89d61d 5313c2a f4c9bff 339683b 024fc98 5bee9bd ecdec3c 5bd0254 a7fb0c6 28abe58 0a18d4b 3ccdcb6 b53de5b deaeaec b54c2ff fc42ae7 45485b1 c05ce1f 9c4790b f18bcb6 d9f2949"
+   }
   }
  ]
 }

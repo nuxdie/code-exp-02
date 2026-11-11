@@ -72,6 +72,16 @@ const SymbolNode* enclosing_function(const std::vector<SymbolNode>& nodes, int l
     return nullptr;
 }
 
+// What to call a place that uses the subject: the function it sits in, from the language
+// server when it has outlined the file, else read from the text, else the line number.
+std::string use_name(const SourcePanel& panel, int line)
+{
+    if (const auto* function = enclosing_function(panel.symbols, line))
+        return function->name.substr(function->name.rfind(':') + 1);
+    const auto name = enclosing_name(panel.text, line);
+    return name.empty() ? "line " + std::to_string(line + 1) : name;
+}
+
 std::string file_name(const std::string& path)
 {
     return std::filesystem::path(path).filename().string();
@@ -142,7 +152,7 @@ void Application::text_connections()
                 if (word_at(panel.text[line], at) != std::pair{at, at + name.size()})
                     continue;
                 add_connection_link({{panel.uri, static_cast<int>(line), at, at + name.size()},
-                                     "line " + std::to_string(line + 1),
+                                     use_name(panel, static_cast<int>(line)),
                                      file_name(panel.path),
                                      false});
             }
@@ -171,11 +181,8 @@ bool Application::receive_connections(const lsp::Message& message)
         const auto& text = panel->text[line];
         const auto word =
             word_at(text, lsp::utf16_to_byte(text, range["start"].value("character", 0)));
-        const auto* function = defines ? nullptr : enclosing_function(panel->symbols, line);
         add_connection_link({{uri, line, word.first, std::max(word.second, word.first + 1)},
-                             defines    ? connection_subject.name
-                             : function ? function->name
-                                        : "line " + std::to_string(line + 1),
+                             defines ? connection_subject.name : use_name(*panel, line),
                              file_name(panel->path),
                              defines});
     }

@@ -28,10 +28,38 @@ void check_folder_layout()
                    "Refining the folder layout must keep cards separate");
 }
 
+void check_enclosing_names()
+{
+    const std::vector<std::string> cpp{"void Application::draw_chat(double y)",
+                                       "{",
+                                       "    if (ready) {",
+                                       "        // note",
+                                       "        renderer->draw(mesh);",
+                                       "    }",
+                                       "}",
+                                       "int total = compute();"};
+    expect(enclosing_name(cpp, 4) == "draw_chat",
+           "A use inside a block must be named after its function, not the if around it");
+    expect(enclosing_name(cpp, 7).empty(), "A top-level line sits in nothing");
+    const std::vector<std::string> python{"class Store:", "    def save(self, root):",
+                                          "        for turn in turns:", "            write(turn)"};
+    expect(enclosing_name(python, 3) == "save" && enclosing_name(python, 1) == "Store",
+           "Indentation alone must be enough to name a Python method and its class");
+    const std::vector<std::string> rust{"impl Camera {", "    fn zoom_at(&mut self, f: f64) {",
+                                        "        self.zoom *= f;", "    }", "}"};
+    expect(enclosing_name(rust, 2) == "zoom_at", "A Rust method must be named");
+    const std::vector<std::string> test{"    static void test_scroll(Application& app)", "    {",
+                                        "        expect(app.scroll(3),",
+                                        "               \"must scroll\");", "    }"};
+    expect(enclosing_name(test, 3) == "test_scroll",
+           "A continued statement must still be named after its function");
+}
+
 int main()
 {
     try {
         check_folder_layout();
+        check_enclosing_names();
         std::vector<FoldBlock> folds{{1, 8, true}, {3, 5, true}, {10, 13, false}};
         const auto view = fold_view(15, folds);
         expect(view.source_lines == std::vector<int>({0, 1, 9, 10, 11, 12, 13, 14}),
