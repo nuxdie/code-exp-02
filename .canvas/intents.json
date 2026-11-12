@@ -3292,6 +3292,25 @@
     "tests/agent_windows_test.cpp": "6867827 4be77d1 8aeefaf da55585 fef9007 326126a 9181150 cad85e9 d442834 bd97d01 77df0d2 5c0d9b4 878931d f60a72b 5f7b778 cfb1ea5 a1213e5 027807d cafb089 27978b0 f21f86e cabd1cb ca7afa8 ac5f657 1101f87 bbcd13a",
     "tests/structure_test.cpp": "c3b6a8e 49a76af e67996b ed7dc8a 3344af6 9726a81 41a6f92 5a6dd6d eb14d0b ddf299d 3c4f1f5 7998749 9681c8f 339683b 9b06a25 20533b5 ce8a324 8fdac5d a9a0a07 3ac2d4c 54f7670 3df6be4 10c1b4f 816d2f8 032436e a981f02 9b80ac6 839f19c 63c3923 b5c0682 51ed507 81f8230 10e3333 f8adcaf 338c082 07b91d9 505c615 a73e88b 8117e17 53a05ca 97fa266 8157c85 1ad76d9 c367010 a13ce7a 8688559 0d71674 bbb2302 179cdbd"
    }
+  },
+  {
+   "id": "claude-2026-11-12-prose",
+   "at": "2026-11-12T00:25:53.253Z",
+   "source": "transcript",
+   "said": "work on 1 and 6",
+   "why": "Comments and documents are words meant to be read, but they were shown as raw comment syntax in the code face. They are now set as prose in place, one source line per row so selection and navigation are unchanged.",
+   "intent": "useful-legible-contextual",
+   "changes": {
+    "README.md": "47b1c2f",
+    "application.h": "3861de5 9771b2d",
+    "application_model.cpp": "7711656 2623930 ade26e9 7f21c34",
+    "application_overview.cpp": "3a7eed7",
+    "application_view.cpp": "715f3c3 3dc8a0b a00c4b2 0d7b1c4 327c7a4 200ca34 9e00de2 c7561e9 6e6f065 666b20c d67cac1 d63ead2 414df98 8ed8527 96e5f36 c1e18f6 f4fdbbf a4ceca0 828ae93 e350d41 cd513fa 2388e98 db2eeaf 80d6b79 28bc0b0 93c7983 7f9ef24 57dac4b 1ef7789 92b2365 f8ce7bd",
+    "source_graph.cpp": "c664ad9 0813285 4c46715 1f68831 21fd01e 24181e2 b2ee8a5 71d1498 45f40e4 204350b c112bb3 ae9b46c f464986 87c36c1",
+    "syntax.cpp": "4056325 a0d83f8 0106769 0a6c401 1173a46 9110534 322236d 6a31bad 442e24e 965c1df d4c16af b637057 1471ffb 29c1642 0fefa14 715f3c3 00499a8 b0c0ee5 f1248a9 42d82a0 8592ab1 7703c86 e143c7c a0a6980 90e7209 ae4628f f7d0099 f4b9127 091d122 0acd450 ff1c357 5478dd8 eee5e94 3bbc53c 1cfaf74 3e0f43c 8adf98d 3496a0f 82745ed 8441259 db2eeaf f2e7cb7 6ed846a 6e000d3 0034e5d a2b203d 2e00fc4 289dc2a ed78d3a 7065c4e feb2ffb cb160ae 1aca3c3 df9c588 622a6d1 62926b4 7f9ef24 38bb538 2292f96 ad46b2a 19d38b9 e0241fd 24a4ccf bb77eb1 4408acc ed3eb0a 8bdf0cd ad769d5 56b0c38 33615c3 ca66279 a693176",
+    "syntax.h": "c41c65b cdd07c4 a6fd19d db9a689 56783bf db98f01 2a1382d 4403bae b196e02 03e985f 721c840 453ec7f 3715248 df22b54 a320ce3 1fdd125 8043930 ea0aa7d",
+    "tests/syntax_test.cpp": "60b3d2c 7143a84 75df2fc 6e90838 6d2d3d2 894ced0 0c872a7 2fa1340 7b9c004 727f187 0db6253 a8f4b78 706f5e5 c6a6a01 8995bb9 1fb0047 f21dd81 06ec1be 01fdc02 8d8bac1 6fefdc7 b8be746 c7b896e 8731bd8 bb9546d 59e39fc c8c2f97 a3d2485 e1f180b 130c100 15b673c 9b03e6d 5b13021 c3eee83 d33862a ae712c5 d056388 ce5ed34 357f10c 41eae29 bb884eb 7df0aa4 2b43204 0149c5e 5a471f9 bc7f5ad"
+   }
   }
  ]
 }
