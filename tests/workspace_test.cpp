@@ -65,8 +65,6 @@ struct ApplicationTestAccess {
             expect(app.panels.front().path == file &&
                        app.panels.front().uri == lsp::file_uri((root / file).string()),
                    "Source cards and navigation must point into the selected project");
-            expect(std::filesystem::exists(build / "source-graph.dot"),
-                   "Graph layout must be generated inside the selected project");
         }
         expect(app.agent_context({0, 0}).at("workspace") == app.workspace_root,
                "Agent context must describe the selected workspace");

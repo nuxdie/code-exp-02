@@ -20,7 +20,6 @@ struct Dependency {
 };
 struct GraphLayout {
     std::vector<CanvasRect> files;
-    std::vector<std::vector<Vec2>> routes;
     Vec2 size;
 };
 
@@ -31,6 +30,3 @@ std::vector<Dependency> scan_dependencies(const std::vector<GraphFile>& files,
 GraphLayout folder_layout(const std::vector<GraphFile>& files,
                           const std::vector<Dependency>& edges);
 std::vector<Dependency> file_dependencies(const std::vector<GraphFile>& files);
-std::string graph_dot(const std::vector<GraphFile>& files, const std::vector<Dependency>& edges);
-GraphLayout graph_layout(const std::vector<GraphFile>& files, const std::vector<Dependency>& edges,
-                         const std::string& directory);

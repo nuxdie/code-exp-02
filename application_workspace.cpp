@@ -86,9 +86,6 @@ void Application::advance_workspace_load()
                 WorkspaceLayout result;
                 result.dependencies = complete ? std::move(edges) : file_dependencies(files);
                 result.graph = folder_layout(files, result.dependencies);
-                if (!files.empty())
-                    std::ofstream(build + "/source-graph.dot")
-                        << graph_dot(files, result.dependencies);
                 result.watcher = std::make_unique<ProjectWatcher>(root, std::move(snapshot));
                 return result;
             });

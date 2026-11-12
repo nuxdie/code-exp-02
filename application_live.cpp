@@ -150,8 +150,6 @@ void Application::refresh_project_geometry(bool settle)
     }
     dependencies = file_dependencies(files);
     connections_dirty = true;
-    if (settle)
-        graph.routes.clear();
     graph.files.clear();
     for (const auto& panel : panels)
         graph.files.push_back(panel.bounds);
@@ -162,6 +160,5 @@ void Application::refresh_project_geometry(bool settle)
         if (card->visible)
             bounds.push_back(card->bounds);
     content_size = canvas_size(bounds);
-    std::ofstream(workspace_build + "/source-graph.dot") << graph_dot(files, dependencies);
     connections_dirty = true;
 }

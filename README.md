@@ -54,7 +54,7 @@ Press `/` to search file names and source text. Results update as you type; use 
 
 | Capability | What you can do |
 | --- | --- |
-| **Spatial source browsing** | Move file cards, fold blocks, fit the canvas, and arrange files with Graphviz. Click a symbol to draw arrows to where it is defined (blue) and from every place that uses it (orange), project-wide. An end in view is a highlighted word; ends out of view become one marker per file on the window edge in their direction. Click a marker to fly there; `Esc` puts the arrows away. Without a language server the arrows connect other occurrences of the word. An agent editing out of view is announced on the edge the same way. |
+| **Spatial source browsing** | Move file cards, fold blocks, fit the canvas, and arrange files by folder. Click a symbol to draw arrows to where it is defined (blue) and from every place that uses it (orange), project-wide. An end in view is a highlighted word; ends out of view become one marker per file on the window edge in their direction. Click a marker to fly there; `Esc` puts the arrows away. Without a language server the arrows connect other occurrences of the word. An agent editing out of view is announced on the edge the same way. |
 | **Language navigation** | Inspect documentation, definitions, references, symbols, diagnostics, and completion suggestions through `clangd` and `neocmakelsp`. |
 | **Conversations beside the code** | Open an agent conversation at the pointer. The app attaches source location, selected text, and visible-file context. Keep multiple conversation cards on the canvas. |
 | **Human intent beside the code** | A coloured bar in each file's gutter marks which of your decisions produced those lines. Hover for the decision; press `I` or click the bar to read your exact words and the agent's reasoning at the time, and to light up everything that decision touched. |
@@ -82,7 +82,7 @@ sudo apt-get install -y \
   cmake cmake-format g++ pkg-config python3 python3-websockets \
   clang-format-18 clang-tidy-18 clangd-18 \
   libx11-dev libpango1.0-dev libfontconfig1-dev librsvg2-dev \
-  libepoxy-dev nlohmann-json3-dev graphviz \
+  libepoxy-dev nlohmann-json3-dev \
   texlive-latex-base dvisvgm \
   xvfb xauth libgl1-mesa-dri libglx-mesa0 zenity
 ```
@@ -114,7 +114,7 @@ Press **Ctrl+O** to choose a project directory in a native folder picker (provid
 
 Bundled fonts and icons are copied into `build/`; keep them beside the executable. Each project keeps its own session and decisions. Automatic viewer rebuilds run only when browsing the viewer's own source tree.
 
-> CMake configuration automatically formats the project's C++ and CMake files. Formatting tools, Python `websockets`, Graphviz, and the LaTeX tools are configure-time requirements.
+> CMake configuration automatically formats the project's C++ and CMake files. Formatting tools, Python `websockets` and the LaTeX tools are configure-time requirements.
 
 ### Agent conversations
 
@@ -178,7 +178,7 @@ Session state normally lives in `.cache/canvas-session.json` and preserves the c
 
 ## Under the hood
 
-The interface is built directly on X11 and OpenGL. Pango/Cairo shape text, an OpenGL renderer draws the canvas, and the startup layout groups files by folder and refines their positions as dependencies are discovered. Graphviz handles explicit graph relayouts. Language servers and the agent bridge communicate asynchronously with the application.
+The interface is built directly on X11 and OpenGL. Pango/Cairo shape text, an OpenGL renderer draws the canvas, and files are laid out by folder, each folder a region of the canvas, and stay where they are until you arrange them again. Language servers and the agent bridge communicate asynchronously with the application.
 
 | Area | Start reading here |
 | --- | --- |

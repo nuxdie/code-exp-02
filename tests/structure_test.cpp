@@ -22,6 +22,12 @@ void check_folder_layout()
     expect(initial.files[0].origin.x != refined.files[0].origin.x ||
                initial.files[0].origin.y != refined.files[0].origin.y,
            "New dependencies must influence the placement of folders");
+    std::vector<GraphFile> many;
+    for (int i = 0; i < 60; ++i)
+        many.push_back({"file" + std::to_string(i) + ".cpp", "", {700, 3000}});
+    const auto wide = folder_layout(many, {});
+    expect(wide.size.x > wide.size.y && wide.size.x < 3 * wide.size.y,
+           "A folder of many files must be shaped like a window, not a tall strip");
     for (std::size_t i = 0; i < refined.files.size(); ++i)
         for (std::size_t j = i + 1; j < refined.files.size(); ++j)
             expect(!refined.files[i].intersects(refined.files[j]),
@@ -105,17 +111,6 @@ int main()
                "Include endpoints must retain the actual reference line and byte position");
         expect(edges[2].build && edges[3].build && edges[2].byte == 33 && edges[3].byte == 27,
                "Build dependencies on one line must have distinct filename endpoints");
-        const auto directory = std::filesystem::temp_directory_path() /
-                               ("source-graph-test-" + std::to_string(getpid()));
-        std::filesystem::create_directories(directory);
-        const auto graph = graph_layout(files, edges, directory.string());
-        expect(graph.files.size() == files.size() && graph.routes.size() == edges.size(),
-               "Graphviz must place every file and route every dependency");
-        for (std::size_t i = 0; i < graph.files.size(); ++i)
-            for (std::size_t j = i + 1; j < graph.files.size(); ++j)
-                expect(!graph.files[i].intersects(graph.files[j]),
-                       "Force-directed layout must avoid overlapping files");
-        std::filesystem::remove_all(directory);
         std::cout << "Graph layout, dependency, folding and symbol hierarchy checks passed.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';

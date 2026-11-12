@@ -308,7 +308,7 @@ class Application {
     void prepare_workspace_preview(std::vector<ProjectFile> files);
     void draw_workspace_preview(const Viewport& view);
     void finish_workspace_load();
-    void restore_file_layouts(const lsp::Json& files);
+    void restore_file_layouts(const lsp::Json& files, bool placed);
     void open_directory_picker();
     void poll_directory_picker();
     void initialize_cmake();
@@ -457,9 +457,7 @@ class Application {
     void load_image_panel(SourcePanel& panel, ImagePreview preview, int title_width);
     void update_image_geometry(SourcePanel& panel, int title_width);
     void relayout();
-    static GraphLayout layout_files(const std::vector<GraphFile>& files,
-                                    const std::vector<Dependency>& edges,
-                                    const std::string& directory);
+    void resize_in_place(const SourcePanel& panel, double old_height);
     void apply_graph_layout();
     void poll_project();
     void release_panel(SourcePanel& panel);

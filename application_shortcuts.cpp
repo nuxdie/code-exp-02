@@ -27,7 +27,7 @@ void Application::show_shortcuts()
         "`Home / End`\ttop / bottom of the canvas\n"
         "`0`\treset camera\n"
         "`F / W`\tfit everything / fit width\n"
-        "`L`\tarrange files with Graphviz\n"
+        "`L`\tarrange files by folder\n"
         "`G`\thide or show arrows\n"
         "Drag blank space or middle-drag on source or blank canvas to pan.\n"
         "Middle-click a conversation, note, search or popup to close it.\n"

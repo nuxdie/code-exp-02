@@ -60,9 +60,11 @@ void Application::load_session()
             load_agent_window(*card, saved);
             chat_windows.push_back(std::move(card));
         }
-        restore_file_layouts(state.value("files", lsp::Json::object()));
+        // Positions saved under an older arrangement would scatter the folders again.
+        const bool placed = state.value("layout", "") == "folders";
+        restore_file_layouts(state.value("files", lsp::Json::object()), placed);
         const auto view = state.value("camera", lsp::Json::object());
-        if (view.contains("zoom")) {
+        if (placed && view.contains("zoom")) {
             camera.center = {view.at("x"), view.at("y")};
             camera.zoom = std::clamp(view.value("zoom", 1.0), Camera::min_zoom, Camera::max_zoom);
             zoom_animation.cancel(camera);
@@ -88,13 +90,14 @@ void Application::load_session()
         // A partially written or older view-state file must never prevent opening the project.
     }
 }
-void Application::restore_file_layouts(const lsp::Json& files)
+void Application::restore_file_layouts(const lsp::Json& files, bool placed)
 {
     for (auto& panel : panels) {
         const auto saved = files.value(panel.path, lsp::Json::object());
         if (!saved.contains("x"))
             continue;
-        panel.bounds.origin = {saved.at("x"), saved.at("y")};
+        if (placed)
+            panel.bounds.origin = {saved.at("x"), saved.at("y")};
         const auto folds = saved.value("folds", lsp::Json::object());
         bool changed = false;
         for (auto& fold : panel.folds) {
@@ -107,6 +110,8 @@ void Application::restore_file_layouts(const lsp::Json& files)
         if (changed)
             update_mesh(panel);
     }
+    if (!placed)
+        relayout();
 }
 
 void Application::save_session()
@@ -145,6 +150,7 @@ void Application::save_session()
          {"camera", {{"x", camera.center.x}, {"y", camera.center.y}, {"zoom", camera.zoom}}},
          {"cameraHistory", save_navigation()},
          {"window", {{"x", x}, {"y", y}, {"width", width}, {"height", height}}},
+         {"layout", "folders"},
          {"files", files}});
     const auto path = session_path(workspace_root);
     std::error_code error;

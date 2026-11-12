@@ -107,31 +107,28 @@ void Application::update_mesh(SourcePanel& panel)
         renderer->upload(panel.header_mesh, {{panel.title, {32, 0}}}, images);
 }
 
+// Files gather by folder, so a folder is a region of the canvas with a name.
 void Application::relayout()
 {
     std::vector<GraphFile> files;
     for (const auto& panel : panels)
         files.push_back({panel.path, panel.source, panel.bounds.size});
     dependencies = file_dependencies(files);
-    graph = layout_files(files, dependencies, workspace_build);
+    graph = folder_layout(files, dependencies);
     apply_graph_layout();
 }
 
-GraphLayout Application::layout_files(const std::vector<GraphFile>& files,
-                                      const std::vector<Dependency>& edges,
-                                      const std::string& directory)
+// A file that grew or shrank moves only what sits beneath it; the rest of the canvas stays
+// where it was.
+void Application::resize_in_place(const SourcePanel& panel, double old_height)
 {
-    try {
-        return graph_layout(files, edges, directory);
-    } catch (const std::exception& error) {
-        std::cerr << error.what() << '\n';
-    }
-    std::vector<Vec2> sizes;
-    for (const auto& file : files)
-        sizes.push_back(file.size);
-    auto bounds = arrange_files(sizes);
-    const auto size = canvas_size(bounds);
-    return {std::move(bounds), {}, size};
+    const double delta = panel.bounds.size.y - old_height;
+    const double left = panel.bounds.origin.x, right = left + panel.bounds.size.x;
+    for (auto& other : panels)
+        if (&other != &panel && other.bounds.origin.y >= panel.bounds.origin.y + old_height &&
+            other.bounds.origin.x < right && other.bounds.origin.x + other.bounds.size.x > left)
+            other.bounds.origin.y += delta;
+    refresh_project_geometry(false);
 }
 
 void Application::apply_graph_layout()
@@ -317,10 +314,10 @@ bool Application::jump_to(const lsp::Json& location)
     if (line < 0 || line >= static_cast<int>(found->lines.size()))
         return false;
     remember_view();
+    const double old_height = found->bounds.size.y;
     if (reveal_line(line, found->folds)) {
         update_mesh(*found);
-        relayout();
-        connections_dirty = true;
+        resize_in_place(*found, old_height);
     }
     const auto byte = lsp::utf16_to_byte(found->text[line], range["start"].value("character", 0));
     PangoRectangle position{};
@@ -345,11 +342,9 @@ void Application::toggle_fold(int index, int source)
     if (found == panel.folds.end())
         return;
     found->collapsed = !found->collapsed;
-    const auto old = panel.bounds.origin;
+    const double old_height = panel.bounds.size.y;
     update_mesh(panel);
-    relayout();
-    camera.center.x += panel.bounds.origin.x - old.x;
-    camera.center.y += panel.bounds.origin.y - old.y;
+    resize_in_place(panel, old_height);
     connections_dirty = true;
     redraw = true;
 }

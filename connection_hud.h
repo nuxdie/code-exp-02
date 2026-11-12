@@ -47,7 +47,7 @@ struct ConnectionMarker {
     std::vector<MarkerPart> parts;
 };
 
-GpuPath connection_curve(Vec2 start, Vec2 end, std::vector<Vec2> controls = {});
+GpuPath connection_curve(Vec2 start, Vec2 end);
 
 bool inside(const CanvasRect& view, Vec2 point);
 Vec2 center(const CanvasRect& box);

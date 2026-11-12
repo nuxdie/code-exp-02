@@ -2,25 +2,12 @@
 
 #include <set>
 
-GpuPath connection_curve(Vec2 start, Vec2 end, std::vector<Vec2> controls)
+GpuPath connection_curve(Vec2 start, Vec2 end)
 {
     GpuPath path;
     path.color = {0.25f, 0.42f, 0.68f, 0.46f};
     path.width = 1.3f;
-    if (controls.size() < 4)
-        controls = {start, {start.x + 48, start.y}, {end.x - 48, end.y}, end};
-    else {
-        // Retain Graphviz's route, adjusting it to the live text positions at both ends.
-        const Vec2 a{start.x - controls.front().x, start.y - controls.front().y};
-        const Vec2 b{end.x - controls.back().x, end.y - controls.back().y};
-        for (std::size_t i = 0; i < controls.size(); ++i) {
-            const double t = static_cast<double>(i) / (controls.size() - 1);
-            controls[i].x += a.x * (1 - t) + b.x * t;
-            controls[i].y += a.y * (1 - t) + b.y * t;
-        }
-        controls.front() = start;
-        controls.back() = end;
-    }
+    const std::vector<Vec2> controls{start, {start.x + 48, start.y}, {end.x - 48, end.y}, end};
     for (std::size_t i = 0; i + 3 < controls.size(); i += 3) {
         for (int sample = 0; sample <= 16; ++sample) {
             const double t = sample / 16.0, s = 1 - t;

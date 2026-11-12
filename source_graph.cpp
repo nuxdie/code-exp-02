@@ -1,19 +1,11 @@
 #include "source_graph.h"
 
-#include <nlohmann/json.hpp>
-
+#include <cmath>
 #include <filesystem>
-#include <fstream>
 #include <map>
 #include <numeric>
 #include <set>
-#include <spawn.h>
 #include <sstream>
-#include <stdexcept>
-#include <sys/wait.h>
-#include <unistd.h>
-
-extern char** environ;
 
 namespace {
 std::string include_name(const std::string& line, bool& comment)
@@ -136,6 +128,27 @@ std::vector<double> relax_order(std::vector<double> rank, const std::vector<Depe
 }
 } // namespace
 
+namespace {
+constexpr double folder_gap = 480;
+
+// The number of columns that shapes the block most like a window, so a fitted view uses the
+// screen instead of a strip of it.
+int window_columns(const std::vector<Vec2>& sizes, double gap)
+{
+    int best = 1;
+    double error = 1e9;
+    for (int columns = 1; columns <= static_cast<int>(sizes.size()); ++columns) {
+        const auto size = canvas_size(arrange_files(sizes, columns, gap));
+        const double off = std::abs(std::log(size.x / std::max(1.0, size.y) / 1.7));
+        if (off < error) {
+            error = off;
+            best = columns;
+        }
+    }
+    return best;
+}
+} // namespace
+
 GraphLayout folder_layout(const std::vector<GraphFile>& files, const std::vector<Dependency>& edges)
 {
     std::map<std::filesystem::path, std::vector<std::size_t>> folders;
@@ -183,101 +196,34 @@ GraphLayout folder_layout(const std::vector<GraphFile>& files, const std::vector
         std::vector<Vec2> sizes;
         for (const auto index : members)
             sizes.push_back(files[index].size);
-        const auto packed = arrange_files(sizes);
+        // Unusually wide files go last, so they share columns instead of widening everyone's.
+        auto widths = sizes;
+        std::nth_element(widths.begin(), widths.begin() + widths.size() / 2, widths.end(),
+                         [](Vec2 a, Vec2 b) { return a.x < b.x; });
+        const double wide = 1.8 * widths[widths.size() / 2].x;
+        std::stable_partition(members.begin(), members.end(),
+                              [&](auto index) { return files[index].size.x <= wide; });
+        std::vector<Vec2> usual, broad;
+        for (const auto index : members)
+            (files[index].size.x <= wide ? usual : broad).push_back(files[index].size);
+        auto packed = arrange_files(usual, window_columns(usual, 96));
+        const double right = usual.empty() ? 0 : canvas_size(packed).x + 96;
+        for (auto file : arrange_files(broad, window_columns(broad, 96))) {
+            file.origin.x += right;
+            packed.push_back(file);
+        }
         group_sizes.push_back(canvas_size(packed));
         for (std::size_t i = 0; i < members.size(); ++i)
             result.files[members[i]] = packed[i];
     }
-    const auto packed_groups = arrange_files(group_sizes, 3, 192);
+    // Folders stand apart, with room above each for its name.
+    const auto packed_groups =
+        arrange_files(group_sizes, window_columns(group_sizes, folder_gap), folder_gap);
     for (std::size_t i = 0; i < order.size(); ++i)
         for (const auto index : groups[order[i]]) {
             result.files[index].origin.x += packed_groups[i].origin.x;
             result.files[index].origin.y += packed_groups[i].origin.y;
         }
     result.size = canvas_size(result.files);
-    return result;
-}
-
-std::string graph_dot(const std::vector<GraphFile>& files, const std::vector<Dependency>& edges)
-{
-    std::ostringstream dot;
-    dot << "digraph Sources {\n graph [layout=neato, start=42, overlap=prism, sep=\"+72\", "
-           "splines=true, outputorder=edgesfirst];\n"
-           " node [shape=box, fixedsize=true, margin=0, fontname=\"JetBrains Mono\"];\n";
-    for (std::size_t i = 0; i < files.size(); ++i)
-        dot << " n" << i << " [label=" << nlohmann::json(files[i].path).dump()
-            << ",width=" << std::max(0.1, files[i].size.x / 96)
-            << ",height=" << std::max(0.1, files[i].size.y / 96) << "];\n";
-    for (const auto& edge : edges)
-        dot << " n" << edge.source << " -> n" << edge.target
-            << " [tailport=ne,headport=nw,len=4,weight=" << (edge.build ? 0.2 : 1)
-            << ",color=\"#aab6c6\"] ;\n";
-    dot << "}\n";
-    return dot.str();
-}
-
-GraphLayout graph_layout(const std::vector<GraphFile>& files, const std::vector<Dependency>& edges,
-                         const std::string& directory)
-{
-    GraphLayout result;
-    if (files.empty())
-        return result;
-    const auto dot_path = directory + "/source-graph.dot";
-    const auto plain_path = directory + "/source-graph.plain";
-    std::ofstream(dot_path) << graph_dot(files, edges);
-    std::vector<std::string> arguments{"neato", "-Tplain", dot_path, "-o", plain_path};
-    std::vector<char*> argv;
-    for (auto& argument : arguments)
-        argv.push_back(argument.data());
-    argv.push_back(nullptr);
-    pid_t child;
-    if (posix_spawnp(&child, "neato", nullptr, nullptr, argv.data(), environ))
-        throw std::runtime_error("Could not start Graphviz neato");
-    int status;
-    while (waitpid(child, &status, 0) < 0) {
-        if (errno != EINTR)
-            throw std::runtime_error("Could not wait for Graphviz");
-    }
-    if (!WIFEXITED(status) || WEXITSTATUS(status))
-        throw std::runtime_error("Graphviz layout failed");
-    result.files.resize(files.size());
-    result.routes.resize(edges.size());
-    std::ifstream plain(plain_path);
-    std::string line;
-    double graph_height = 0;
-    while (std::getline(plain, line)) {
-        std::istringstream stream(line);
-        std::string kind;
-        stream >> kind;
-        if (kind == "graph") {
-            double scale, width;
-            stream >> scale >> width >> graph_height;
-            result.size = {width * 96, graph_height * 96};
-        } else if (kind == "node") {
-            std::string name;
-            double x, y, width, height;
-            stream >> name >> x >> y >> width >> height;
-            const auto index = static_cast<std::size_t>(std::stoi(name.substr(1)));
-            if (index < files.size())
-                result.files[index] = {{(x - width / 2) * 96, (graph_height - y - height / 2) * 96},
-                                       files[index].size};
-        } else if (kind == "edge") {
-            std::string source, target;
-            int count;
-            stream >> source >> target >> count;
-            const int a = std::stoi(source.substr(1)), b = std::stoi(target.substr(1));
-            const auto edge = std::find_if(edges.begin(), edges.end(), [&](const auto& edge) {
-                return edge.source == a && edge.target == b;
-            });
-            if (edge == edges.end())
-                continue;
-            auto& route = result.routes[edge - edges.begin()];
-            for (int i = 0; i < count; ++i) {
-                double x, y;
-                stream >> x >> y;
-                route.push_back({x * 96, (graph_height - y) * 96});
-            }
-        }
-    }
     return result;
 }
