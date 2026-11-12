@@ -279,7 +279,6 @@ int main()
         setenv("SOURCE_CANVAS_DISABLE_AGENT", "1", 1);
         setenv("SOURCE_CANVAS_DISABLE_SESSION", "1", 1);
         setenv("SOURCE_CANVAS_DISABLE_INTENT", "1", 1);
-        setenv("SOURCE_CANVAS_AUTO_BUILD", "0", 1);
         Application app;
         ApplicationTestAccess::run(app);
     } catch (const std::exception& error) {

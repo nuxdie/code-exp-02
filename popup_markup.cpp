@@ -176,8 +176,8 @@ class InlineDocumentation {
     {
         std::size_t position = 0;
         while (position < line.size()) {
-            if (web_url(line, position) || entity(line, position) || math(line, position) ||
-                code(line, position) || emphasis(line, position) || link(line, position))
+            if (web_url(line, position) || entity(line, position) || code(line, position) ||
+                emphasis(line, position) || link(line, position))
                 continue;
             result += line[position++];
         }
@@ -216,32 +216,6 @@ class InlineDocumentation {
             return false;
         result += decoded;
         position = end + 1;
-        return true;
-    }
-
-    bool math(const std::string& line, std::size_t& position)
-    {
-        std::string open, close;
-        for (const auto& pair : {std::pair<std::string, std::string>{"$$", "$$"},
-                                 {"$", "$"},
-                                 {"\\(", "\\)"},
-                                 {"\\[", "\\]"}}) {
-            if (line.compare(position, pair.first.size(), pair.first) == 0) {
-                open = pair.first;
-                close = pair.second;
-                break;
-            }
-        }
-        if (open.empty())
-            return false;
-        const auto end = line.find(close, position + open.size());
-        if (end == std::string::npos || end == position + open.size())
-            return false;
-        document.math.push_back({offset + result.size(),
-                                 line.substr(position + open.size(), end - position - open.size()),
-                                 open == "$$" || open == "\\["});
-        result += "\xef\xbf\xbc";
-        position = end + close.size();
         return true;
     }
 
@@ -327,27 +301,6 @@ bool format_prose(std::string& line)
     return heading;
 }
 
-void join_display_math(std::istream& input, std::string& line)
-{
-    const auto first = line.find_first_not_of(" \t");
-    if (first == std::string::npos)
-        return;
-    const auto marker = line.substr(first);
-    if (marker != "$$" && marker != "\\[")
-        return;
-    const std::string close = marker == "$$" ? "$$" : "\\]";
-    std::string next, body;
-    while (std::getline(input, next)) {
-        const auto begin = next.find_first_not_of(" \t");
-        if (begin != std::string::npos && next.substr(begin) == close) {
-            line = marker + body + close;
-            return;
-        }
-        body += next + " ";
-    }
-    line += " " + body;
-}
-
 std::string unescape_documentation(const std::string& line)
 {
     std::string result;
@@ -413,8 +366,6 @@ PopupDocument popup_document(const std::string& text, bool markup)
                 fence.clear();
             continue;
         }
-        if (markup && fence.empty())
-            join_display_math(input, line);
         const bool code = markup && !fence.empty();
         const bool heading = markup && fence.empty() && format_prose(line);
         if (!document.code_lines.empty())

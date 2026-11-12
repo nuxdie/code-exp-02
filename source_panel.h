@@ -2,7 +2,6 @@
 #include "gpu.h"
 #include "lsp.h"
 #include "structure.h"
-#include <librsvg/rsvg.h>
 #include <string>
 #include <vector>
 
@@ -15,8 +14,6 @@ struct SourcePanel {
     std::string image_error;
     bool cpp = false, cmake = false;
     int version = 1;
-    RsvgHandle* icon = nullptr;
-    GpuImage gpu_icon;
     GpuMesh mesh;
     GpuMesh header_mesh;
     std::vector<FoldBlock> folds;
@@ -41,8 +38,6 @@ struct SourceHit {
     int line = -1;
     std::size_t byte = 0;
 };
-
-const char* file_icon(const std::string& filename);
 
 // The blocks of a text that can be folded, found from its braces alone. Long blocks that
 // are not inside another start collapsed, so a file opens as an outline of itself.

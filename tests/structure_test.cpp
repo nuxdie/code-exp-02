@@ -148,8 +148,6 @@ int main()
         const auto tree = symbol_tree(symbols);
         expect(tree.size() == 1 && tree[0].children.size() == 1,
                "Symbol hierarchy must preserve classes and methods");
-        expect(symbol_definition(tree, 3, 6) && !symbol_definition(tree, 4, 6),
-               "Definition clicks must distinguish declarations from uses");
         const std::vector<GraphFile> files{
             {"main.cpp", "#include \"api.h\"\n#include \"api.h\"\n", {800, 500}},
             {"api.h", "", {700, 400}},

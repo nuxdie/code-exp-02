@@ -14,7 +14,6 @@ struct TextTarget {
     std::string key;
     const std::string* text = nullptr;
     PangoLayout* layout = nullptr;
-    const std::vector<PopupMath>* math = nullptr;
     Vec2 origin{};
     double scale = 1;
     std::size_t prefix = 0;
@@ -24,7 +23,6 @@ struct CanvasSelection {
     TextSurface surface = TextSurface::Inactive;
     std::string key;
     TextInput range;
-    std::vector<PopupMath> math;
     Vec2 press{};
     bool dragging = false, moved = false, extend = false;
 };

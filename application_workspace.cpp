@@ -288,10 +288,8 @@ void Application::finish_workspace_load()
             language_failure = error.what();
         }
     }
-    initialize_cmake();
     initialize_chat();
     load_intent_margin();
-    initialize_reload();
     workspace_load.reset();
     redraw = true;
 }

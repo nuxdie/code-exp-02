@@ -113,16 +113,16 @@ void test_contextual_conversation()
     expect(model.submit("Make this smoother"), "A connected fresh card must accept a prompt");
     request = take_request(model, "thread/start");
     expect(request["params"]["developerInstructions"] == model.instructions &&
-               request["params"]["dynamicTools"][1]["name"] == "canvas_intent",
+               request["params"]["dynamicTools"][0]["name"] == "canvas_intent",
            "New agents must be told the standing decisions and be able to file their turn");
     expect(request["params"]["cwd"] == "/project", "New cards must retain the project workspace");
     expect(request["params"]["approvalPolicy"] == "never" &&
                request["params"]["sandbox"] == "danger-full-access",
            "New canvas agents must start with no approval prompts and full access");
     const auto& tool = request["params"]["dynamicTools"][0];
-    expect(tool["name"] == "canvas_walkthrough" && tool["type"] == "function" &&
-               tool["inputSchema"]["properties"].contains("steps"),
-           "New canvas threads must advertise the native code walkthrough tool");
+    expect(tool["name"] == "canvas_intent" && tool["type"] == "function" &&
+               tool["inputSchema"]["properties"].contains("intent"),
+           "New canvas threads must advertise the intent tool");
     model.receive({{"id", request["id"]}, {"result", {{"thread", {{"id", "new-thread"}}}}}});
     const auto first_turn = model.outgoing();
     expect(first_turn.size() == 1 && first_turn.front()["method"] == "turn/start" &&

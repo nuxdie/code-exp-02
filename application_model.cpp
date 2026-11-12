@@ -26,14 +26,9 @@ SourcePanel Application::make_panel(const std::string& path, const std::string& 
     const auto extension = std::filesystem::path(path).extension().string();
     panel.cpp = extension == ".cpp" || extension == ".cc" || extension == ".cxx" ||
                 extension == ".c" || extension == ".h" || extension == ".hpp";
-    const std::string icon_name = file_icon(path);
-    load_icon(icon_name);
-    panel.icon = icons[icon_name];
-    panel.gpu_icon = gpu_icons[icon_name];
     panel.title = make_line(path, {{0, path.size(), Syntax::Directive}});
     int text_width = 0;
     pango_layout_get_pixel_size(panel.title, &text_width, nullptr);
-    text_width += 32;
     panel.cmake =
         std::filesystem::path(path).filename() == "CMakeLists.txt" || extension == ".cmake";
     if (panel.image) {
@@ -90,13 +85,10 @@ void Application::update_mesh(SourcePanel& panel)
     if (!panel.image)
         panel.bounds.size.y = header_height + panel.folded.source_lines.size() * line_height;
     panel.bounds.size.x += panel.mesh.buffer ? 0 : 32;
-    std::vector<PlacedImage> images;
-    if (panel.icon)
-        images.push_back({panel.gpu_icon, {{0, 0}, {24, 24}}});
     if (!panel.image)
         renderer->upload(panel.mesh, text);
     if (!panel.header_mesh.buffer)
-        renderer->upload(panel.header_mesh, {{panel.title, {32, 0}}}, images);
+        renderer->upload(panel.header_mesh, {{panel.title, {2, 0}}});
 }
 
 // Files gather by folder, so a folder is a region of the canvas with a name.
@@ -193,24 +185,16 @@ SourceHit Application::hit_test(Vec2 screen)
     const auto world = camera.screen_to_world(screen, viewport());
     if (chat_at(screen))
         return {};
-    const auto* excerpt = walkthrough_code_at(screen);
-    if (!excerpt && window_at(screen) == WindowKind::Walkthrough)
-        return {};
     for (std::size_t i = 0; i < panels.size(); ++i) {
         const auto& panel = panels[i];
-        if (excerpt && panel.path != excerpt->path)
-            continue;
-        const double x =
-            world.x - (excerpt ? excerpt->bounds.origin.x + 80 : panel.bounds.origin.x + 24);
-        const double y = world.y - (excerpt ? excerpt->bounds.origin.y + excerpt->code_y
-                                            : panel.bounds.origin.y + header_height);
+        const double x = world.x - (panel.bounds.origin.x + 24);
+        const double y = world.y - (panel.bounds.origin.y + header_height);
         if (x < 0 || x >= panel.bounds.size.x || y < 0)
             continue;
         const int row = static_cast<int>(y / line_height);
-        if (row >= (excerpt ? excerpt->last - excerpt->first + 1
-                            : static_cast<int>(panel.folded.source_lines.size())))
+        if (row >= static_cast<int>(panel.folded.source_lines.size()))
             continue;
-        const int line = excerpt ? excerpt->first - 1 + row : panel.folded.source_lines[row];
+        const int line = panel.folded.source_lines[row];
         if (const auto byte = source_line_hit(panel.lines[line], panel.text[line], x, font_height))
             return {static_cast<int>(i), line, *byte};
     }
@@ -222,35 +206,12 @@ int Application::panel_at(Vec2 screen)
     const auto world = camera.screen_to_world(screen, viewport());
     if (chat_at(screen))
         return -1;
-    const auto* excerpt = walkthrough_code_at(screen);
-    if (!excerpt && window_at(screen) == WindowKind::Walkthrough)
-        return -1;
-    for (std::size_t i = 0; i < panels.size(); ++i) {
-        if (excerpt) {
-            if (panels[i].path == excerpt->path)
-                return static_cast<int>(i);
-            continue;
-        }
+    for (std::size_t i = 0; i < panels.size(); ++i)
         if (Viewport{panels[i].bounds.origin.x, panels[i].bounds.origin.y, panels[i].bounds.size.x,
                      panels[i].bounds.size.y}
                 .contains(world))
             return static_cast<int>(i);
-    }
     return -1;
-}
-
-bool Application::definition_at_pointer()
-{
-    const auto hit = hit_test(mouse_position);
-    if (hit.panel < 0)
-        return false;
-    const auto& panel = panels[hit.panel];
-    for (const auto& token : panel.semantics)
-        if (token.line == hit.line && hit.byte >= token.begin &&
-            hit.byte < token.begin + token.length)
-            return (token.modifiers & definition_modifier) != 0;
-    return symbol_definition(panel.symbols, hit.line,
-                             lsp::byte_to_utf16(panel.text[hit.line], hit.byte));
 }
 
 int Application::query_at_pointer(const std::string& method)
@@ -259,12 +220,12 @@ int Application::query_at_pointer(const std::string& method)
     if (std::getenv("SOURCE_CANVAS_TRACE_LSP"))
         std::cerr << method << " at " << mouse_position.x << ',' << mouse_position.y << " -> panel "
                   << hit.panel << " line " << hit.line << " byte " << hit.byte << '\n';
-    if (hit.panel < 0 || (!panels[hit.panel].cpp && !panels[hit.panel].cmake))
+    if (hit.panel < 0 || !panels[hit.panel].cpp)
         return 0;
     const auto& panel = panels[hit.panel];
     auto* server = server_for(panel);
-    const auto& failure = panel.cmake ? cmake_failure : language_failure;
-    if (!(panel.cmake ? cmake_ready : language_ready) || !server) {
+    const auto& failure = language_failure;
+    if (!language_ready || !server) {
         show_popup(failure.empty() ? "Language features are starting…"
                                    : "Language features unavailable: " + failure,
                    mouse_position);
@@ -360,28 +321,6 @@ void Application::toggle_fold(int index, int source)
     resize_in_place(panel, old_height);
     connections_dirty = true;
     redraw = true;
-}
-
-void Application::load_icon(const std::string& icon_name)
-{
-    if (!icons.count(icon_name)) {
-        const auto icon_path = executable.parent_path() / "assets/vscode-icons" / icon_name;
-        GError* error = nullptr;
-        icons[icon_name] = rsvg_handle_new_from_file(icon_path.c_str(), &error);
-        if (error) {
-            std::cerr << error->message << '\n';
-            g_error_free(error);
-        }
-        if (icons[icon_name]) {
-            auto* image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 192, 192);
-            auto* image_cr = cairo_create(image);
-            const RsvgRectangle bounds{0, 0, 192, 192};
-            rsvg_handle_render_document(icons[icon_name], image_cr, &bounds, nullptr);
-            gpu_icons[icon_name] = renderer->image(image);
-            cairo_destroy(image_cr);
-            cairo_surface_destroy(image);
-        }
-    }
 }
 
 void Application::apply_diagnostics(const SourcePanel& panel, std::size_t line,

@@ -26,6 +26,13 @@ struct ApplicationTestAccess {
         app.handle_key(event);
     }
 
+    // One step of a continuous pan, as a drag or wheel gesture makes it.
+    static void pan(Application& app, Vec2 delta)
+    {
+        app.remember_view(true);
+        app.camera.pan(delta);
+    }
+
     static void button(Application& app, unsigned value)
     {
         XEvent event{};
@@ -57,25 +64,25 @@ struct ApplicationTestAccess {
         key(app, XK_Right, Mod1Mask);
         expect(same(app.camera, start),
                "Empty back and forward must never fall through to panning");
-        key(app, XK_Right);
-        key(app, XK_Right);
+        pan(app, {-40, 0});
+        pan(app, {-40, 0});
         const auto panned = app.camera;
         key(app, XK_Left, Mod1Mask);
-        expect(same(app.camera, start), "Repeated pan keys must form one history step");
+        expect(same(app.camera, start), "Repeated pan steps must form one history step");
         key(app, XK_Right, Mod1Mask);
         expect(same(app.camera, panned), "Alt+Right must restore the exact pan destination");
         key(app, XK_Right, Mod1Mask);
         expect(same(app.camera, panned), "Forward at the newest position must do nothing");
         key(app, XK_Left, Mod1Mask);
-        key(app, XK_Down);
+        pan(app, {0, -40});
         expect(!app.go_forward(), "New movement after back must discard the forward branch");
 
         reset(app);
-        key(app, XK_Right);
+        pan(app, {-40, 0});
         const auto first = app.camera;
         app.navigation_input -= std::chrono::seconds(1);
-        key(app, XK_Down);
-        expect(app.go_back() && same(app.camera, first), "A pause must separate keyboard gestures");
+        pan(app, {0, -40});
+        expect(app.go_back() && same(app.camera, first), "A pause must separate gestures");
         expect(app.go_back() && same(app.camera, start),
                "Both separate gestures must be reachable");
     }
@@ -136,8 +143,10 @@ struct ApplicationTestAccess {
         const auto start = app.camera;
         key(app, XK_f);
         const auto fitted = app.camera;
-        key(app, XK_0);
-        expect(app.go_back() && same(app.camera, fitted), "Reset and fit must be separate steps");
+        app.remember_view();
+        app.camera.pan({-300, 0});
+        expect(app.go_back() && same(app.camera, fitted),
+               "Fit and a later move must be separate steps");
         expect(app.go_back() && same(app.camera, start), "Fit must retain the previous camera");
         key(app, XK_Left, Mod1Mask);
         expect(same(app.camera, start), "Back at the oldest position must do nothing");
@@ -179,7 +188,7 @@ struct ApplicationTestAccess {
     {
         reset(app);
         const auto start = app.camera;
-        key(app, XK_Right);
+        pan(app, {-40, 0});
         const auto panned = app.camera;
         key(app, XK_Left, Mod1Mask);
         app.chat->disabled = false;
@@ -191,7 +200,7 @@ struct ApplicationTestAccess {
                "Saving and loading a project must retain camera position and forward history");
         expect(app.go_back() && same(app.camera, start),
                "Reloaded history must remain bidirectional");
-        key(app, XK_Down);
+        pan(app, {0, -40});
         const auto pending = app.camera;
         app.chat->disabled = false;
         app.save_session();
@@ -241,7 +250,6 @@ int main()
         setenv("SOURCE_CANVAS_PROJECT_ROOT", root.c_str(), 1);
         setenv("SOURCE_CANVAS_DISABLE_AGENT", "1", 1);
         setenv("SOURCE_CANVAS_DISABLE_INTENT", "1", 1);
-        setenv("SOURCE_CANVAS_AUTO_BUILD", "0", 1);
         setenv("SOURCE_CANVAS_STATE_FILE", (root / "session.json").c_str(), 1);
         unsetenv("SOURCE_CANVAS_DISABLE_SESSION");
         Application app;

@@ -31,9 +31,7 @@ void Application::handle_event(const XEvent& event)
         handle_button(event);
         break;
     case MotionNotify:
-        if (!walkthrough_event(event, {static_cast<double>(event.xmotion.x),
-                                       static_cast<double>(event.xmotion.y)}))
-            handle_motion(event);
+        handle_motion(event);
         break;
     case ButtonRelease:
         if (event.xbutton.button == drag_button)
@@ -46,10 +44,9 @@ void Application::handle_event(const XEvent& event)
         if (!drag_button) {
             mouse_position = {static_cast<double>(event.xcrossing.x),
                               static_cast<double>(event.xcrossing.y)};
-            popup_dismiss_due =
-                search.active || shortcuts_visible || options_page != OptionsPage::Closed
-                    ? Clock::time_point::max()
-                    : Clock::now() + std::chrono::milliseconds(300);
+            popup_dismiss_due = search.active || shortcuts_visible
+                                    ? Clock::time_point::max()
+                                    : Clock::now() + std::chrono::milliseconds(300);
             mouse_position = {-1, -1};
             redraw = true;
         }
@@ -72,8 +69,6 @@ void Application::handle_button(const XEvent& event)
     const auto view = viewport();
     mouse_position = pointer;
     redraw = true;
-    if (walkthrough_event(event, pointer))
-        return;
     if (navigation_button(event.xbutton.button))
         return;
     if (close_window_button(event, pointer)) {
@@ -137,9 +132,6 @@ bool Application::close_window_button(const XEvent& event, Vec2 pointer)
         if (text_selection.surface == TextSurface::Popup)
             text_selection = {};
         hide_popup();
-    } else if (target == WindowKind::Walkthrough) {
-        release_walkthrough();
-        schedule_save();
     } else if (target == WindowKind::Chat && activate_chat(pointer))
         close_agent_window();
     else
@@ -166,8 +158,7 @@ void Application::handle_motion(const XEvent& event)
     mouse_position = pointer;
     redraw = true;
     update_cursor();
-    if ((search.active || shortcuts_visible || options_page != OptionsPage::Closed) &&
-        !drag_button) {
+    if ((search.active || shortcuts_visible) && !drag_button) {
         hover_due = popup_dismiss_due = Clock::time_point::max();
         return;
     }
@@ -232,12 +223,7 @@ void Application::handle_release(const XEvent& event)
     window_manager.end();
     drag_button = 0;
     XUngrabPointer(display, CurrentTime);
-    if (dragged_panel >= 0 && !drag_moved) {
-        popup_origin = {static_cast<double>(event.xbutton.x), static_cast<double>(event.xbutton.y)};
-        show_outline(dragged_panel);
-    }
     dragged_panel = -1;
-    dragged_walkthrough_step = -1;
     if (chat) {
         chat->dragging = false;
         chat->scrolling = false;
@@ -276,10 +262,7 @@ void Application::handle_key(const XEvent& event)
     }
     auto escape_event = event.xkey;
     if (XLookupKeysym(&escape_event, 0) == XK_Escape) {
-        if (!popup_text.empty())
-            hide_popup();
-        else if (!drag_button)
-            show_options();
+        hide_popup();
         drag_button = 0;
         XUngrabPointer(display, CurrentTime);
         redraw = true;
@@ -294,15 +277,6 @@ void Application::handle_key(const XEvent& event)
         return;
     }
     switch (key) {
-    case XK_g:
-    case XK_G:
-        show_connections = !show_connections;
-        break;
-    case XK_s:
-    case XK_S:
-        popup_origin = mouse_position;
-        show_outline(panel_at(mouse_position));
-        break;
     case XK_c:
     case XK_C: {
         const int index = panel_at(mouse_position);
@@ -321,24 +295,8 @@ void Application::handle_key(const XEvent& event)
     case XK_I:
         select_intent_at(mouse_position);
         break;
-    case XK_k:
-    case XK_K:
-        hover_request = query_at_pointer("textDocument/hover");
-        break;
     case XK_F1:
         show_shortcuts();
-        break;
-    case XK_F12:
-        if (!(event.xkey.state & ShiftMask) && open_document_link(mouse_position))
-            break;
-        if (event.xkey.state & ShiftMask)
-            list_request = query_at_pointer("textDocument/references");
-        else
-            navigation_request = query_at_pointer("textDocument/definition");
-        break;
-    case XK_space:
-        if (event.xkey.state & ControlMask)
-            list_request = query_at_pointer("textDocument/completion");
         break;
     case XK_Escape:
         drag_button = 0;
@@ -350,56 +308,12 @@ void Application::handle_key(const XEvent& event)
 
 bool Application::popup_button(const XEvent& event, Vec2 pointer, bool in_popup)
 {
-    if (in_popup && options_page != OptionsPage::Closed && event.xbutton.button == Button1) {
-        options_action(popup_row_at(pointer));
-        return true;
-    }
     if (in_popup && (event.xbutton.button == Button4 || event.xbutton.button == Button5)) {
-        if (!jump_rows.empty()) {
-            list_offset += event.xbutton.button == Button4 ? -3 : 3;
-            refresh_list();
-        } else
-            popup_scroll += event.xbutton.button == Button4 ? -60 : 60;
+        popup_scroll += event.xbutton.button == Button4 ? -60 : 60;
         redraw = true;
         return true;
     }
-    if (event.xbutton.button == Button1 && !popup_locations.empty() &&
-        Viewport{popup_bounds.origin.x, popup_bounds.origin.y, popup_bounds.size.x,
-                 popup_bounds.size.y}
-            .contains(pointer)) {
-        activate_popup_location(pointer);
-        return true;
-    }
-
     return in_popup && event.xbutton.button == Button1;
-}
-
-int Application::popup_row_at(Vec2 pointer)
-{
-    int index = 0, trailing = 0;
-    pango_layout_xy_to_index(
-        popup_layout, static_cast<int>((pointer.x - popup_bounds.origin.x - 12) * PANGO_SCALE),
-        static_cast<int>((pointer.y - popup_bounds.origin.y - 12 + popup_scroll) * PANGO_SCALE),
-        &index, &trailing);
-    return static_cast<int>(std::count(
-        popup_text.begin(),
-        popup_text.begin() + std::clamp(index, 0, static_cast<int>(popup_text.size())), '\n'));
-}
-
-void Application::activate_popup_location(Vec2 pointer)
-{
-    const int row = popup_row_at(pointer) - (list_title.empty() ? 0 : 1);
-    if (row < 0 || row >= static_cast<int>(popup_locations.size()))
-        return;
-    if (row < static_cast<int>(popup_symbol_rows.size()) && popup_symbol_rows[row] &&
-        !popup_symbol_rows[row]->children.empty() &&
-        pointer.x - popup_bounds.origin.x < 12 + popup_row_depths[row] * 17 + 25) {
-        popup_symbol_rows[row]->expanded = !popup_symbol_rows[row]->expanded;
-        show_outline(outline_panel);
-        return;
-    }
-    const auto location = popup_locations[row];
-    jump_to(location);
 }
 
 void Application::begin_drag(const XEvent& event, Vec2 pointer, const Viewport& view, bool pan_only)

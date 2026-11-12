@@ -4,14 +4,11 @@
 #include "canvas_selection.h"
 #include "canvas_window.h"
 #include "chat_canvas.h"
-#include "code_walkthrough.h"
 #include "connection_hud.h"
 #include "conversation.h"
 #include "directory_picker.h"
 #include "document_view.h"
 #include "intent_margin.h"
-#include "live_build.h"
-#include "math_typesetter.h"
 #include "overview.h"
 #include "popup_markup.h"
 #include "project_watch.h"
@@ -58,13 +55,6 @@ class Application {
     ~Application();
 
   private:
-    struct JumpRow {
-        std::string label;
-        lsp::Json location;
-        SymbolNode* node = nullptr;
-        int depth = 0;
-    };
-
     using Clock = std::chrono::steady_clock;
     bool benchmark = false;
     Display* display = nullptr;
@@ -106,10 +96,8 @@ class Application {
     int screen = 0;
     std::unique_ptr<ChatCanvas> chat;
     std::vector<std::unique_ptr<ChatCanvas>> chat_windows;
-    std::unique_ptr<CodeWalkthrough> walkthrough;
     IntentMargin intent_margin;
     std::vector<std::future<void>> intent_writes;
-    int dragged_walkthrough_step = -1;
     std::unique_ptr<SystemTheme> system_theme;
     XIM input_method = nullptr;
     XIC input_context = nullptr;
@@ -117,15 +105,8 @@ class Application {
     CanvasSelection text_selection;
     SearchCanvas search;
     bool shortcuts_visible = false;
-    enum class OptionsPage { Closed, Options, Settings };
-    OptionsPage options_page = OptionsPage::Closed;
-    std::string appearance = "system";
-    enum class MonospaceFont { JetBrains, Victor };
-    MonospaceFont monospace_font = MonospaceFont::JetBrains;
-    const char* monospace_family() const;
-    void set_monospace_font(MonospaceFont font);
+    static constexpr const char* monospace_family = "Victor Mono";
     void configure_source_font();
-    bool desktop_dark = false;
     Clock::time_point save_due = Clock::time_point::max();
     std::unique_ptr<GpuRenderer> renderer;
     Window window = 0;
@@ -145,18 +126,12 @@ class Application {
                                              0x24292f, 0x875a00, 0x005cc5, 0x6f42c1};
     std::vector<SourcePanel> panels;
     std::vector<Vec2> file_sizes;
-    std::map<std::string, RsvgHandle*> icons;
-    std::map<std::string, GpuImage> gpu_icons;
     std::vector<lsp::Document> documents;
     std::unordered_set<std::string> opened_documents;
     std::vector<Dependency> dependencies;
     GraphLayout graph;
     Vec2 content_size;
     std::unique_ptr<lsp::LanguageServer> language_server;
-    std::unique_ptr<lsp::LanguageServer> cmake_server;
-    bool cmake_ready = false;
-    std::string cmake_failure;
-    std::vector<std::string> cmake_token_legend;
     std::vector<std::string> token_legend;
     unsigned deprecated_modifier = 0;
     unsigned definition_modifier = 0;
@@ -172,12 +147,11 @@ class Application {
     int dragged_panel = -1;
     CanvasWindowManager window_manager;
     std::vector<CanvasRect> window_headers;
-    enum class WindowKind { Canvas, Source, Walkthrough, Chat, Popup, Search };
+    enum class WindowKind { Canvas, Source, Chat, Popup, Search };
     WindowKind window_at(Vec2 pointer);
     bool begin_window_drag(Vec2& origin, Vec2 pointer);
     void draw_window_title(DocumentView& title, const std::string& text, CanvasRect world,
                            CanvasRect& hit, std::vector<CanvasRect>& occupied);
-    bool show_connections = true;
     bool connections_dirty = true;
     ConnectionSubject connection_subject;
     std::pair<int, int> connection_requests{0, 0}; // definition, references
@@ -240,20 +214,12 @@ class Application {
     Clock::time_point popup_dismiss_due = Clock::time_point::max();
     int hover_request = 0;
     int navigation_request = 0;
-    int list_request = 0;
     std::string hover_prefix;
     std::string popup_text;
     Vec2 popup_origin;
     Vec2 hover_origin;
     CanvasRect popup_bounds{};
     double popup_scroll = 0;
-    std::vector<lsp::Json> popup_locations;
-    std::vector<JumpRow> jump_rows;
-    std::vector<SymbolNode*> popup_symbol_rows;
-    std::vector<int> popup_row_depths;
-    int list_offset = 0;
-    int outline_panel = -1;
-    std::string list_title;
     struct SavedView {
         Camera camera;
         std::string path;
@@ -265,13 +231,6 @@ class Application {
     Clock::time_point navigation_input;
     bool navigation_continuous = false;
     std::optional<SourceHit> focused_line;
-    struct MathArtwork {
-        GpuImage image;
-        Vec2 size;
-        bool ready = false;
-    };
-    std::unique_ptr<MathTypesetter> math_typesetter;
-    std::map<std::string, MathArtwork> math_artwork;
     unsigned document_generation = 0;
     PangoLayout* popup_layout = nullptr;
     GpuMesh popup_mesh;
@@ -279,7 +238,6 @@ class Application {
     int cached_popup_width = 0;
     bool popup_prose = false;
     std::vector<PopupSpan> popup_styles;
-    std::vector<PopupMath> popup_math;
     std::vector<bool> popup_code_lines;
     std::vector<bool> cached_popup_code_lines;
     std::vector<std::pair<std::size_t, std::size_t>> popup_inline_code;
@@ -287,14 +245,7 @@ class Application {
     Atom protocols = 0;
     bool running = true;
     bool window_destroyed = false;
-    bool auto_build = false, build_running = false, reload_requested = false,
-         deferred_reload = false;
-    std::unique_ptr<LiveBuild> live_build;
-    uint64_t source_generation = 0;
-    std::string build_status;
-    std::filesystem::file_time_type loaded_binary, observed_binary;
-    Clock::time_point rebuild_due = Clock::time_point::max();
-    Clock::time_point binary_check_due = Clock::time_point::max();
+    bool reload_requested = false; // re-launch on another directory
 
     bool initialize();
     bool initialize_window();
@@ -321,18 +272,11 @@ class Application {
     void load_agent_windows(const lsp::Json& state, const char* environment_thread);
     void open_directory_picker();
     void poll_directory_picker();
-    void initialize_cmake();
     lsp::LanguageServer* server_for(const SourcePanel& panel);
     bool open_document_link(Vec2 pointer);
     std::string text_link_at(Vec2 pointer);
     bool open_link(const std::string& destination);
-    bool open_literal_file(const SourceHit& hit);
     void language_links(const lsp::Message& message);
-    void initialize_reload();
-    void queue_rebuild();
-    void poll_reload(Clock::time_point now);
-    void handle_build_result(const BuildResult& result);
-    void request_reload();
     void load_intent_margin();
     std::string record_turn_intent(const lsp::Json& call);
     void poll_intent_margin();
@@ -368,24 +312,9 @@ class Application {
     bool search_button(const XEvent& event, Vec2 pointer);
     void paste_search(const XEvent& event);
     bool canvas_shortcut_key(const XEvent& event);
-    void show_options(bool settings = false);
-    bool options_key(KeySym key);
-    void options_action(int row);
     void show_shortcuts();
     bool shortcuts_key(KeySym key);
     bool handle_canvas_tool(const lsp::Json& message);
-    std::string walkthrough_tool(const lsp::Json& call);
-    void show_walkthrough(const lsp::Json& specification, bool restoring = false);
-    void release_walkthrough();
-    void focus_walkthrough();
-    void prepare_walkthrough(bool arrange);
-    void prepare_walkthrough_step(WalkthroughStep& step, std::size_t index);
-    void draw_walkthrough();
-    void draw_walkthrough_selection(const WalkthroughStep& step);
-    const WalkthroughStep* walkthrough_code_at(Vec2 pointer);
-    bool walkthrough_event(const XEvent& event, Vec2 pointer);
-    void drag_walkthrough(Vec2 pointer);
-    lsp::Json save_walkthrough();
     void poll_agent_window();
     void start_agent_windows();
     ChatCanvas* chat_at(Vec2 pointer);
@@ -422,7 +351,6 @@ class Application {
     void restore_chat_scroll(bool finish);
     void draw_chat_messages();
     void draw_chat_working(double y);
-    void draw_chat_threads();
     void draw_chat_chrome();
     void draw_chat_header(std::vector<CanvasRect>& occupied);
     void draw_chat_controls();
@@ -487,13 +415,9 @@ class Application {
     void show_popup(std::string text, Vec2 origin, bool syntax = false);
     SourceHit hit_test(Vec2 screen);
     int panel_at(Vec2 screen);
-    void refresh_list();
-    void show_outline(int index);
-    bool definition_at_pointer();
     int query_at_pointer(const std::string& method);
     bool jump_to(const lsp::Json& location);
     void toggle_fold(int index, int source);
-    void fit_width();
     void draw();
 
     void handle_button(const XEvent& event);
@@ -540,12 +464,6 @@ class Application {
     void refresh_symbol_sources(const std::vector<ProjectChange>& changes);
     void rebuild_connections();
     void update_popup_mesh(int layout_width);
-    void poll_math();
-    void shape_document_math(PangoAttrList* attributes, const std::vector<PopupMath>& math,
-                             int layout_width);
-    void upload_document_mesh(GpuMesh& mesh, PangoLayout* layout,
-                              const std::vector<PopupMath>& math);
-    MathArtwork load_math_artwork(const std::string& svg);
     void style_document_spans(PangoAttrList* attributes, const std::vector<PopupSpan>& spans);
     void configure_document(PangoLayout* layout, const PopupDocument& document, int width,
                             bool prose);
@@ -553,7 +471,6 @@ class Application {
                          bool prose = true);
     void add_popup_syntax(PangoAttrList* attributes, const std::string& text, std::size_t offset,
                           HighlightState& state);
-    void load_icon(const std::string& icon_name);
     void apply_diagnostics(const SourcePanel& panel, std::size_t line, PangoAttrList* attributes);
     void language_error(const lsp::Message& message);
     void language_initialized(const lsp::Message& message);
@@ -561,10 +478,6 @@ class Application {
     void language_styles(const lsp::Message& message);
     void language_hover(const lsp::Message& message);
     void language_definition(const lsp::Message& message);
-    void language_references(const lsp::Message& message);
-    void language_completion(const lsp::Message& message);
     bool popup_button(const XEvent& event, Vec2 pointer, bool in_popup);
-    int popup_row_at(Vec2 pointer);
-    void activate_popup_location(Vec2 pointer);
     void begin_drag(const XEvent& event, Vec2 pointer, const Viewport& view, bool pan_only = false);
 };

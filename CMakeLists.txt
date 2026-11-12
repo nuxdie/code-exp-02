@@ -10,7 +10,6 @@ pkg_check_modules(
     IMPORTED_TARGET
     pangocairo
     fontconfig
-    librsvg-2.0
     gio-2.0
     gdk-pixbuf-2.0
 )
@@ -49,14 +48,6 @@ find_program(
 if(NOT CLANGD_EXECUTABLE)
     set(CLANGD_EXECUTABLE clangd)
 endif()
-find_program(
-    CMAKE_LSP_EXECUTABLE
-    NAMES neocmakelsp
-    HINTS "${CMAKE_CURRENT_SOURCE_DIR}/.cache/tools"
-)
-if(NOT CMAKE_LSP_EXECUTABLE)
-    set(CMAKE_LSP_EXECUTABLE neocmakelsp)
-endif()
 configure_file(viewer_config.h.in viewer_config.h @ONLY)
 configure_file(tools/agent_bridge.py agent_bridge.py COPYONLY)
 configure_file(tools/intents.py intents.py COPYONLY)
@@ -70,20 +61,12 @@ if(NOT WEBSOCKETS_RESULT EQUAL 0)
     )
 endif()
 file(COPY fonts/noto-serif DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/fonts")
-file(COPY assets DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
 foreach(
     font_file
-    JetBrainsMono-Regular.ttf
-    JetBrainsMono-Bold.ttf
-    JetBrainsMono-Italic.ttf
-    OFL.txt
-    victor-mono/VictorMono-Regular.ttf
-    victor-mono/VictorMono-Bold.ttf
-    victor-mono/VictorMono-Italic.ttf
-    victor-mono/VictorMono-BoldItalic.ttf
-    victor-mono/OFL.txt
-    victor-mono/SOURCE.txt
+    victor-mono/VictorMono-Regular.ttf victor-mono/VictorMono-Bold.ttf
+    victor-mono/VictorMono-Italic.ttf victor-mono/VictorMono-BoldItalic.ttf
+    victor-mono/OFL.txt victor-mono/SOURCE.txt
 )
     configure_file("fonts/${font_file}" "fonts/${font_file}" COPYONLY)
 endforeach()
@@ -171,10 +154,6 @@ target_include_directories(
 target_link_libraries(
     agent_connection PUBLIC nlohmann_json::nlohmann_json Threads::Threads
 )
-add_library(live_build live_build.cpp)
-target_compile_features(live_build PUBLIC cxx_std_17)
-target_include_directories(live_build PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(live_build PUBLIC Threads::Threads)
 add_library(project_watch project_watch.cpp)
 target_compile_features(project_watch PUBLIC cxx_std_17)
 target_include_directories(project_watch PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -188,10 +167,6 @@ target_link_libraries(
 target_include_directories(language_server PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 find_program(LATEX_EXECUTABLE latex REQUIRED)
 find_program(DVISVGM_EXECUTABLE dvisvgm REQUIRED)
-add_library(math_typesetter math_typesetter.cpp)
-target_compile_features(math_typesetter PUBLIC cxx_std_17)
-target_include_directories(math_typesetter PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(math_typesetter PUBLIC Threads::Threads)
 add_library(source_graph source_graph.cpp)
 target_compile_features(source_graph PUBLIC cxx_std_17)
 target_include_directories(source_graph PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -220,15 +195,11 @@ add_library(
     application_search_input.cpp
     application_search_view.cpp
     application_shortcuts.cpp
-    application_walkthrough.cpp
-    application_walkthrough_view.cpp
-    application_walkthrough_input.cpp
     application_window_manager.cpp
     application_agent_windows.cpp
     application_agent_context.cpp
     application_agent_menu.cpp
     application_agent_session.cpp
-    application_cmake.cpp
     application_file_links.cpp
     application_text_targets.cpp
     application_text_selection.cpp
@@ -251,8 +222,6 @@ add_library(
     application_chat_questions.cpp
     application_composer.cpp
     application_session.cpp
-    application_reload.cpp
-    application_math.cpp
     application_pointer.cpp
     popup_markup.cpp
     syntax.cpp
@@ -264,14 +233,8 @@ target_include_directories(
                             "${CMAKE_CURRENT_BINARY_DIR}"
 )
 target_link_libraries(
-    application_core
-    PUBLIC gpu_renderer
-           language_server
-           source_graph
-           math_typesetter
-           project_watch
-           agent_connection
-           live_build
+    application_core PUBLIC gpu_renderer language_server source_graph
+                            project_watch agent_connection
 )
 
 add_executable(white_window main.cpp)
@@ -310,10 +273,6 @@ if(BUILD_TESTING)
     add_executable(conversation_tests tests/conversation_test.cpp)
     target_link_libraries(conversation_tests PRIVATE agent_connection)
     add_test(NAME conversation COMMAND conversation_tests)
-    add_executable(live_build_tests tests/live_build_test.cpp)
-    target_link_libraries(live_build_tests PRIVATE live_build)
-    add_test(NAME live_build COMMAND live_build_tests)
-    set_tests_properties(live_build PROPERTIES TIMEOUT 30)
     add_executable(agent_live_tests tests/agent_live_test.cpp)
     target_link_libraries(agent_live_tests PRIVATE agent_connection)
     target_compile_definitions(
@@ -364,10 +323,6 @@ if(BUILD_TESTING)
         popup_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
     )
     add_test(NAME popup COMMAND popup_tests)
-    add_executable(math_tests tests/math_test.cpp)
-    target_link_libraries(math_tests PRIVATE math_typesetter)
-    add_test(NAME math COMMAND math_tests)
-    set_tests_properties(math PROPERTIES TIMEOUT 20)
     add_executable(selection_tests tests/selection_test.cpp)
     target_link_libraries(selection_tests PRIVATE application_core)
     if(XVFB_RUN_EXECUTABLE)
@@ -378,10 +333,6 @@ if(BUILD_TESTING)
         add_test(NAME selection COMMAND selection_tests)
     endif()
     set_tests_properties(selection PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30)
-    add_executable(walkthrough_tests tests/walkthrough_test.cpp)
-    target_link_libraries(walkthrough_tests PRIVATE application_core)
-    add_test(NAME walkthrough COMMAND walkthrough_tests)
-    set_tests_properties(walkthrough PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30)
     add_executable(agent_windows_tests tests/agent_windows_test.cpp)
     add_executable(search_tests tests/search_test.cpp)
     target_link_libraries(search_tests PRIVATE application_core)
@@ -417,10 +368,6 @@ if(BUILD_TESTING)
             ${test_name} PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30
         )
     endforeach()
-    add_executable(cmake_canvas_tests tests/cmake_canvas_test.cpp)
-    target_link_libraries(cmake_canvas_tests PRIVATE application_core)
-    add_test(NAME cmake_canvas COMMAND cmake_canvas_tests)
-    set_tests_properties(cmake_canvas PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 45)
     add_executable(live_canvas_tests tests/live_canvas_test.cpp)
     target_link_libraries(live_canvas_tests PRIVATE application_core)
     if(XVFB_RUN_EXECUTABLE)
@@ -498,14 +445,11 @@ if(BUILD_TESTING)
         agent_activity_tests
         selection_tests
         agent_windows_tests
-        walkthrough_tests
         search_tests
         navigation_tests
-        cmake_canvas_tests
         system_theme_tests
         project_watch_tests
         conversation_tests
-        live_build_tests
         agent_live_tests
         live_canvas_tests
         workspace_tests
@@ -516,7 +460,6 @@ if(BUILD_TESTING)
         structure_tests
         syntax_tests
         popup_tests
-        math_tests
         integration_tests
     )
 endif()

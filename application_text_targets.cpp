@@ -18,7 +18,6 @@ TextTarget Application::chat_text_target(Vec2 pointer)
                 "",
                 &card->input.text,
                 card->composer.layout.get(),
-                nullptr,
                 camera.world_to_screen(
                     {card->editor.origin.x + 12, card->editor.origin.y + 10 - card->editor_scroll},
                     viewport()),
@@ -33,9 +32,11 @@ TextTarget Application::chat_text_target(Vec2 pointer)
         const auto found = card->messages.find(id);
         if (found != card->messages.end()) {
             const auto& view = found->second;
-            return {TextSurface::Chat,   id,
-                    &view.document.text, view.layout.get(),
-                    &view.document.math, camera.world_to_screen(hit.bounds.origin, viewport()),
+            return {TextSurface::Chat,
+                    id,
+                    &view.document.text,
+                    view.layout.get(),
+                    camera.world_to_screen(hit.bounds.origin, viewport()),
                     camera.zoom};
         }
     }
@@ -43,14 +44,6 @@ TextTarget Application::chat_text_target(Vec2 pointer)
 }
 TextTarget Application::source_text_target(Vec2 pointer)
 {
-    if (const auto* step = walkthrough_code_at(pointer)) {
-        for (const auto& panel : panels)
-            if (panel.path == step->path)
-                return {TextSurface::Source, step->path, &panel.source};
-        return {};
-    }
-    if (window_at(pointer) == WindowKind::Walkthrough)
-        return {};
     const auto world = camera.screen_to_world(pointer, viewport());
     for (const auto& header : header_hits)
         if (contains(header, pointer))
@@ -82,7 +75,6 @@ TextTarget Application::text_at(Vec2 pointer)
                 "",
                 &search.query.text,
                 search.input.layout.get(),
-                nullptr,
                 {search.editor.origin.x + 12 - search.editor_scroll, search.editor.origin.y + 10}};
         return {};
     }
@@ -91,7 +83,6 @@ TextTarget Application::text_at(Vec2 pointer)
                 "",
                 &popup_text,
                 popup_layout,
-                &popup_math,
                 {popup_bounds.origin.x + 12, popup_bounds.origin.y + 12 - popup_scroll}};
     auto target = chat_text_target(pointer);
     if (target.surface != TextSurface::Inactive)
@@ -110,7 +101,6 @@ TextTarget Application::active_text_target()
                 "",
                 &search.query.text,
                 search.input.layout.get(),
-                nullptr,
                 {search.editor.origin.x + 12 - search.editor_scroll, search.editor.origin.y + 10}};
         return {};
     case TextSurface::Source:
@@ -130,7 +120,6 @@ TextTarget Application::active_text_target()
                         entry.id,
                         &view.document.text,
                         view.layout.get(),
-                        &view.document.math,
                         camera.world_to_screen(chat->message_text_bounds(i, y).origin, viewport()),
                         camera.zoom};
             }
@@ -144,7 +133,6 @@ TextTarget Application::active_text_target()
                     "",
                     &popup_text,
                     popup_layout,
-                    &popup_math,
                     {popup_bounds.origin.x + 12, popup_bounds.origin.y + 12 - popup_scroll}};
         return {};
     case TextSurface::Composer:
@@ -152,7 +140,6 @@ TextTarget Application::active_text_target()
                 "",
                 &chat->input.text,
                 chat->composer.layout.get(),
-                nullptr,
                 camera.world_to_screen(
                     {chat->editor.origin.x + 12, chat->editor.origin.y + 10 - chat->editor_scroll},
                     viewport()),
@@ -166,25 +153,14 @@ std::size_t Application::source_byte_at(const SourcePanel& panel, Vec2 pointer)
     const auto world = camera.screen_to_world(pointer, viewport());
     if (panel.folded.source_lines.empty())
         return 0;
-    const auto* excerpt = walkthrough_code_at(pointer);
-    if (text_selection.dragging && text_selection.surface == TextSurface::Source &&
-        text_selection.key == panel.path)
-        excerpt = walkthrough_code_at(text_selection.press);
-    if (excerpt && excerpt->path != panel.path)
-        excerpt = nullptr;
-    const auto row = std::clamp(
-        static_cast<int>(std::floor((world.y - (excerpt ? excerpt->bounds.origin.y + excerpt->code_y
-                                                        : panel.bounds.origin.y + header_height)) /
-                                    line_height)),
-        0,
-        excerpt ? excerpt->last - excerpt->first
-                : static_cast<int>(panel.folded.source_lines.size()) - 1);
-    const auto line = excerpt ? excerpt->first - 1 + row : panel.folded.source_lines[row];
+    const auto row =
+        std::clamp(static_cast<int>(
+                       std::floor((world.y - panel.bounds.origin.y - header_height) / line_height)),
+                   0, static_cast<int>(panel.folded.source_lines.size()) - 1);
+    const auto line = panel.folded.source_lines[row];
     int index = 0, trailing = 0;
     pango_layout_xy_to_index(panel.lines[line],
-                             static_cast<int>((world.x - (excerpt ? excerpt->bounds.origin.x + 80
-                                                                  : panel.bounds.origin.x + 24)) *
-                                              PANGO_SCALE),
+                             static_cast<int>((world.x - panel.bounds.origin.x - 24) * PANGO_SCALE),
                              font_height * PANGO_SCALE / 2, &index, &trailing);
     const auto& text = panel.text[line];
     const auto byte = std::min(text.size(), static_cast<std::size_t>(std::max(0, index)));

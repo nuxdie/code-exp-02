@@ -179,79 +179,10 @@ bool Application::navigation_button(unsigned button)
 bool Application::camera_key(KeySym key)
 {
     const auto view = viewport();
-    switch (key) {
-    case XK_Up:
-        remember_view(true);
-        camera.pan({0, 40});
-        break;
-    case XK_Down:
-        remember_view(true);
-        camera.pan({0, -40});
-        break;
-    case XK_Left:
-        remember_view(true);
-        camera.pan({40, 0});
-        break;
-    case XK_Right:
-        remember_view(true);
-        camera.pan({-40, 0});
-        break;
-    case XK_Page_Up:
-        remember_view(true);
-        camera.pan({0, view.height * 0.9});
-        break;
-    case XK_Page_Down:
-        remember_view(true);
-        camera.pan({0, -view.height * 0.9});
-        break;
-    case XK_Home:
-        remember_view();
-        camera.home(view);
-        zoom_animation.cancel(camera);
-        break;
-    case XK_End:
-        remember_view();
-        camera.home(view);
-        camera.center.y += std::max(0.0, content_size.y - view.height / camera.zoom);
-        zoom_animation.cancel(camera);
-        break;
-    case XK_0:
-    case XK_KP_0:
-        remember_view();
-        camera.reset(view);
-        zoom_animation.cancel(camera);
-        break;
-    case XK_f:
-    case XK_F:
-        remember_view();
-        camera.fit(content_size, view);
-        zoom_animation.cancel(camera);
-        break;
-    case XK_w:
-    case XK_W:
-        fit_width();
-        break;
-    case XK_l:
-    case XK_L:
-        remember_view();
-        relayout();
-        connections_dirty = true;
-        camera.fit(content_size, view);
-        zoom_animation.cancel(camera);
-        break;
-    case XK_equal:
-    case XK_plus:
-    case XK_KP_Add:
-        remember_view(true);
-        zoom_animation.request(camera, 1.15, view.center());
-        break;
-    case XK_minus:
-    case XK_KP_Subtract:
-        remember_view(true);
-        zoom_animation.request(camera, 1 / 1.15, view.center());
-        break;
-    default:
+    if (key != XK_f && key != XK_F)
         return false;
-    }
+    remember_view();
+    camera.fit(content_size, view);
+    zoom_animation.cancel(camera);
     return true;
 }

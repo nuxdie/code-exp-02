@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cctype>
 #include <chrono>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -17,17 +18,45 @@
 #include <unistd.h>
 
 namespace {
+// Text beyond this is generated or data, not something to read on a canvas.
+constexpr std::uintmax_t largest_text = 256 * 1024;
+
 bool excluded_directory(const std::filesystem::path& path)
 {
+    static const std::set<std::string> names{".git", ".cache", "__pycache__", "node_modules"};
     for (const auto& part : path) {
         const auto name = part.string();
-        if (name == ".git" || name == ".cache" || name == "fonts" || name == "__pycache__" ||
-            name.compare(0, 5, "build") == 0)
+        if (names.count(name) || name.compare(0, 5, "build") == 0)
             return true;
     }
     return false;
 }
-std::vector<std::filesystem::path> project_paths(const std::string& root, bool directories)
+// The files git tracks or would track, so each project's own ignore rules decide what is shown.
+std::vector<std::filesystem::path> git_files(const std::string& root)
+{
+    std::string quoted = "'";
+    for (const char character : root)
+        quoted += character == '\'' ? std::string("'\\''") : std::string(1, character);
+    const auto command =
+        "git -C " + quoted + "' ls-files -z --cached --others --exclude-standard 2>/dev/null";
+    std::vector<std::filesystem::path> files;
+    auto* pipe = popen(command.c_str(), "r");
+    if (!pipe)
+        return files;
+    std::string output;
+    char buffer[65536];
+    for (std::size_t count; (count = fread(buffer, 1, sizeof(buffer), pipe)) > 0;)
+        output.append(buffer, count);
+    if (pclose(pipe) != 0)
+        return {};
+    for (std::size_t begin = 0; begin < output.size();) {
+        const auto end = output.find('\0', begin);
+        files.emplace_back(output.substr(begin, end - begin));
+        begin = end == std::string::npos ? output.size() : end + 1;
+    }
+    return files;
+}
+std::vector<std::filesystem::path> walked_paths(const std::string& root, bool directories)
 {
     std::vector<std::filesystem::path> result;
     std::error_code error;
@@ -45,6 +74,33 @@ std::vector<std::filesystem::path> project_paths(const std::string& root, bool d
             result.push_back(relative);
     }
     return result;
+}
+std::vector<std::filesystem::path> project_paths(const std::string& root, bool directories)
+{
+    const auto tracked = git_files(root);
+    if (tracked.empty())
+        return walked_paths(root, directories);
+    std::set<std::filesystem::path> result;
+    std::error_code error;
+    for (const auto& file : tracked) {
+        if (excluded_directory(file))
+            continue;
+        if (!directories) {
+            if (std::filesystem::is_regular_file(std::filesystem::path(root) / file, error))
+                result.insert(file);
+            continue;
+        }
+        for (auto parent = file.parent_path(); !parent.empty(); parent = parent.parent_path())
+            result.insert(parent);
+    }
+    return {result.begin(), result.end()};
+}
+bool binary_head(const std::filesystem::path& file)
+{
+    std::ifstream input(file, std::ios::binary);
+    char head[8192];
+    input.read(head, sizeof(head));
+    return std::find(head, head + input.gcount(), '\0') != head + input.gcount();
 }
 void signal_fd(int fd)
 {
@@ -70,16 +126,7 @@ bool project_image(const std::string& path)
 }
 bool project_source(const std::string& path)
 {
-    if (excluded_directory(path))
-        return false;
-    const auto file = std::filesystem::path(path);
-    const auto name = file.filename().string();
-    static const std::set<std::string> extensions{".cpp",  ".h",  ".hpp",   ".cc", ".cxx",
-                                                  ".c",    ".in", ".cmake", ".py", ".yml",
-                                                  ".yaml", ".md", ".tex"};
-    return project_image(path) || name == "CMakeLists.txt" || name == ".clang-format" ||
-           name == ".clang-tidy" || name == ".cmake-format.json" ||
-           extensions.count(file.extension().string()) != 0;
+    return !excluded_directory(path);
 }
 std::pair<int, int> text_extent(const std::string& text)
 {
@@ -105,19 +152,23 @@ std::vector<ProjectFile> list_project_files(const std::string& root)
     std::vector<ProjectFile> files;
     for (const auto& relative : project_paths(root, false)) {
         auto path = relative.string();
-        if (!project_source(path))
-            continue;
+        const auto file = std::filesystem::path(root) / relative;
         std::error_code error;
-        const auto bytes =
-            std::filesystem::file_size(std::filesystem::path(root) / relative, error);
-        files.push_back({std::move(path), error ? 0 : bytes});
+        const auto bytes = std::filesystem::file_size(file, error);
+        if (error || (!project_image(path) && (bytes > largest_text || binary_head(file))))
+            continue;
+        files.push_back({std::move(path), bytes});
     }
     return files;
 }
 
 std::optional<std::string> read_project_file(const std::string& root, const std::string& path)
 {
-    std::ifstream file(std::filesystem::path(root) / path, std::ios::binary);
+    const auto location = std::filesystem::path(root) / path;
+    std::error_code error;
+    if (!project_image(path) && std::filesystem::file_size(location, error) > largest_text)
+        return std::nullopt;
+    std::ifstream file(location, std::ios::binary);
     if (!file)
         return std::nullopt;
     std::string text{std::istreambuf_iterator<char>(file), {}};

@@ -75,22 +75,6 @@ void Application::load_session()
     if (!state.is_object())
         return;
     try {
-        appearance = state.value("appearance", "system");
-        if (appearance != "light" && appearance != "dark")
-            appearance = "system";
-        renderer->set_dark_theme(appearance == "system" ? desktop_dark : appearance == "dark");
-        set_monospace_font(state.contains("monospaceFont") &&
-                                   state["monospaceFont"] == "Victor Mono"
-                               ? MonospaceFont::Victor
-                               : MonospaceFont::JetBrains);
-        const auto saved_walkthrough = state.value("walkthrough", lsp::Json());
-        if (saved_walkthrough.is_object()) {
-            try {
-                show_walkthrough(saved_walkthrough, true);
-            } catch (const std::exception&) {
-                // Invalid walkthroughs must not block restoration of the rest of the session.
-            }
-        }
         const auto saved_search = state.value("globalSearch", lsp::Json::object());
         search.query.set(saved_search.value("query", ""));
         search.active = saved_search.value("active", false);
@@ -180,12 +164,9 @@ void Application::save_session()
     }
     state.update(
         {{"root", workspace_root},
-         {"appearance", appearance},
-         {"monospaceFont", monospace_family()},
          {"originThread", origin ? origin : ""},
          {"globalSearch", {{"query", search.query.text}, {"active", search.active}}},
          {"additionalAgents", additional},
-         {"walkthrough", save_walkthrough()},
          {"camera", {{"x", camera.center.x}, {"y", camera.center.y}, {"zoom", camera.zoom}}},
          {"cameraHistory", save_navigation()},
          {"window", {{"x", x}, {"y", y}, {"width", width}, {"height", height}}},

@@ -3358,6 +3358,46 @@
     "tests/project_watch_test.cpp": "081e678 5209c8e 5cff847 f04b8fb",
     "tests/workspace_test.cpp": "4082232 82915c1 0536a5b e52fd60 fb30d3e f19210c a1d2686 6c9076c c04b333 7a4f881 fb5f68f e133ac6"
    }
+  },
+  {
+   "id": "claude-2026-11-12-take-away",
+   "at": "2026-11-12T18:38:13.338Z",
+   "source": "transcript",
+   "said": "the design is finished not when there's nothing to add. but when there's nothing to take away. remove all of it: Duplicates of what the canvas now does. Things that do not belong in a viewer (i like victor mono font). Special cases that work against any codebase. Walkthroughs (we need to rework them later). self-rebuild im on the fence, maybe remove it too, the less code we have to manage, the better",
+   "why": "Removed second ways of doing what the canvas already does (F12, Shift+F12, K, S, G, L, camera keys, thread list), what a viewer cannot use (completion, the options menu, settings), special cases (CMake server, LaTeX, file icons, the extension list), walkthroughs and self-rebuild. Victor Mono is the one code face; the theme follows the system; every text file git tracks is shown.",
+   "intent": "useful-legible-contextual",
+   "changes": {
+    ".github/workflows/quality.yml": "413cc01",
+    "CMakeLists.txt": "0f835d9 ac6ce97 a6b6651 594659a a195308",
+    "README.md": "11bb538 ba20c8a 98e07d1 9e720e6 c076075 e350b7e 6753638 aad14be bf96eb6 010a6a5 19a2159 680d7b2 f030169 dbc496f ec76570 83ed59a b23cf37 418394a 34963a7",
+    "application.cpp": "9f581c2 25a3795 8502fdc 4edc5bc c3b297b",
+    "application.h": "8323c6f 00592df 484cf2e",
+    "application_agent_context.cpp": "9e9a80e",
+    "application_agent_session.cpp": "19d5751 2be38d2 42d82a0 6cef2a2 512fb72 aa7b815 457b5b6 72b60e4 6ef5a2b a2599d9 7027e4f 28435a6 f31df9e 8023083 a0ded2c 14c6289 a1175dc be33525 51f3515 10287e2",
+    "application_chat_view.cpp": "a33df59 df78092 9ece365 ca345a1 8adf98d 8f69e11 46c4c60 74f47cd 28f3135 5b17e4a 50cb830 f7ea5b7 90955e1 c6daaa2 de946ab 10cfd97 191f251 da702cb 3d25f86 299d2d9 9e58249 bf647ca be3b447 c71b554 6f2a176 4acc74e 2e0c172",
+    "application_events.cpp": "ac4439d 6ddb374 c67a679 a7d24df ce81735 7fe3d0b df4b063",
+    "application_file_links.cpp": "dd2ff6c c4f9bc8 50739d1 68d3759 850f04f ce3ad83 814b91d d8a3edb d5c4440 c07e414 ea04545 8976c25 977c7ac 65ae2da 3c939c8 2ff9e96 c0450b0 9d75b05 44a13d7 b03700c 8f8560c 55e6633 9c48971 acabc87 d194013 3d354e6 96326eb 7bb490a 3f0a6ff 3d9ee72 777c7d2 ec7be21 aa7b815 42d82a0 f9e96e9 6b8a159 3cba66e c08d40e 8ed8527 af0d8eb",
+    "application_language.cpp": "5082415 d6f20cf 285880d 737e590 1ca3afd 0cdea67",
+    "application_model.cpp": "c8725b2 15257ae 7c9b359 eede2ee 96922ee 88462ba 010b182 bcbe7e2 8634431",
+    "application_navigation.cpp": "906bada db217e6 203b376 da349a7",
+    "application_overview.cpp": "1cc55ef 14f4804",
+    "application_shortcuts.cpp": "5d06f9a 20c5ce4 803e7b2 b33be7d 54b23ed 55a8fc6 fa40ab1 fb03000 0558b6c 6d6118a 94da716 ee6cf50 3f0daa7 a07ced4 03ce09a 84017ac f660d61 4496e2c 541e079 718fa7f bb67186 16c867b",
+    "application_text_selection.cpp": "fb82dc7",
+    "application_text_targets.cpp": "c49f224 f42e3df 6d0e553 0b67471 417e920 9185261 013c6a3 8a93f2d 8a0100b 9e8565f",
+    "application_view.cpp": "87098e1 4e76e00 41761b2 3a23138 5a8783e",
+    "canvas_tools.cpp": "169e0b7",
+    "chat_canvas.h": "5beb64d ac1eff8 1589f31",
+    "popup_markup.cpp": "9dd1ac2 b7faf39",
+    "project_watch.cpp": "fa7d5f1 5993e9c 10c2c09 61adcbc 66f3b5d f0c46c8 e97ca3e 6c68cce 3b75bba c402bcf da3726d 2305846 7d92803 176a4ee a151dcd 5a5f329 f8c4563 b5b818a 6c9d619 e972296 5cfc7a0 e0241fd b360bfc 217df3d ecde89c f90f6c2 c5032e8 1670af8 d1d2ebb c2bf0bc 2b0c4cf 4801cc9 60baca7 d27bbb5 d48819f 8adf98d 6ec361b 8c47758 d4b3e97 0145178 a3d16e6 c238ae0 b2f92e0 c053360 c5db016 7e48ce2 e92139a ae763a2 e1e5af3 83ca015 2130446 fa09435 2327b57 3307d0e f4b9127 60a9828",
+    "tests/agent_windows_test.cpp": "cf7e6d5",
+    "tests/conversation_test.cpp": "cb750e7 0473d44 1f4a810 d977465",
+    "tests/integration_test.cpp": "6f655c5 b200d9d dbbe0e6 e35ff83 3d50bce 5af2e9d c89f057",
+    "tests/live_canvas_test.cpp": "dbf181c 3f91fa2",
+    "tests/navigation_test.cpp": "15a452a 2495e59 c7e76b2 98dac03 8998533 342a457 53d0ad3 26081ab 9a7fbc1 a65fe53 6866c2d 3733e82",
+    "tests/popup_test.cpp": "8a40678 8c0f9fb",
+    "tests/search_test.cpp": "9daaf24 2b3d359 f86f3aa bb6c638 f5f1f45",
+    "tests/workspace_test.cpp": "45a2613 f8e79ac 3c194a3 e57e0ca 7fecf18 4247c3d 30ba5df 0368ec3 6b895fb"
+   }
   }
  ]
 }

@@ -112,28 +112,6 @@ struct ApplicationTestAccess {
         expect(app.go_back(), "Navigation must preserve a return location after graph relayout");
     }
 
-    static void test_symbols(Application& app, int index)
-    {
-        auto& panel = app.panels[index];
-        auto camera = std::find_if(panel.symbols.begin(), panel.symbols.end(),
-                                   [](const auto& node) { return node.name == "Camera"; });
-        expect(camera != panel.symbols.end() && !camera->children.empty(),
-               "Class symbols must have nested fields and methods");
-        app.hide_popup();
-        app.popup_origin = {30, 30};
-        app.show_outline(index);
-        app.draw();
-        const auto byte = app.popup_text.find("Camera");
-        PangoRectangle rectangle{};
-        pango_layout_index_to_pos(app.popup_layout, static_cast<int>(byte), &rectangle);
-        const Vec2 arrow{app.popup_bounds.origin.x + 17,
-                         app.popup_bounds.origin.y + 12 + rectangle.y / PANGO_SCALE + 8};
-        app.handle_button(click(arrow));
-        app.handle_release(click(arrow));
-        expect(camera->expanded && app.popup_text.find("zoom_at") != std::string::npos,
-               "Clicking an outline chevron must expand the actual nested symbol hierarchy");
-    }
-
     static void press_and_release(Application& app, Vec2 point)
     {
         auto event = click(point, 0);
@@ -151,8 +129,6 @@ struct ApplicationTestAccess {
         const auto byte = lsp::utf16_to_byte(panel.text[camera->line], camera->column);
         app.hide_popup();
         const auto point = point_at(app, index, camera->line, byte);
-        expect(app.definition_at_pointer(),
-               "A class definition must be recognized from semantic metadata");
         press_and_release(app, point);
         expect(app.connection_subject.active && app.connection_subject.name == "Camera" &&
                    app.popup_text.empty(),
@@ -172,8 +148,6 @@ struct ApplicationTestAccess {
         expect(usage >= 0, "Expected a real Camera type usage");
         const auto use_byte = panel.text[usage].find("Camera");
         const auto use_point = point_at(app, index, usage, use_byte);
-        expect(!app.definition_at_pointer(),
-               "A symbol reference must not be classified as its definition");
         press_and_release(app, use_point);
         wait_for(app, [&]() {
             return std::any_of(
@@ -287,11 +261,11 @@ struct ApplicationTestAccess {
     static void test_typeset_documentation(Application& app)
     {
         app.show_popup("## Camera\nReadable **prose** with <code>const int n = 2;</code>.\n"
-                       "The transform is $s = v + z(w-c)$.\n\\[\\frac{1}{z} + \\sqrt{x}\\]",
+                       "The transform keeps the pointed place still.",
                        {60, 60}, true);
         app.draw();
-        expect(app.popup_prose && app.popup_styles.size() == 2 && app.popup_math.size() == 2,
-               "Documentation must combine prose, code typography and equations");
+        expect(app.popup_prose && app.popup_styles.size() == 2,
+               "Documentation must combine prose and code typography");
         expect(std::string(pango_font_description_get_family(
                    pango_layout_get_font_description(app.popup_layout))) == "Noto Serif",
                "Documentation prose must use the bundled serif reading face");
@@ -306,25 +280,11 @@ struct ApplicationTestAccess {
                 const auto* font = reinterpret_cast<PangoAttrFontDesc*>(
                     pango_attr_iterator_get(iterator, PANGO_ATTR_FONT_DESC));
                 monospace = font && std::string(pango_font_description_get_family(font->desc)) ==
-                                        "JetBrains Mono";
+                                        "Victor Mono";
             }
         } while (pango_attr_iterator_next(iterator));
         pango_attr_iterator_destroy(iterator);
-        expect(monospace, "Inline code must retain JetBrains Mono inside serif prose");
-        const auto deadline = Application::Clock::now() + std::chrono::seconds(12);
-        auto ready = [&]() {
-            return std::all_of(app.popup_math.begin(), app.popup_math.end(), [&](const auto& math) {
-                const auto found =
-                    app.math_artwork.find(MathTypesetter::key(math.expression, math.display));
-                return found != app.math_artwork.end() && found->second.ready;
-            });
-        };
-        while (!ready() && Application::Clock::now() < deadline) {
-            pollfd fd{app.math_typesetter->event_fd(), POLLIN, 0};
-            poll(&fd, 1, 50);
-            app.poll_math();
-        }
-        expect(ready(), "LaTeX equations must reach the actual GPU popup as cached artwork");
+        expect(monospace, "Inline code must keep the code face inside serif prose");
         app.draw();
         expect(app.popup_mesh.vertices > 0,
                "Typeset documentation must upload a renderable GPU mesh");
@@ -342,25 +302,9 @@ struct ApplicationTestAccess {
         wait_for(app, [&]() { return !app.popup_text.empty(); });
         expect(app.popup_prose && app.popup_text.find("world coordinates") != std::string::npos,
                "Actual clangd documentation must reach the prose renderer");
-        expect(app.popup_math.size() == 4 && !app.popup_inline_code.empty() &&
-                   app.popup_text.find("\\*") == std::string::npos,
-               "Real source documentation must recover math, examples and HTML through clangd");
+        expect(!app.popup_inline_code.empty() && app.popup_text.find("\\*") == std::string::npos,
+               "Real source documentation must recover examples and HTML through clangd");
         app.draw();
-        auto ready = [&]() {
-            return std::all_of(app.popup_math.begin(), app.popup_math.end(), [&](const auto& math) {
-                const auto found =
-                    app.math_artwork.find(MathTypesetter::key(math.expression, math.display));
-                return found != app.math_artwork.end() && found->second.ready;
-            });
-        };
-        const auto deadline = Application::Clock::now() + std::chrono::seconds(12);
-        while (!ready() && Application::Clock::now() < deadline) {
-            pollfd fd{app.math_typesetter->event_fd(), POLLIN, 0};
-            poll(&fd, 1, 50);
-            app.poll_math();
-        }
-        expect(ready(),
-               "Every equation from actual clangd documentation must typeset successfully");
         app.hide_popup();
         std::string long_doc = "## A long explanation\n";
         for (int i = 0; i < 80; ++i)
@@ -403,7 +347,6 @@ struct ApplicationTestAccess {
         test_live_documentation(app, index);
         test_popup(app);
         test_folding(app, index);
-        test_symbols(app, index);
         test_context_navigation(app, index);
         std::cout
             << "Connections, popup, folding, symbol hierarchy and navigation checks passed.\n";

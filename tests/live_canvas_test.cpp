@@ -125,9 +125,8 @@ struct ApplicationTestAccess {
         app.handle_event(escape);
         app.draw();
         expect(!app.connection_subject.active && app.connection_links.empty() &&
-                   app.connection_markers.empty() &&
-                   app.options_page == Application::OptionsPage::Closed,
-               "Escape must put the arrows away before doing anything else");
+                   app.connection_markers.empty(),
+               "Escape must put the arrows away");
     }
     static void test_live_source(Application& app, const std::filesystem::path& root)
     {
@@ -339,15 +338,6 @@ struct ApplicationTestAccess {
                "Reload state must preserve the draft, caret, scroll position and camera");
         expect(std::filesystem::exists(root / ".cache/canvas-session.json"),
                "The view state must be saved inside the project cache");
-        app.chat->conversation.questions.push_back(
-            {1, "item/commandExecution/requestApproval", "approval", lsp::Json::object()});
-        app.request_reload();
-        expect(app.deferred_reload && !app.reload_requested,
-               "A viewer reload must wait for an actual pending approval to be answered");
-        app.chat->conversation.questions.clear();
-        app.request_reload();
-        expect(app.reload_requested && !app.running,
-               "A ready viewer must request a state-preserving restart");
     }
     static void run(Application& app, const std::filesystem::path& root, bool symbols)
     {
@@ -397,7 +387,6 @@ int main(int argc, char** argv)
         std::filesystem::current_path(root);
         unsetenv("SOURCE_CANVAS_PROJECT_ROOT");
         setenv("SOURCE_CANVAS_DISABLE_AGENT", "1", 1);
-        setenv("SOURCE_CANVAS_AUTO_BUILD", "0", 1);
         {
             Application app(root.string());
             ApplicationTestAccess::run(app, root, symbols);

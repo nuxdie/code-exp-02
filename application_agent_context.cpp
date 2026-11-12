@@ -199,7 +199,7 @@ void Application::prepare_chat_prompt()
             pango_layout_get_ellipsize(preview.layout.get()) == PANGO_ELLIPSIZE_NONE) {
             pango_layout_set_height(preview.layout.get(), 240 * PANGO_SCALE);
             pango_layout_set_ellipsize(preview.layout.get(), PANGO_ELLIPSIZE_END);
-            upload_document_mesh(preview.mesh, preview.layout.get(), preview.document.math);
+            renderer->upload(preview.mesh, {{preview.layout.get(), {0, 0}}});
         }
         preview_height = std::min(240.0, chat->context_preview.size.y) + 24;
     }

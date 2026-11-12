@@ -34,7 +34,6 @@ bool Application::begin_text_selection(const XEvent& event, Vec2 pointer)
     text_selection.surface = target.surface;
     text_selection.chat = target.surface == TextSurface::Chat ? chat.get() : nullptr;
     text_selection.key = target.key;
-    text_selection.math = target.math ? *target.math : std::vector<PopupMath>{};
     text_selection.press = pointer;
     text_selection.dragging = true;
     text_selection.moved = false;
@@ -108,14 +107,7 @@ std::string Application::selected_text()
     if (!target.text || *target.text != text_selection.range.text)
         return {};
     const auto [begin, end] = selected_input().selection();
-    auto result = text_selection.range.text.substr(begin, end - begin);
-    for (auto math = text_selection.math.rbegin(); math != text_selection.math.rend(); ++math) {
-        if (math->begin < begin || math->begin + 3 > end)
-            continue;
-        const auto delimiter = math->display ? "$$" : "$";
-        result.replace(math->begin - begin, 3, delimiter + math->expression + delimiter);
-    }
-    return result;
+    return text_selection.range.text.substr(begin, end - begin);
 }
 bool Application::selection_key(const XEvent& event)
 {

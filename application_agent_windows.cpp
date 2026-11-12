@@ -84,11 +84,6 @@ void Application::draw_conversation()
     chat_animation_due = Clock::time_point::max();
     auto& occupied = window_headers;
     occupied = header_hits;
-    if (walkthrough) {
-        occupied.push_back(walkthrough->header_bounds);
-        for (const auto& step : walkthrough->steps)
-            occupied.push_back(step.header_bounds);
-    }
     for (auto& card : chat_windows) {
         std::swap(chat, card);
         draw_chat_card();

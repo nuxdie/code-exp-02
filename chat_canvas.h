@@ -10,20 +10,7 @@
 #include <map>
 
 struct ChatHit {
-    enum class Kind {
-        Title,
-        Input,
-        Send,
-        Stop,
-        Threads,
-        Thread,
-        Scrollbar,
-        Message,
-        Text,
-        Accept,
-        Decline,
-        Option
-    };
+    enum class Kind { Title, Input, Send, Stop, Scrollbar, Message, Text, Accept, Decline, Option };
     Kind kind;
     CanvasRect bounds;
     std::size_t index = 0;
@@ -50,7 +37,7 @@ struct ChatCanvas {
     std::size_t question_index = 0;
     nlohmann::json question_answers = nlohmann::json::object();
     std::string question_key;
-    bool focused = false, follow = true, choosing_thread = false, placed = false;
+    bool focused = false, follow = true, placed = false;
     bool dragging = false, scrolling = false;
     double scroll_grab_fraction = 0;
     void follow_camera(const Camera& before, const Camera& after, const Viewport& viewport)
@@ -87,7 +74,7 @@ struct ChatCanvas {
     }
     CanvasRect scrollbar_track() const
     {
-        if (choosing_thread || body.size.y <= 0 || content_height <= body.size.y)
+        if (body.size.y <= 0 || content_height <= body.size.y)
             return {};
         return {{body.origin.x + body.size.x + 4, body.origin.y}, {16, body.size.y}};
     }

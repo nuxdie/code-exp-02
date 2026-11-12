@@ -87,18 +87,6 @@ inline std::vector<SymbolNode> symbol_tree(const lsp::Json& data)
     return result;
 }
 
-inline bool symbol_definition(const std::vector<SymbolNode>& nodes, int line, int column)
-{
-    for (const auto& node : nodes) {
-        if (node.line == line && column >= node.column &&
-            column <= node.column + lsp::byte_to_utf16(node.name, node.name.size()))
-            return true;
-        if (symbol_definition(node.children, line, column))
-            return true;
-    }
-    return false;
-}
-
 namespace structure_text {
 inline int indent(const std::string& row)
 {

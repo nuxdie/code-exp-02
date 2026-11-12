@@ -98,20 +98,6 @@ void Application::chat_action(const ChatHit& hit, Vec2 world)
     case ChatHit::Kind::Stop:
         chat->conversation.interrupt();
         break;
-    case ChatHit::Kind::Threads:
-        chat->choosing_thread = !chat->choosing_thread;
-        chat->conversation.list_threads();
-        break;
-    case ChatHit::Kind::Thread:
-        if (hit.index < chat->conversation.threads.size()) {
-            chat->drafts[chat->conversation.thread_id] = chat->input.text;
-            chat->conversation.select_thread(chat->conversation.threads[hit.index].value("id", ""));
-            chat->input.set(chat->drafts[chat->conversation.thread_id]);
-            chat->choosing_thread = false;
-            chat->messages.clear();
-            chat->follow = true;
-        }
-        break;
     case ChatHit::Kind::Message:
         chat_message_action(hit, world);
         break;

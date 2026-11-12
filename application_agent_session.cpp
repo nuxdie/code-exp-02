@@ -55,3 +55,28 @@ void Application::load_agent_window(ChatCanvas& card, const lsp::Json& state)
         card.placed = true;
     }
 }
+
+bool Application::handle_canvas_tool(const lsp::Json& message)
+{
+    if (message.value("method", "") != "item/tool/call" || !message.contains("id"))
+        return false;
+    const auto params = message.value("params", lsp::Json::object());
+    if (params.value("threadId", "") != chat->conversation.thread_id)
+        return true;
+    bool success = false;
+    std::string result;
+    try {
+        if (params.value("tool", "") != "canvas_intent")
+            throw std::runtime_error("Unknown canvas tool");
+        result = record_turn_intent(params);
+        success = true;
+    } catch (const std::exception& error) {
+        result = error.what();
+    }
+    chat->client->send(
+        {{"id", message["id"]},
+         {"result",
+          {{"success", success},
+           {"contentItems", lsp::Json::array({{{"type", "inputText"}, {"text", result}}})}}}});
+    return true;
+}

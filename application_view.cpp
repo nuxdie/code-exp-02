@@ -57,7 +57,7 @@ PangoLayout* Application::make_line(const std::string& line, const std::vector<T
     }
     style_document_spans(attributes, web_links(line));
     if (prose)
-        set_as_prose(attributes, line, *prose, monospace_family());
+        set_as_prose(attributes, line, *prose, monospace_family);
     pango_layout_set_attributes(layout, attributes);
     pango_attr_list_unref(attributes);
     return layout;
@@ -67,16 +67,6 @@ Viewport Application::viewport()
 {
     return {0, 0, static_cast<double>(std::max(1, width)),
             static_cast<double>(std::max(1, height))};
-}
-
-void Application::fit_width()
-{
-    remember_view();
-    const auto view = viewport();
-    camera.zoom = std::clamp(view.width / std::max(1.0, content_size.x), Camera::min_zoom, 1.0);
-    camera.home(view);
-    zoom_animation.cancel(camera);
-    finish_view();
 }
 
 void Application::draw()
@@ -103,7 +93,6 @@ void Application::draw()
     draw_fold_toggle();
     draw_intent_note();
     draw_connection_markers();
-    draw_walkthrough();
     draw_agent_activity();
     draw_conversation();
     draw_popup();
@@ -254,7 +243,7 @@ void Application::draw_popup()
 void Application::add_popup_syntax(PangoAttrList* attributes, const std::string& text,
                                    std::size_t offset, HighlightState& state)
 {
-    auto* description = pango_font_description_from_string(monospace_family());
+    auto* description = pango_font_description_from_string(monospace_family);
     pango_font_description_set_absolute_size(description, 14 * PANGO_SCALE);
     auto* font = pango_attr_font_desc_new(description);
     pango_font_description_free(description);
@@ -308,7 +297,7 @@ void Application::style_document_spans(PangoAttrList* attributes,
 void Application::configure_document(PangoLayout* layout, const PopupDocument& document,
                                      int layout_width, bool prose)
 {
-    auto* font = pango_font_description_from_string(prose ? "Noto Serif" : monospace_family());
+    auto* font = pango_font_description_from_string(prose ? "Noto Serif" : monospace_family);
     pango_font_description_set_absolute_size(font, (prose ? 17 : 14) * PANGO_SCALE);
     pango_layout_set_font_description(layout, font);
     pango_font_description_free(font);
@@ -322,7 +311,6 @@ void Application::configure_document(PangoLayout* layout, const PopupDocument& d
     auto* attributes = pango_attr_list_new();
     pango_attr_list_insert(attributes, pango_attr_font_features_new("liga=1,clig=1,calt=1"));
     style_document_spans(attributes, document.styles);
-    shape_document_math(attributes, document.math, layout_width);
     HighlightState state;
     std::istringstream input(document.text);
     std::string line;
@@ -389,13 +377,12 @@ void Application::update_popup_mesh(int layout_width)
     document.text = popup_text;
     document.code_lines = popup_code_lines;
     document.styles = popup_styles;
-    document.math = popup_math;
     document.inline_code = popup_inline_code;
     configure_document(popup_layout, document, layout_width, popup_prose);
     compact_popup_layout(popup_layout, document, popup_prose);
     if (shortcuts_visible)
         style_shortcuts(layout_width);
-    upload_document_mesh(popup_mesh, popup_layout, popup_math);
+    renderer->upload(popup_mesh, {{popup_layout, {0, 0}}});
     cached_popup = popup_text;
     cached_popup_width = layout_width;
     cached_popup_code_lines = popup_code_lines;
@@ -414,7 +401,7 @@ void Application::update_document(DocumentView& view, const std::string& source,
     if (!view.layout)
         view.layout.reset(pango_layout_copy(base_layout));
     configure_document(view.layout.get(), view.document, width, prose);
-    upload_document_mesh(view.mesh, view.layout.get(), view.document.math);
+    renderer->upload(view.mesh, {{view.layout.get(), {0, 0}}});
     int text_width = 0, height = 0;
     pango_layout_get_pixel_size(view.layout.get(), &text_width, &height);
     view.size = {static_cast<double>(text_width), static_cast<double>(height)};

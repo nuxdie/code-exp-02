@@ -26,7 +26,7 @@
 
 Source Canvas is an experimental native Linux workspace that turns a source tree into a zoomable canvas. Files become movable cards, dependencies become visible connections, and agent conversations live next to the code they discuss. A separate intent view connects human decisions to Git changes and line history.
 
-Image files appear as preview cards alongside source, including images in `assets/`. PNG, JPEG, SVG, GIF, BMP, TIFF, ICO and WebP extensions are recognized; decoding depends on installed GdkPixbuf loaders. Previews preserve transparency and aspect ratio, fit within 640 canvas units, and reload when edited. Animated images show a still frame. Invalid or unsupported images show an error card.
+Image files appear as preview cards alongside source. PNG, JPEG, SVG, GIF, BMP, TIFF, ICO and WebP extensions are recognized; decoding depends on installed GdkPixbuf loaders. Previews preserve transparency and aspect ratio, fit within 640 canvas units, and reload when edited. Animated images show a still frame. Invalid or unsupported images show an error card.
 
 The repository is named `code-exp-02`; the executable is currently called `white_window`.
 
@@ -54,12 +54,12 @@ Press `/` to search file names and source text. Results update as you type; use 
 
 | Capability | What you can do |
 | --- | --- |
-| **Spatial source browsing** | Move file cards, fold blocks, fit the canvas, and arrange files by folder. Each folder is a named region. Zoomed out past reading size, a file shows the names of what it defines (or a document its headings) over the code, and titles that would overlap are left out; the file under the pointer always shows its title. Words meant to be read are set as prose where they stand: a comment on its own line loses its marker and is set in a serif face, as are Markdown and text files; commented-out code, aligned columns and fenced code keep the code face. Click a symbol to draw arrows to where it is defined (blue) and from every place that uses it (orange), project-wide. An end in view is a highlighted word; ends out of view become one marker per file on the window edge in their direction. Click a marker to fly there; `Esc` puts the arrows away. Without a language server the arrows connect other occurrences of the word. An agent editing out of view is announced on the edge the same way. |
-| **Language navigation** | Inspect documentation, definitions, references, symbols, diagnostics, and completion suggestions through `clangd` and `neocmakelsp`. |
+| **Spatial source browsing** | Every text file the project tracks is a card, whatever its language; a project's own ignore rules decide what is left out. Move file cards, fold blocks and fit the canvas. Files gather by folder, and each folder is a named region. Zoomed out past reading size, a file shows the names of what it defines (or a document its headings) over the code, and titles that would overlap are left out; the file under the pointer always shows its title. Words meant to be read are set as prose where they stand: a comment on its own line loses its marker and is set in a serif face, as are Markdown and text files; commented-out code, aligned columns and fenced code keep the code face. Click a symbol to draw arrows to where it is defined (blue) and from every place that uses it (orange), project-wide. An end in view is a highlighted word; ends out of view become one marker per file on the window edge in their direction. Click a marker to fly there; `Esc` puts the arrows away. Without a language server the arrows connect other occurrences of the word. An agent editing out of view is announced on the edge the same way. |
+| **Language navigation** | Hover for documentation, and see diagnostics and symbol-aware arrows, through `clangd`. |
 | **Conversations beside the code** | Open an agent conversation at the pointer. The app attaches source location, selected text, and visible-file context. Keep multiple conversation cards on the canvas. |
 | **Human intent beside the code** | A coloured bar in each file's gutter marks which of your decisions produced those lines. Hover for the decision; press `I` or click the bar to read your exact words and the agent's reasoning at the time, and to light up everything that decision touched. |
-| **Live source updates** | Watch project files for changes. With agents enabled, the viewer can rebuild and restart itself while preserving session state. |
-| **Rich reading** | Read formatted documentation, code blocks, and LaTeX equations; select and copy text across source, conversations, and popups. The canvas follows the desktop theme. |
+| **Live source updates** | Cards follow the files on disk as they change. |
+| **Rich reading** | Read formatted documentation and code blocks; select and copy text across source, conversations, and popups. The canvas follows the desktop theme. |
 
 ## Get running
 
@@ -81,19 +81,10 @@ sudo apt-get update
 sudo apt-get install -y \
   cmake cmake-format g++ pkg-config python3 python3-websockets \
   clang-format-18 clang-tidy-18 clangd-18 \
-  libx11-dev libpango1.0-dev libfontconfig1-dev librsvg2-dev \
+  libx11-dev libpango1.0-dev libfontconfig1-dev \
   libepoxy-dev nlohmann-json3-dev \
-  texlive-latex-base dvisvgm \
   xvfb xauth libgl1-mesa-dri libglx-mesa0 zenity
 ```
-
-Install the pinned CMake language server; the installer verifies the release archive's SHA-256 checksum:
-
-```bash
-python3 tools/install_cmake_lsp.py
-```
-
-The installer supports Linux x86-64 and ARM64. On other architectures, provide `neocmakelsp` on `PATH` before configuring.
 
 ### 3. Build and open
 
@@ -110,11 +101,11 @@ The viewer opens its own source tree by default, regardless of your current dire
 ./build/white_window .
 ```
 
-Press **Ctrl+O** to choose a project directory in a native folder picker (provided by Zenity). Selecting a different directory saves the current session and reopens the viewer on that project; canceling keeps the current workspace. Explicit directory arguments are preserved across automatic viewer reloads.
+Press **Ctrl+O** to choose a project directory in a native folder picker (provided by Zenity). Selecting a different directory saves the current session and reopens the viewer on that project; canceling keeps the current workspace.
 
-Bundled fonts and icons are copied into `build/`; keep them beside the executable. Each project keeps its own session and decisions. Automatic viewer rebuilds run only when browsing the viewer's own source tree.
+Bundled fonts are copied into `build/`; keep them beside the executable. Each project keeps its own session and decisions.
 
-> CMake configuration automatically formats the project's C++ and CMake files. Formatting tools, Python `websockets` and the LaTeX tools are configure-time requirements.
+> CMake configuration automatically formats the project's C++ and CMake files. Formatting tools and Python `websockets` are configure-time requirements.
 
 ### Agent conversations
 
@@ -122,9 +113,8 @@ The agent bridge expects an authenticated local Codex installation available as 
 
 New canvas threads currently run with full filesystem access and no approval prompts.
 
-Ask a new canvas conversation to **“show me how this is wired”**. Its `canvas_walkthrough` tool can arrange up to twelve focused source excerpts together, including multiple ranges from one file, with numbered steps, explanations, and labeled arrows. It controls horizontal, vertical, grid, or explicit positions and can focus or clear the walkthrough. Drag excerpt titles to adjust the layout, click code to open its original source line, or middle-click the walkthrough to dismiss it. Excerpts show live source at the specified line ranges, and the walkthrough survives session reloads. Ranges follow line numbers; review them after edits that move code.
 
-The tool is registered when a thread is created and retained when that thread resumes, using the [Codex app-server dynamic tool protocol](https://learn.chatgpt.com/docs/app-server#dynamic-tool-calls-experimental). Conversations created before this feature need a new thread to use it.
+Agents file each turn against your decisions through a `canvas_intent` tool. It is registered when a thread is created and retained when that thread resumes, using the [Codex app-server dynamic tool protocol](https://learn.chatgpt.com/docs/app-server#dynamic-tool-calls-experimental).
 
 To browse the source with agent connections disabled:
 
@@ -132,7 +122,7 @@ To browse the source with agent connections disabled:
 SOURCE_CANVAS_DISABLE_AGENT=1 ./build/white_window
 ```
 
-Source browsing, search, and language navigation remain available in this mode. Automatic viewer rebuilds and session saving are tied to agent mode and are disabled with it.
+Source browsing, search, and language navigation remain available in this mode. Session saving is tied to agent mode and is disabled with it.
 
 ## Find your way
 
@@ -142,15 +132,14 @@ Start with **`/`** to find a file, **`F`** to see the whole canvas, and **`F1`**
 | --- | --- |
 | Open a project directory | `Ctrl+O` |
 | Zoom around the pointer | Mouse wheel |
-| Pan | Drag blank space, middle-drag on source or blank canvas, or arrow keys |
+| Pan | Drag blank space, or middle-drag anywhere |
 | Move a card | Drag its title |
-| Fit everything / fit width / reset view | `F` / `W` / `0` |
-| Arrange files / hide arrows | `L` / `G` |
+| Fit everything | `F` |
 | Search the project | `/`, then `↑` / `↓` and `Enter` |
-| Read symbol documentation | Hover or `K` |
+| Read symbol documentation | Hover |
 | Arrows for a symbol / put them away | Click / `Esc` |
-| Go to definition / usages / back | `F12` / `Shift+F12` / `Alt+Left` |
-| Show symbols / collapse or expand blocks | `S` / `C` or `Shift+C` |
+| Camera back / forward | `Alt+Left` / `Alt+Right` |
+| Collapse or expand blocks | `C` / `Shift+C` |
 | Open a contextual conversation | Right-click or `Ctrl+Shift+A` |
 | Close a conversation to its title / reopen / remove | Middle-click / click the title / middle-click the title |
 | Close a note, search, or popup | Middle-click it |
@@ -169,8 +158,7 @@ Session state normally lives in `.cache/canvas-session.json` and preserves the c
 | Environment variable | Effect |
 | --- | --- |
 | `SOURCE_CANVAS_PROJECT_ROOT=/absolute/path` | Select a project when no directory argument is passed (relative paths also work). A directory argument takes precedence. Language tools use this project's compilation database in its root or `build/`, with `.cache/source-canvas/` as a fallback for generated files. |
-| `SOURCE_CANVAS_DISABLE_AGENT=1` | Disable agent connections, automatic viewer rebuilds, and session saving. |
-| `SOURCE_CANVAS_AUTO_BUILD=0` | Keep agent connections but disable automatic viewer rebuilds and reloads. |
+| `SOURCE_CANVAS_DISABLE_AGENT=1` | Disable agent connections and session saving. |
 | `SOURCE_CANVAS_STATE_FILE=/absolute/path.json` | Use a separate canvas session file. |
 | `SOURCE_CANVAS_DISABLE_SESSION=1` | Skip restoring and saving the session. |
 | `SOURCE_CANVAS_AGENT_SOCKET=/path/to/socket` | Connect the agent bridge to a specific local app-server socket. |
@@ -186,7 +174,7 @@ The interface is built directly on X11 and OpenGL. Pango/Cairo shape text, an Op
 | Application and event loop | [`main.cpp`](main.cpp), [`application.cpp`](application.cpp), [`application_events.cpp`](application_events.cpp) |
 | Camera, geometry, and GPU rendering | [`camera.h`](camera.h), [`canvas.h`](canvas.h), [`gpu.cpp`](gpu.cpp) |
 | Source cards, dependencies, and file watching | [`application_model.cpp`](application_model.cpp), [`source_graph.cpp`](source_graph.cpp), [`project_watch.cpp`](project_watch.cpp) |
-| Language servers and documentation | [`lsp.cpp`](lsp.cpp), [`application_language.cpp`](application_language.cpp), [`popup_markup.cpp`](popup_markup.cpp), [`math_typesetter.cpp`](math_typesetter.cpp) |
+| Language servers and documentation | [`lsp.cpp`](lsp.cpp), [`application_language.cpp`](application_language.cpp), [`popup_markup.cpp`](popup_markup.cpp) |
 | Agent conversations | [`conversation.cpp`](conversation.cpp), [`agent_client.cpp`](agent_client.cpp), [`tools/agent_bridge.py`](tools/agent_bridge.py) |
 | Intent | [`tools/intents.py`](tools/intents.py), [`intent_margin.cpp`](intent_margin.cpp), [`application_intent_margin.cpp`](application_intent_margin.cpp) |
 | Build, tests, and quality policy | [`CMakeLists.txt`](CMakeLists.txt), [`tests/`](tests/), [`tools/quality.py`](tools/quality.py) |
@@ -211,4 +199,4 @@ Intent lives in `.canvas/intents.json`: distilled decisions, the verbatim turns 
 
 ### Credits
 
-Typography: [JetBrains Mono](fonts/OFL.txt), [Victor Mono](fonts/victor-mono/OFL.txt), and [Noto Serif](fonts/noto-serif/LICENSE). File icons: [vscode-icons](assets/vscode-icons/LICENSE). Their source and license files are included alongside the assets.
+Typography: [Victor Mono](fonts/victor-mono/OFL.txt) and [Noto Serif](fonts/noto-serif/LICENSE). Their source and license files are included alongside the fonts.

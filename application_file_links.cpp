@@ -78,41 +78,55 @@ bool Application::open_link(const std::string& destination)
                     {"range", {{"start", {{"line", line}, {"character", column}}}}}});
 }
 
-bool Application::open_literal_file(const SourceHit& hit)
+lsp::LanguageServer* Application::server_for(const SourcePanel& panel)
 {
-    const auto& source = panels[hit.panel];
-    if (!source.cmake)
+    return panel.cpp ? language_server.get() : nullptr;
+}
+bool Application::open_document_link(Vec2 pointer)
+{
+    const auto literal = text_link_at(pointer);
+    if (!literal.empty()) {
+        auto* companion = chat_at(pointer);
+        const auto before = camera;
+        const bool opened = open_link(literal);
+        if (opened && companion) {
+            companion->follow_camera(before, camera, viewport());
+            schedule_save();
+        }
+        return opened;
+    }
+    const auto hit = hit_test(pointer);
+    if (hit.panel < 0)
         return false;
-    const auto& line = source.text[hit.line];
-    HighlightState state;
-    for (const auto& token : highlight(line, state, true))
-        if (token.syntax == Syntax::Comment && hit.byte >= token.begin)
-            return false;
-    std::string target;
-    std::size_t longest = 0;
-    const auto base =
-        std::filesystem::path(workspace_root) / std::filesystem::path(source.path).parent_path();
-    for (const auto& panel : panels) {
-        const auto absolute =
-            (std::filesystem::path(workspace_root) / panel.path).lexically_normal();
-        const auto candidate = absolute.lexically_relative(base).generic_string();
-        if (candidate.empty())
+    const auto& panel = panels[hit.panel];
+    const auto column = lsp::byte_to_utf16(panel.text[hit.line], hit.byte);
+    for (const auto& link : panel.links) {
+        const auto& range = link.at("range");
+        const auto& start = range.at("start");
+        const auto& end = range.at("end");
+        const bool after =
+            hit.line > start.value("line", 0) ||
+            (hit.line == start.value("line", 0) && column >= start.value("character", 0));
+        const bool before = hit.line < end.value("line", 0) || (hit.line == end.value("line", 0) &&
+                                                                column < end.value("character", 0));
+        if (!after || !before)
             continue;
-        auto position = line.find(candidate);
-        while (position != std::string::npos) {
-            const auto end = position + candidate.size();
-            const bool left = position == 0 || std::string(" \t\"'();").find(line[position - 1]) !=
-                                                   std::string::npos;
-            const bool right =
-                end == line.size() || std::string(" \t\"'();").find(line[end]) != std::string::npos;
-            if (left && right && hit.byte >= position && hit.byte < end &&
-                candidate.size() > longest) {
-                target = panel.uri;
-                longest = candidate.size();
-            }
-            position = line.find(candidate, end);
+        const auto target = link.value("target", "");
+        if (!target.empty())
+            return open_link(target);
+        auto* server = server_for(panel);
+        if (server) {
+            navigation_request = server->request("documentLink/resolve", panel.uri, link);
+            return true;
         }
     }
-    return !target.empty() &&
-           jump_to({{"uri", target}, {"range", {{"start", {{"line", 0}, {"character", 0}}}}}});
+    return false;
+}
+void Application::language_links(const lsp::Message& message)
+{
+    const auto found = std::find_if(panels.begin(), panels.end(),
+                                    [&](const auto& panel) { return panel.uri == message.uri; });
+    if (found == panels.end())
+        return;
+    found->links = message.result.is_array() ? message.result : lsp::Json::array();
 }

@@ -65,20 +65,20 @@ struct ApplicationTestAccess {
                "Workspace must resolve the explicit directory or environment override");
         expect(app.workspace_build == build.string(),
                "Language tools and generated files must use the selected project");
-        expect(app.panels.size() == (file.empty() ? 0 : 1),
-               "Canvas must contain only the selected project's source");
+        expect(std::all_of(app.panels.begin(), app.panels.end(),
+                           [&](const auto& panel) {
+                               return panel.path == file || panel.path == "compile_commands.json";
+                           }) &&
+                   app.panels.empty() == file.empty(),
+               "Canvas must contain only the selected project's files");
         if (!file.empty()) {
-            expect(app.panels.front().path == file &&
-                       app.panels.front().uri == lsp::file_uri((root / file).string()),
+            const auto card = std::find_if(app.panels.begin(), app.panels.end(),
+                                           [&](const auto& panel) { return panel.path == file; });
+            expect(card != app.panels.end() && card->uri == lsp::file_uri((root / file).string()),
                    "Source cards and navigation must point into the selected project");
         }
         expect(app.agent_context({0, 0}).at("workspace") == app.workspace_root,
                "Agent context must describe the selected workspace");
-        app.chat->disabled = false;
-        app.initialize_reload();
-        expect(!app.auto_build && !app.live_build,
-               "Editing another project must never rebuild or reload the viewer");
-        app.chat->disabled = true;
     }
 
     static void check_images(const std::filesystem::path& root)
@@ -220,7 +220,6 @@ int main()
         std::ofstream(root / "other/build/compile_commands.json") << "[]\n";
         std::filesystem::current_path(root);
         unsetenv("SOURCE_CANVAS_PROJECT_ROOT");
-        unsetenv("SOURCE_CANVAS_AUTO_BUILD");
         setenv("SOURCE_CANVAS_DISABLE_AGENT", "1", 1);
         setenv("SOURCE_CANVAS_DISABLE_SESSION", "1", 1);
         setenv("SOURCE_CANVAS_DISABLE_INTENT", "1", 1);

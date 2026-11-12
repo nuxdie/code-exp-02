@@ -106,62 +106,40 @@ void Application::draw_chat_header(std::vector<CanvasRect>& occupied)
     renderer->draw(chat_icon_mesh, bounds.origin, scale);
 }
 
-void Application::draw_chat_threads()
-{
-    double y = 0;
-    for (std::size_t i = 0; i < chat->conversation.threads.size(); ++i) {
-        const auto& thread = chat->conversation.threads[i];
-        const auto name = thread.contains("name") && thread["name"].is_string()
-                              ? thread["name"].get<std::string>()
-                              : thread.value("preview", "Conversation");
-        auto& entry = chat->messages["__thread_" + std::to_string(i)];
-        update_document(entry, name.substr(0, 120), static_cast<int>(chat->body.size.x), false);
-        const Vec2 world{chat->body.origin.x, chat->body.origin.y + y};
-        renderer->draw(entry.mesh, camera.world_to_screen(world, viewport()), camera.zoom);
-        chat->hits.push_back({ChatHit::Kind::Thread, {world, {chat->body.size.x, 48}}, i});
-        y += 48;
-    }
-}
-
 void Application::draw_chat_messages()
 {
     const auto screen = camera.world_to_screen(chat->body.origin, viewport());
     renderer->clip({screen, {chat->body.size.x * camera.zoom, chat->body.size.y * camera.zoom}},
                    height);
-    if (chat->choosing_thread)
-        draw_chat_threads();
-    else {
-        double y = chat->body.origin.y - chat->scroll;
-        for (std::size_t i = 0; i < chat->conversation.entries.size(); ++i) {
-            const auto& entry = chat->conversation.entries[i];
-            if (entry.activity)
-                continue;
-            const double entry_height = chat_entry_height(i);
-            const auto bounds = chat->message_text_bounds(i, y);
-            const auto found = chat->messages.find(entry.id);
-            if (bounds.intersects(chat->body) && found != chat->messages.end() &&
-                found->second.layout) {
-                const auto bubble = camera.world_to_screen(
-                    {bounds.origin.x - 12, bounds.origin.y - 10}, viewport());
-                renderer->rectangle(
-                    {bubble,
-                     {(bounds.size.x + 24) * camera.zoom, (bounds.size.y + 20) * camera.zoom}},
-                    entry.role == "You" ? std::array<float, 4>{0.85f, 0.91f, 0.99f, 1}
-                                        : std::array<float, 4>{0.94f, 0.95f, 0.96f, 1});
-                if (text_selection.surface == TextSurface::Chat &&
-                    text_selection.chat == chat.get() && text_selection.key == entry.id &&
-                    text_selection.range.text == found->second.document.text)
-                    draw_selection_layout(found->second.layout.get(),
-                                          camera.world_to_screen(bounds.origin, viewport()),
-                                          camera.zoom, text_selection.range.selection());
-                renderer->draw(found->second.mesh,
-                               camera.world_to_screen(bounds.origin, viewport()), camera.zoom);
-                chat->hits.push_back({ChatHit::Kind::Message, bounds, i});
-            }
-            y += entry_height;
+    double y = chat->body.origin.y - chat->scroll;
+    for (std::size_t i = 0; i < chat->conversation.entries.size(); ++i) {
+        const auto& entry = chat->conversation.entries[i];
+        if (entry.activity)
+            continue;
+        const double entry_height = chat_entry_height(i);
+        const auto bounds = chat->message_text_bounds(i, y);
+        const auto found = chat->messages.find(entry.id);
+        if (bounds.intersects(chat->body) && found != chat->messages.end() &&
+            found->second.layout) {
+            const auto bubble =
+                camera.world_to_screen({bounds.origin.x - 12, bounds.origin.y - 10}, viewport());
+            renderer->rectangle(
+                {bubble, {(bounds.size.x + 24) * camera.zoom, (bounds.size.y + 20) * camera.zoom}},
+                entry.role == "You" ? std::array<float, 4>{0.85f, 0.91f, 0.99f, 1}
+                                    : std::array<float, 4>{0.94f, 0.95f, 0.96f, 1});
+            if (text_selection.surface == TextSurface::Chat && text_selection.chat == chat.get() &&
+                text_selection.key == entry.id &&
+                text_selection.range.text == found->second.document.text)
+                draw_selection_layout(found->second.layout.get(),
+                                      camera.world_to_screen(bounds.origin, viewport()),
+                                      camera.zoom, text_selection.range.selection());
+            renderer->draw(found->second.mesh, camera.world_to_screen(bounds.origin, viewport()),
+                           camera.zoom);
+            chat->hits.push_back({ChatHit::Kind::Message, bounds, i});
         }
-        draw_chat_working(y);
+        y += entry_height;
     }
+    draw_chat_working(y);
     renderer->clear_clip();
     draw_chat_scrollbar();
 }

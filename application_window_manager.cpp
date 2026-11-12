@@ -61,13 +61,6 @@ Application::WindowKind Application::window_at(Vec2 pointer)
         return WindowKind::Chat;
     if (std::any_of(chat_windows.begin(), chat_windows.end(), hit_chat))
         return WindowKind::Chat;
-    if (walkthrough)
-        for (const auto& step : walkthrough->steps)
-            if (contains(step.header_bounds, pointer))
-                return WindowKind::Walkthrough;
-    if (walkthrough &&
-        (contains(walkthrough->header_bounds, pointer) || contains(walkthrough->bounds, world)))
-        return WindowKind::Walkthrough;
     for (const auto& bounds : header_hits)
         if (contains(bounds, pointer))
             return WindowKind::Source;

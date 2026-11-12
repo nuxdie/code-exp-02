@@ -135,8 +135,6 @@ void Application::layout_connections()
 
 void Application::draw_connections(const Viewport&)
 {
-    if (!show_connections)
-        return;
     const bool moved = connection_camera.zoom != camera.zoom ||
                        connection_camera.center.x != camera.center.x ||
                        connection_camera.center.y != camera.center.y ||
@@ -157,8 +155,6 @@ void Application::draw_connections(const Viewport&)
 
 void Application::draw_connection_markers()
 {
-    if (!show_connections)
-        return;
     // The subject is underlined above the text, so it reads even on a highlighted line.
     const auto& chosen = connection_subject_box;
     if (chosen.size.x > 0)
@@ -200,8 +196,6 @@ void Application::draw_connection_markers()
 
 const ConnectionMarker* Application::connection_marker_at(Vec2 pointer)
 {
-    if (!show_connections)
-        return nullptr;
     for (const auto& marker : connection_markers)
         if (CanvasWindowManager::contains(marker.bounds, pointer))
             return &marker;

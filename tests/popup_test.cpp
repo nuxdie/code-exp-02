@@ -52,23 +52,8 @@ void test_typography()
     expect(doc.styles.size() == 4 && doc.inline_code.size() == 1 && doc.code_lines.back(),
            "Prose typography, inline code and code blocks must coexist");
     const auto plain = popup_document("<code>literal</code> **literal** $x$", false);
-    expect(plain.text == "<code>literal</code> **literal** $x$" && plain.math.empty(),
+    expect(plain.text == "<code>literal</code> **literal** $x$",
            "Non-documentation popup text must retain literal content");
-}
-
-void test_math()
-{
-    const auto doc = popup_document("Inline $x^2$ and \\(\\frac{a}{b}\\).\n$$\n\\sum_{i=1}^{n} "
-                                    "i\n$$\n```cpp\nconst char* price = \"$5$\";\n```",
-                                    true);
-    expect(doc.math.size() == 3 && !doc.math[0].display && doc.math[2].display &&
-               doc.math[1].expression == "\\frac{a}{b}",
-           "Inline and multiline display LaTeX must preserve source expressions and modes");
-    for (const auto& math : doc.math)
-        expect(doc.text.substr(math.begin, 3) == "\xef\xbf\xbc",
-               "Math must reserve an inline layout object");
-    expect(doc.text.find("$5$") != std::string::npos,
-           "Dollar signs inside code must not become equations");
 }
 
 void test_links()
@@ -131,8 +116,6 @@ struct Camera {}
                doc.text.find("camera.pan({12, 0});") != std::string::npos,
            "Escaped clangd prose must recover headings, code examples and HTML without visible "
            "escapes");
-    expect(doc.math.size() == 4 && doc.math[0].expression == "v" && doc.math.back().display,
-           "Clangd's doubled TeX backslashes must become valid original equations");
     int code_lines = 0;
     for (bool code : doc.code_lines)
         code_lines += code;
@@ -153,10 +136,9 @@ int main()
     try {
         test_html();
         test_typography();
-        test_math();
         test_links();
         test_clangd_escaped_documentation();
-        std::cout << "Documentation markup, typography and LaTeX parsing checks passed.\n";
+        std::cout << "Documentation markup, and typography checks passed.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
         return 1;

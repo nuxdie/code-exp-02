@@ -1,18 +1,6 @@
 #include "application.h"
 
 namespace {
-bool needs_viewer_build(const std::string& path)
-{
-    if (path.compare(0, 6, "tests/") == 0)
-        return false;
-    if (path == "tools/agent_bridge.py" || path == "CMakeLists.txt" || path == ".clang-format" ||
-        path == ".clang-tidy" || path == ".cmake-format.json" || path == "tools/cmake_style.py")
-        return true;
-    const auto extension = std::filesystem::path(path).extension().string();
-    return extension == ".cpp" || extension == ".cc" || extension == ".cxx" || extension == ".c" ||
-           extension == ".h" || extension == ".hpp" || extension == ".in" || extension == ".cmake";
-}
-
 void settle_panel(std::vector<SourcePanel>& panels, std::size_t index)
 {
     auto& panel = panels[index];
@@ -128,11 +116,6 @@ void Application::poll_project()
     refresh_project_geometry();
     if (search.active)
         update_search();
-    const bool runtime_change = std::any_of(changes.begin(), changes.end(), [](const auto& change) {
-        return needs_viewer_build(change.path);
-    });
-    if (runtime_change)
-        queue_rebuild();
     schedule_save();
     redraw = true;
 }

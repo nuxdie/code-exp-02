@@ -637,8 +637,7 @@ struct ApplicationTestAccess {
         escape.xkey.display = app.display;
         escape.xkey.keycode = XKeysymToKeycode(app.display, XK_Escape);
         app.handle_event(escape);
-        expect(margin.selected.empty() && app.options_page == Application::OptionsPage::Closed,
-               "Escape must clear the selected intent before anything else");
+        expect(margin.selected.empty(), "Escape must clear the selected intent");
         margin.view = {};
     }
     static void test_overview_titles(Application& app)
@@ -707,7 +706,6 @@ int main(int argc, char** argv)
         setenv("SOURCE_CANVAS_PROJECT_ROOT", root.c_str(), 1);
         setenv("SOURCE_CANVAS_DISABLE_AGENT", "1", 1);
         setenv("SOURCE_CANVAS_DISABLE_INTENT", "1", 1);
-        setenv("SOURCE_CANVAS_AUTO_BUILD", "0", 1);
         setenv("SOURCE_CANVAS_STATE_FILE", (root / "session.json").c_str(), 1);
         unsetenv("SOURCE_CANVAS_DISABLE_SESSION");
         Application app;

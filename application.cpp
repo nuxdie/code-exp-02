@@ -42,8 +42,7 @@ bool Application::initialize_window()
         return false;
     }
     for (const char* filename :
-         {"JetBrainsMono-Regular.ttf", "JetBrainsMono-Bold.ttf", "JetBrainsMono-Italic.ttf",
-          "victor-mono/VictorMono-Regular.ttf", "victor-mono/VictorMono-Bold.ttf",
+         {"victor-mono/VictorMono-Regular.ttf", "victor-mono/VictorMono-Bold.ttf",
           "victor-mono/VictorMono-Italic.ttf", "victor-mono/VictorMono-BoldItalic.ttf"}) {
         const auto path = executable.parent_path() / "fonts" / filename;
         if (!FcConfigAppFontAddFile(FcConfigGetCurrent(),
@@ -107,7 +106,6 @@ bool Application::initialize_window()
     pango_layout_set_wrap(popup_layout, PANGO_WRAP_WORD_CHAR);
     pango_layout_set_ellipsize(popup_layout, PANGO_ELLIPSIZE_NONE);
 
-    math_typesetter = std::make_unique<MathTypesetter>();
     close_message = XInternAtom(display, "WM_DELETE_WINDOW", False);
     protocols = XInternAtom(display, "WM_PROTOCOLS", False);
     XSetWMProtocols(display, window, &close_message, 1);
@@ -115,14 +113,9 @@ bool Application::initialize_window()
     return true;
 }
 
-const char* Application::monospace_family() const
-{
-    return monospace_font == MonospaceFont::Victor ? "Victor Mono" : "JetBrains Mono";
-}
-
 void Application::configure_source_font()
 {
-    auto* font = pango_font_description_from_string(monospace_family());
+    auto* font = pango_font_description_from_string(monospace_family);
     pango_font_description_set_absolute_size(font, 16 * PANGO_SCALE);
     pango_layout_set_font_description(base_layout, font);
     pango_font_description_free(font);
@@ -135,44 +128,6 @@ void Application::configure_source_font()
         renderer->upload(fold_toggle_meshes[i], {{layout, {0, 0}}});
         g_object_unref(layout);
     }
-}
-
-void Application::set_monospace_font(MonospaceFont font)
-{
-    if (font == monospace_font)
-        return;
-    monospace_font = font;
-    configure_source_font();
-    const auto* description = pango_layout_get_font_description(base_layout);
-    for (auto& panel : panels) {
-        pango_layout_set_font_description(panel.title, description);
-        int title_width = 0;
-        pango_layout_get_pixel_size(panel.title, &title_width, nullptr);
-        title_width += 32;
-        if (panel.image) {
-            update_image_geometry(panel, title_width);
-        } else {
-            int text_width = title_width;
-            for (auto* line : panel.lines) {
-                pango_layout_set_font_description(line, description);
-                int width = 0;
-                pango_layout_get_pixel_size(line, &width, nullptr);
-                text_width = std::max(text_width, width);
-            }
-            panel.bounds.size.x = text_width + 36;
-        }
-        renderer->release(panel.header_mesh);
-        update_mesh(panel);
-    }
-    ++document_generation;
-    cached_popup.clear();
-    refresh_project_geometry(false);
-    if (walkthrough) {
-        for (auto& step : walkthrough->steps)
-            renderer->release(step.code);
-        prepare_walkthrough(false);
-    }
-    redraw = true;
 }
 
 int Application::benchmark_run()
@@ -249,10 +204,6 @@ int Application::run_window()
             for (const auto& message : language_server->take_messages())
                 handle_message(message);
 
-        if (cmake_server)
-            for (const auto& message : cmake_server->take_messages())
-                handle_message(message);
-
         const auto now = Clock::now();
         update_timers(now);
         if ((redraw || zoom_animation.active(camera)) && now >= next_frame) {
@@ -278,7 +229,6 @@ Application::~Application()
     if (!display)
         return;
     save_session();
-    live_build.reset();
     system_theme.reset();
     if (chat)
         chat->client.reset();
@@ -299,7 +249,6 @@ Application::~Application()
     if (drag_cursor)
         XFreeCursor(display, drag_cursor);
     language_server.reset();
-    cmake_server.reset();
     if (popup_layout)
         g_object_unref(popup_layout);
     if (base_layout)
@@ -308,16 +257,12 @@ Application::~Application()
     for (auto& panel : panels)
         release_panel(panel);
 
-    for (const auto& icon : icons)
-        if (icon.second)
-            g_object_unref(icon.second);
     if (cr)
         cairo_destroy(cr);
     if (surface)
         cairo_surface_destroy(surface);
     if (window_destroyed && renderer)
         renderer->window_destroyed();
-    release_walkthrough();
     renderer.reset();
     XCloseDisplay(display);
 }
@@ -339,15 +284,12 @@ void Application::update_timers(Clock::time_point now)
     if (system_theme) {
         const auto dark = system_theme->take_change();
         if (dark) {
-            desktop_dark = *dark;
-            renderer->set_dark_theme(appearance == "system" ? desktop_dark : appearance == "dark");
+            renderer->set_dark_theme(*dark);
             redraw = true;
         }
     }
-    poll_reload(now);
     if (save_due <= now)
         save_session();
-    poll_math();
     if (popup_dismiss_due <= now) {
         popup_dismiss_due = Clock::time_point::max();
         if (!Viewport{popup_bounds.origin.x, popup_bounds.origin.y, popup_bounds.size.x,
@@ -390,8 +332,7 @@ void Application::wait_for_work(Clock::time_point next_frame)
         timeout = timeout < 0 ? dismiss_wait : std::min(timeout, dismiss_wait);
     }
     const auto pending =
-        std::min({save_due, agent_reconnect_due(), chat_animation_due, activity_animation_due,
-                  build_running ? Clock::time_point::max() : rebuild_due, binary_check_due});
+        std::min({save_due, agent_reconnect_due(), chat_animation_due, activity_animation_due});
     if (pending != Clock::time_point::max()) {
         const int delay = static_cast<int>(std::max(
             0.0,
@@ -403,13 +344,10 @@ void Application::wait_for_work(Clock::time_point next_frame)
     std::vector<pollfd> connections = {
         {ConnectionNumber(display), POLLIN, 0},
         {wake_fd(language_server), POLLIN, 0},
-        {wake_fd(math_typesetter), POLLIN, 0},
         {wake_fd(project_watcher), POLLIN, 0},
         {chat && chat->client ? chat->client->event_fd() : -1, POLLIN, 0},
-        {wake_fd(live_build), POLLIN, 0},
         {wake_fd(system_theme), POLLIN, 0},
-        {wake_fd(directory_picker), POLLIN, 0},
-        {wake_fd(cmake_server), POLLIN, 0}};
+        {wake_fd(directory_picker), POLLIN, 0}};
     for (const auto& card : chat_windows)
         connections.push_back({card->client ? card->client->event_fd() : -1, POLLIN, 0});
     if (poll(connections.data(), connections.size(), timeout) < 0 && errno != EINTR) {
