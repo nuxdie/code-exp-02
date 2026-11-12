@@ -88,8 +88,8 @@ void Application::apply_project_change(const ProjectChange& change)
     } else if (found == panels.end()) {
         auto panel = make_panel(change.path, *change.source);
         update_mesh(panel);
-        panel.bounds.origin = {content_size.x + 96, 0};
         panels.push_back(std::move(panel));
+        place_in_folder(panels.back());
     } else if (found->image || found->source != *change.source) {
         replace_source(static_cast<int>(found - panels.begin()), *change.source);
     }
@@ -153,12 +153,8 @@ void Application::refresh_project_geometry(bool settle)
     graph.files.clear();
     for (const auto& panel : panels)
         graph.files.push_back(panel.bounds);
-    auto bounds = graph.files;
-    if (chat && chat->visible)
-        bounds.push_back(chat->bounds);
-    for (const auto& card : chat_windows)
-        if (card->visible)
-            bounds.push_back(card->bounds);
+    auto bounds = conversation_bounds();
+    bounds.insert(bounds.end(), graph.files.begin(), graph.files.end());
     content_size = canvas_size(bounds);
     connections_dirty = true;
 }

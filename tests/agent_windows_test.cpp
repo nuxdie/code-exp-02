@@ -163,9 +163,12 @@ struct ApplicationTestAccess {
         app.handle_event(click);
         app.chat->input.set("");
         click.type = ButtonPress;
+        const auto* prompt = app.chat.get();
+        const auto cards = app.chat_windows.size();
         app.handle_button(click);
-        expect(!app.chat->visible && app.chat->input.text.empty(),
-               "Clicking outside an empty new prompt must dismiss it");
+        expect(app.chat.get() != prompt && app.chat_windows.size() == cards - 1 &&
+                   !app.chat->visible,
+               "Clicking outside an empty new prompt must remove it, not leave a hidden card");
         click.type = ButtonRelease;
         app.handle_event(click);
         XEvent key{};
@@ -175,7 +178,7 @@ struct ApplicationTestAccess {
         key.xkey.keycode = XKeysymToKeycode(app.display, XK_a);
         key.xkey.state = ControlMask | ShiftMask;
         app.handle_key(key);
-        expect(app.chat->visible && app.chat_windows.size() == 3,
+        expect(app.chat->visible && app.chat_windows.size() == cards,
                "The new-agent shortcut must work even when every old card is closed");
     }
     static void test_first_submission(Application& app)
@@ -380,10 +383,27 @@ struct ApplicationTestAccess {
                "Clicking a scaled header beyond the card must activate and drag that chat");
         click.type = ButtonRelease;
         app.handle_event(click);
-        app.chat->visible = false;
+        second.conversation.thread_id = "kept-thread";
+        middle_click(app, pointer);
         app.draw();
-        expect(app.chat->header_bounds.size.x == 0 && app.chat_at(pointer) != &second,
-               "Closing a chat must remove its overview label and hit target");
+        const auto kept = second.header_bounds;
+        expect(app.chat.get() != &second && !second.visible && !second.client && kept.size.x > 0 &&
+                   app.chat_windows.size() == 1,
+               "Closing a conversation must leave its title on the canvas and stop its agent");
+        click.type = ButtonPress;
+        click.xbutton.x = static_cast<int>(kept.origin.x + kept.size.x / 2);
+        click.xbutton.y = static_cast<int>(kept.origin.y + kept.size.y / 2);
+        app.handle_button(click);
+        expect(app.chat.get() == &second && second.visible,
+               "Clicking a kept title must open that conversation again");
+        middle_click(app,
+                     {static_cast<double>(click.xbutton.x), static_cast<double>(click.xbutton.y)});
+        app.draw();
+        const Vec2 title{kept.origin.x + kept.size.x / 2, kept.origin.y + kept.size.y / 2};
+        middle_click(app, title);
+        app.draw();
+        expect(app.chat_windows.empty() && app.chat->visible,
+               "Closing a kept title must remove the conversation for good");
         app.chat = std::move(original);
         app.chat_windows = std::move(windows);
     }

@@ -10,6 +10,27 @@ std::filesystem::path session_path(const std::string& root)
 }
 } // namespace
 
+void Application::load_agent_windows(const lsp::Json& state, const char* environment_thread)
+{
+    const auto origin = state.value("originThread", "");
+    load_agent_window(*chat, state);
+    if (environment_thread && origin != environment_thread) {
+        chat->conversation.thread_id = environment_thread;
+        chat->conversation.fresh = false;
+        chat->composing = false;
+        chat->bounds.size = {760, 900};
+        chat->context = lsp::Json::object();
+    }
+    chat_windows.clear();
+    for (const auto& saved : state.value("additionalAgents", lsp::Json::array())) {
+        auto card = std::make_unique<ChatCanvas>(workspace_root);
+        load_agent_window(*card, saved);
+        // A closed conversation with nothing in it is not worth keeping.
+        if (card->visible || kept_chat(*card))
+            chat_windows.push_back(std::move(card));
+    }
+}
+
 void Application::load_session()
 {
     if (!chat || benchmark || std::getenv("SOURCE_CANVAS_DISABLE_SESSION"))
@@ -45,24 +66,12 @@ void Application::load_session()
         search.active = saved_search.value("active", false);
         if (search.active)
             update_search();
-        const auto origin = state.value("originThread", "");
-        load_agent_window(*chat, state);
-        if (environment_thread && origin != environment_thread) {
-            chat->conversation.thread_id = environment_thread;
-            chat->conversation.fresh = false;
-            chat->composing = false;
-            chat->bounds.size = {760, 900};
-            chat->context = lsp::Json::object();
-        }
-        chat_windows.clear();
-        for (const auto& saved : state.value("additionalAgents", lsp::Json::array())) {
-            auto card = std::make_unique<ChatCanvas>(workspace_root);
-            load_agent_window(*card, saved);
-            chat_windows.push_back(std::move(card));
-        }
+        load_agent_windows(state, environment_thread);
         // Positions saved under an older arrangement would scatter the folders again.
         const bool placed = state.value("layout", "") == "folders";
         restore_file_layouts(state.value("files", lsp::Json::object()), placed);
+        if (!placed || !state.value("shelved", false))
+            shelve_conversations();
         const auto view = state.value("camera", lsp::Json::object());
         if (placed && view.contains("zoom")) {
             camera.center = {view.at("x"), view.at("y")};
@@ -92,10 +101,14 @@ void Application::load_session()
 }
 void Application::restore_file_layouts(const lsp::Json& files, bool placed)
 {
+    // Files that appeared since the session was saved have no place yet.
+    std::set<std::string> unplaced;
     for (auto& panel : panels) {
         const auto saved = files.value(panel.path, lsp::Json::object());
-        if (!saved.contains("x"))
+        if (!saved.contains("x")) {
+            unplaced.insert(panel.path);
             continue;
+        }
         if (placed)
             panel.bounds.origin = {saved.at("x"), saved.at("y")};
         const auto folds = saved.value("folds", lsp::Json::object());
@@ -110,8 +123,13 @@ void Application::restore_file_layouts(const lsp::Json& files, bool placed)
         if (changed)
             update_mesh(panel);
     }
-    if (!placed)
+    if (!placed) {
         relayout();
+        return;
+    }
+    for (auto& panel : panels)
+        if (unplaced.erase(panel.path))
+            place_in_folder(panel, unplaced);
 }
 
 void Application::save_session()
@@ -151,6 +169,7 @@ void Application::save_session()
          {"cameraHistory", save_navigation()},
          {"window", {{"x", x}, {"y", y}, {"width", width}, {"height", height}}},
          {"layout", "folders"},
+         {"shelved", true},
          {"files", files}});
     const auto path = session_path(workspace_root);
     std::error_code error;

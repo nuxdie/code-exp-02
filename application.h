@@ -41,6 +41,7 @@
 #include <optional>
 #include <pango/pangocairo.h>
 #include <poll.h>
+#include <set>
 #include <sstream>
 #include <thread>
 #include <unordered_set>
@@ -312,6 +313,7 @@ class Application {
     void draw_workspace_preview(const Viewport& view);
     void finish_workspace_load();
     void restore_file_layouts(const lsp::Json& files, bool placed);
+    void load_agent_windows(const lsp::Json& state, const char* environment_thread);
     void open_directory_picker();
     void poll_directory_picker();
     void initialize_cmake();
@@ -385,6 +387,11 @@ class Application {
     bool activate_chat(Vec2 pointer);
     void spawn_agent_window(Vec2 world, lsp::Json context);
     void close_agent_window();
+    static bool kept_chat(const ChatCanvas& card);
+    void start_agent(ChatCanvas& card);
+    bool reopen_chat(Vec2 pointer);
+    std::vector<CanvasRect> conversation_bounds() const;
+    void shelve_conversations();
     void dismiss_empty_chat(const XEvent& event, Vec2 pointer);
     bool close_window_button(const XEvent& event, Vec2 pointer);
     bool agent_window_key(const XEvent& event);
@@ -462,6 +469,7 @@ class Application {
     void update_image_geometry(SourcePanel& panel, int title_width);
     void relayout();
     void resize_in_place(const SourcePanel& panel, double old_height);
+    void place_in_folder(SourcePanel& panel, const std::set<std::string>& unplaced = {});
     void apply_graph_layout();
     void poll_project();
     void release_panel(SourcePanel& panel);

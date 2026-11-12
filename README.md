@@ -152,7 +152,8 @@ Start with **`/`** to find a file, **`F`** to see the whole canvas, and **`F1`**
 | Go to definition / usages / back | `F12` / `Shift+F12` / `Alt+Left` |
 | Show symbols / collapse or expand blocks | `S` / `C` or `Shift+C` |
 | Open a contextual conversation | Right-click or `Ctrl+Shift+A` |
-| Close a conversation, note, search, or popup | Middle-click it |
+| Close a conversation to its title / reopen / remove | Middle-click / click the title / middle-click the title |
+| Close a note, search, or popup | Middle-click it |
 | Focus the active conversation / send / insert newline | `Tab` or `Ctrl+L` / `Enter` / `Shift+Enter` |
 | Read the intent behind a line / clear | `I`, `Alt+click` or click the gutter bar / `Esc` |
 | Select / copy text | Drag / `Ctrl+C` |

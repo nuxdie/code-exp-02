@@ -54,8 +54,8 @@ Application::WindowKind Application::window_at(Vec2 pointer)
     if (!popup_text.empty() && contains(popup_bounds, pointer))
         return WindowKind::Popup;
     const auto hit_chat = [&](const auto& card) {
-        return card && card->visible &&
-               (contains(card->header_bounds, pointer) || contains(card->bounds, world));
+        return card && (contains(card->header_bounds, pointer) ||
+                        (card->visible && contains(card->bounds, world)));
     };
     if (hit_chat(chat))
         return WindowKind::Chat;

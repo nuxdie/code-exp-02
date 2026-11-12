@@ -88,8 +88,9 @@ void Application::handle_button(const XEvent& event)
         open_chat_input(pointer);
         return;
     }
-    if (event.xbutton.button == Button1 && !drag_button)
-        activate_chat(pointer);
+    if (event.xbutton.button == Button1 && !drag_button && activate_chat(pointer) &&
+        reopen_chat(pointer))
+        return;
     const bool in_popup =
         !popup_text.empty() && Viewport{popup_bounds.origin.x, popup_bounds.origin.y,
                                         popup_bounds.size.x, popup_bounds.size.y}

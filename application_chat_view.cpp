@@ -85,7 +85,7 @@ void Application::draw_chat_chrome()
 void Application::draw_chat_header(std::vector<CanvasRect>& occupied)
 {
     chat->header_bounds = {};
-    if (!chat->visible || chat->composing)
+    if (chat->visible ? chat->composing : !kept_chat(*chat))
         return;
     draw_window_title(chat->header, chat->conversation.title, chat->bounds, chat->header_bounds,
                       occupied);

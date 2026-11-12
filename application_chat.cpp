@@ -33,14 +33,9 @@ void Application::initialize_chat()
         if (input_context)
             XSetICFocus(input_context);
     }
-    std::vector<CanvasRect> bounds;
+    auto bounds = conversation_bounds();
     for (const auto& panel : panels)
         bounds.push_back(panel.bounds);
-    if (chat->visible)
-        bounds.push_back(chat->bounds);
-    for (const auto& card : chat_windows)
-        if (card->visible)
-            bounds.push_back(card->bounds);
     content_size = canvas_size(bounds);
 }
 void Application::focus_chat()
@@ -57,6 +52,7 @@ void Application::focus_chat()
     initial_view = false;
     finish_view();
     chat->visible = true;
+    start_agent(*chat);
     chat->focused = true;
     chat->follow = true;
     hide_popup();
@@ -99,8 +95,10 @@ void Application::poll_agent_window()
         chat->reconnect = Clock::time_point::max();
     }
     render_agent_context();
-    if (!chat->visible && !chat->conversation.questions.empty())
+    if (!chat->visible && !chat->conversation.questions.empty()) {
         chat->visible = true;
+        start_agent(*chat);
+    }
     flush_agent();
 }
 

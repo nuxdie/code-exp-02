@@ -133,21 +133,42 @@ void Application::resize_in_place(const SourcePanel& panel, double old_height)
     refresh_project_geometry(false);
 }
 
+// A file new to the canvas joins its folder: under the shortest column of the files already
+// there, or beside the project when it is the first of its folder.
+void Application::place_in_folder(SourcePanel& panel, const std::set<std::string>& unplaced)
+{
+    const auto folder = std::filesystem::path(panel.path).parent_path();
+    std::map<double, double> columns;
+    for (const auto& other : panels) {
+        if (&other == &panel || unplaced.count(other.path) ||
+            std::filesystem::path(other.path).parent_path() != folder)
+            continue;
+        auto& bottom = columns[other.bounds.origin.x];
+        bottom = std::max(bottom, other.bounds.origin.y + other.bounds.size.y);
+    }
+    const auto shortest =
+        std::min_element(columns.begin(), columns.end(),
+                         [](const auto& a, const auto& b) { return a.second < b.second; });
+    panel.bounds.origin = columns.empty() ? Vec2{content_size.x + 480, 480}
+                                          : Vec2{shortest->first, shortest->second + 96};
+    for (bool moved = true; moved;) {
+        moved = false;
+        for (const auto& other : panels)
+            if (&other != &panel && !unplaced.count(other.path) &&
+                panel.bounds.intersects(other.bounds)) {
+                panel.bounds.origin.y = other.bounds.origin.y + other.bounds.size.y + 96;
+                moved = true;
+            }
+    }
+}
+
 void Application::apply_graph_layout()
 {
     for (std::size_t i = 0; i < panels.size(); ++i)
         panels[i].bounds.origin = graph.files[i].origin;
-    content_size = graph.size;
-    for (const auto& card : chat_windows) {
-        if (!card->visible)
-            continue;
-        content_size.x = std::max(content_size.x, card->bounds.origin.x + card->bounds.size.x);
-        content_size.y = std::max(content_size.y, card->bounds.origin.y + card->bounds.size.y);
-    }
-    if (chat && chat->visible) {
-        content_size.x = std::max(content_size.x, chat->bounds.origin.x + chat->bounds.size.x);
-        content_size.y = std::max(content_size.y, chat->bounds.origin.y + chat->bounds.size.y);
-    }
+    auto bounds = conversation_bounds();
+    bounds.push_back({{0, 0}, graph.size});
+    content_size = canvas_size(bounds);
     connections_dirty = true;
 }
 
