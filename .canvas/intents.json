@@ -3311,6 +3311,28 @@
     "syntax.h": "c41c65b cdd07c4 a6fd19d db9a689 56783bf db98f01 2a1382d 4403bae b196e02 03e985f 721c840 453ec7f 3715248 df22b54 a320ce3 1fdd125 8043930 ea0aa7d",
     "tests/syntax_test.cpp": "60b3d2c 7143a84 75df2fc 6e90838 6d2d3d2 894ced0 0c872a7 2fa1340 7b9c004 727f187 0db6253 a8f4b78 706f5e5 c6a6a01 8995bb9 1fb0047 f21dd81 06ec1be 01fdc02 8d8bac1 6fefdc7 b8be746 c7b896e 8731bd8 bb9546d 59e39fc c8c2f97 a3d2485 e1f180b 130c100 15b673c 9b03e6d 5b13021 c3eee83 d33862a ae712c5 d056388 ce5ed34 357f10c 41eae29 bb884eb 7df0aa4 2b43204 0149c5e 5a471f9 bc7f5ad"
    }
+  },
+  {
+   "id": "claude-2026-11-12-conversations",
+   "at": "2026-11-12T00:49:08.754Z",
+   "source": "transcript",
+   "said": "work on 1 and 6",
+   "why": "Closed conversations were hidden for good, could not be reopened, and each kept an agent bridge process alive: 83 of them were running. A closed conversation now remains on the canvas as its title, empty ones are dropped, and only open conversations run an agent.",
+   "intent": "useful-legible-contextual",
+   "changes": {
+    "README.md": "d69fa63 5fe74c1",
+    "application.h": "a160deb 5b6c276 ef9d9b7 ce42ae9 f879aa9 bc4ae67 76f2583 69f3a37",
+    "application_agent_windows.cpp": "6e99adb 58c03cc 2c3b13e 84da72c 04cadb9 db09f39 9ed334d 37fa576 f471a0a 42d82a0 614a4ef e0f9db6 db3ad11 f12a57b 2e40bdc cbc46c5 3afdacf a2ad3bb 53b21e8 d5842a9 0a46839 6d5f9b1 0a10997 0b583a3 f70dcc7 130b56d f2def38 ea04545 aa7b815 45a486b 0b80c52 6ba5cc0 aa0cc5a bac0e72 5324f42 1c11ab1 4caeaf6 7e78230 e96bf54 06c4b70 9aa7a85 7f52c60 1650041 7b2e562 b677922 ec2fe9a 8c8e902 d32ebbf 8ff02b6 a53706e b01db65 03911d8 7d6d53d 07c54cc 432e151 2406fb2 d378f35 c9e30ac d2ab2e7 0aa22bf cc4373c 8ed8527 03c3925 c9effcb 94c185a b3900b8 2eed5ba 6fc92b1",
+    "application_chat.cpp": "f288f75 53b21e8 1e2d767",
+    "application_chat_view.cpp": "4eae0c8",
+    "application_events.cpp": "be9b9e6 a1287c9 8ed8527",
+    "application_live.cpp": "5ce4700 f288f75 d4c77a4",
+    "application_model.cpp": "9e82792 5ccf1fb 18198fd 6d8e507 61413be 236860b 3ad60ca 1b56663 c9e7062 7b3ec9b b955eb7 5169a49 ba0b026 d4eb63b 8862b8b 1870c8e 1c3da0b d0cc027 d65c634 8447c69 89c8534 dea266c bbb0347 88462ba a731b21 f288f75 e69e180 e5b6984",
+    "application_session.cpp": "67ad071 87b111b 0addf62 2890687 9f8686e bcce873 a8cab79 a7697d5 9f3de4e 17faa25 96e65a0 561c3ba 2b84a6c f230bc3 afa8ed0 7426ae6 af4177a b3377a3 298af52 1f713ec b78e0b3 ee3c55d dbf1bd4 5e4a69e 8ed8527 aaaba41 4d3efd6 58715d4 35ceae8",
+    "application_shortcuts.cpp": "f9be74f 6ea38e6",
+    "application_window_manager.cpp": "303f6ee f241acc",
+    "tests/agent_windows_test.cpp": "b1e2970 27f3fb7 60644ed cb5c35b ac16345 bd212d7 ab6aed5 4c9692b 77df0d2 c8247fc 27a1571 5327c69 41dd47d 8ec957e a97d904 ef21f80 088818a 12fac20 34f8928 16740bd 810989e 7f6e379 878dec2 682b1ad 28dace2"
+   }
   }
  ]
 }
