@@ -3249,6 +3249,26 @@
     "tests/integration_test.cpp": "6cb8792 b40ac51 f7c42ec 236f34f 418155e 994012e aefa090 5bdccc2 908e39b",
     "tests/live_canvas_test.cpp": "5f56b83 11b1b57 b1b4938 6f67fe4 cdd55fe 0256b00 47cbc7d 0159bc0"
    }
+  },
+  {
+   "id": "claude-2026-11-12-overview-layout",
+   "at": "2026-11-12T00:03:27.559Z",
+   "source": "transcript",
+   "said": "work on 1 and 6",
+   "why": "The zoomed-out view cannot mean anything while files are scattered by a force layout that reshuffles on every fold. Files now gather by folder in window-shaped blocks, stay put when one of them grows, and Graphviz is gone.",
+   "intent": "useful-legible-contextual",
+   "changes": {
+    ".github/workflows/quality.yml": "dc0364a",
+    "README.md": "2e9525c def2a00 3bfeaeb 56de7b5",
+    "application.h": "1712558 1e90f3d",
+    "application_connections.cpp": "ab848b4 174a298",
+    "application_model.cpp": "6b7b11b ec54c55 59c0e34 7497447 814205d e49f179 f66a1a3 d941a5a 349cabb 2894d5f 907400c ffa723f 24e8225 961904d 1d466b9 5ed94b1",
+    "application_session.cpp": "a1b2db2 5cbc9f9 e838513 57e8ff8 aa7bf7f 0821dc6 48ba68b 961784c 4766a9e 6db2219",
+    "application_shortcuts.cpp": "cbc3e45",
+    "connection_hud.h": "53b4c2c",
+    "source_graph.cpp": "d2707ee 715f3c3 942a9f2 6a81d2e d41a8c1 acf1f08 084418d f0ac6cf ce4ce0e 5dc3726 f9e64de 28bc024 671a120 2e795e2 45d6279 7f9ef24 19c3b70 929e805 1d13f34 8d2bc5b 92d482b 6b3fa6a 5ec7b17 b13ba95 e3eafb4 b42e1f5 85f790b 577bfdd 77592dc 1f9c686 67ea24e c12d7df 5d9ea03 0a79c43",
+    "tests/structure_test.cpp": "7cc8535 653f134 ab0747d 8f79bff 7db2a9e b4c5242"
+   }
   }
  ]
 }
