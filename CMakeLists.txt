@@ -237,6 +237,8 @@ add_library(
     application_intent_margin.cpp
     application_connection_hud.cpp
     connection_hud.cpp
+    application_overview.cpp
+    overview.cpp
     intent_margin.cpp
     application_view.cpp
     application_events.cpp
@@ -347,7 +349,7 @@ if(BUILD_TESTING)
     )
     add_test(NAME gpu COMMAND gpu_tests)
     set_tests_properties(gpu PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 30)
-    add_executable(structure_tests tests/structure_test.cpp)
+    add_executable(structure_tests tests/structure_test.cpp overview.cpp)
     target_link_libraries(structure_tests PRIVATE source_graph language_server)
     add_test(NAME structure COMMAND structure_tests)
     add_executable(syntax_tests tests/syntax_test.cpp syntax.cpp)

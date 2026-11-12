@@ -57,6 +57,7 @@ void Application::draw()
     }
     renderer->begin(width, height);
     advance_agent_activity();
+    draw_regions(view);
     draw_connections(view);
     draw_activity_highlights();
     draw_intent_margin(view);
@@ -104,28 +105,6 @@ void Application::draw_files(const Viewport& view)
         const Vec2 mesh_origin{origin.x,
                                origin.y + (panel.image ? header_height * camera.zoom : 0)};
         renderer->draw(panel.mesh, mesh_origin, camera.zoom);
-    }
-}
-
-void Application::draw_headers(const Viewport& view)
-{
-    header_hits.assign(panels.size(), {});
-    window_headers.clear();
-    for (std::size_t i = 0; i < panels.size(); ++i) {
-        const auto& panel = panels[i];
-        const auto point = camera.world_to_screen(panel.bounds.origin, view);
-        const double scale = CanvasWindowManager::title_scale(camera.zoom);
-        int title_width = 0;
-        pango_layout_get_pixel_size(panel.title, &title_width, nullptr);
-        if (point.y < -27 * scale || point.y > height || point.x > width ||
-            point.x + (title_width + 34) * scale < 0)
-            continue;
-        const auto bounds = CanvasWindowManager::title_bounds(
-            point, {static_cast<double>(title_width + 34), 27}, camera.zoom, width, window_headers);
-        header_hits[i] = bounds;
-        window_headers.push_back(bounds);
-        renderer->rectangle(bounds, {1, 1, 1, 0.94f});
-        renderer->draw(panel.header_mesh, bounds.origin, scale);
     }
 }
 

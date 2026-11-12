@@ -47,6 +47,12 @@ inline bool reveal_line(int line, std::vector<FoldBlock>& blocks)
     return changed;
 }
 
+// Something a file defines, and the lines it spans.
+struct OutlineEntry {
+    std::string name;
+    int line = 0, last = 0;
+};
+
 struct SymbolNode {
     std::string name;
     int kind = 0;

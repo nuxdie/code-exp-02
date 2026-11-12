@@ -12,6 +12,7 @@
 #include "intent_margin.h"
 #include "live_build.h"
 #include "math_typesetter.h"
+#include "overview.h"
 #include "popup_markup.h"
 #include "project_watch.h"
 #include "search_canvas.h"
@@ -223,6 +224,8 @@ class Application {
     std::array<GpuMesh, 2> fold_toggle_meshes;
     GpuMesh chat_icon_mesh;
     std::vector<CanvasRect> header_hits;
+    std::vector<FolderRegion> regions;
+    std::map<std::string, DocumentView> overview_labels;
     bool drag_moved = false;
     Vec2 last_pointer;
     Vec2 mouse_position;
@@ -510,6 +513,10 @@ class Application {
     void draw_connections(const Viewport& view);
     void draw_files(const Viewport& view);
     void draw_headers(const Viewport& view);
+    void draw_regions(const Viewport& view);
+    void draw_region_names(const Viewport& view, std::vector<CanvasRect>& taken);
+    void draw_outline(SourcePanel& panel, const Viewport& view, std::vector<CanvasRect>& taken);
+    DocumentView& overview_label(const std::string& text);
     void draw_fold_toggle();
     CanvasRect fold_toggle_bounds(const SourcePanel& panel, int line);
     SourceHit fold_at(Vec2 screen);

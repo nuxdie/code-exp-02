@@ -145,6 +145,8 @@ struct ApplicationTestAccess {
                        found->bounds.origin.y + app.header_height + app.line_height &&
                    bounds->size.y == app.line_height,
                "Edits inside collapsed code must land on the visible fold row");
+        app.camera.center = {found->bounds.origin.x + 400, found->bounds.origin.y + 300};
+        app.zoom_animation.cancel(app.camera);
         const auto camera = app.camera;
         app.receive_agent_activity(
             edit("one", "render", (root / "main.cpp").string(), "@@ -3 +3 @@\n-old\n+changed\n"));

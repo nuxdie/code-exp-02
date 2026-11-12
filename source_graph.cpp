@@ -129,7 +129,9 @@ std::vector<double> relax_order(std::vector<double> rank, const std::vector<Depe
 } // namespace
 
 namespace {
-constexpr double folder_gap = 480;
+constexpr double folder_gap = 1400;
+constexpr double folder_margin = 300;  // room around the canvas for a region's ground
+constexpr double folder_heading = 900; // and above it for the first row of folder names
 
 // The number of columns that shapes the block most like a window, so a fitted view uses the
 // screen instead of a strip of it.
@@ -227,9 +229,11 @@ GraphLayout folder_layout(const std::vector<GraphFile>& files, const std::vector
         arrange_files(group_sizes, window_columns(group_sizes, folder_gap), folder_gap);
     for (std::size_t i = 0; i < order.size(); ++i)
         for (const auto index : groups[order[i]]) {
-            result.files[index].origin.x += packed_groups[i].origin.x;
-            result.files[index].origin.y += packed_groups[i].origin.y;
+            result.files[index].origin.x += packed_groups[i].origin.x + folder_margin;
+            result.files[index].origin.y += packed_groups[i].origin.y + folder_heading;
         }
     result.size = canvas_size(result.files);
+    result.size.x += folder_margin;
+    result.size.y += folder_margin;
     return result;
 }

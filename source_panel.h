@@ -24,6 +24,8 @@ struct SourcePanel {
     std::vector<PangoLayout*> fold_labels;
     std::vector<SymbolNode> symbols;
     bool symbols_expanded = false;
+    std::vector<OutlineEntry> outline; // for when the file is too small to read
+    int outline_key = -1;
     PangoLayout* title = nullptr;
     std::vector<PangoLayout*> lines;
     std::vector<std::string> text;

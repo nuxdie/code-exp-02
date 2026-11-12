@@ -621,6 +621,34 @@ struct ApplicationTestAccess {
                "Escape must clear the selected intent before anything else");
         margin.view = {};
     }
+    static void test_overview_titles(Application& app)
+    {
+        const auto camera = app.camera;
+        app.camera.fit(app.content_size, app.viewport());
+        app.camera.zoom *= 0.2;
+        app.zoom_animation.cancel(app.camera);
+        const auto over =
+            app.camera.world_to_screen({app.panels.back().bounds.origin.x + 30,
+                                        app.panels.back().bounds.origin.y + app.header_height + 5},
+                                       app.viewport());
+        app.mouse_position = over;
+        app.draw();
+        const auto& hits = app.header_hits;
+        for (std::size_t i = 0; i < hits.size(); ++i)
+            for (std::size_t j = i + 1; j < hits.size(); ++j)
+                expect(hits[i].size.x <= 0 || hits[j].size.x <= 0 || !hits[i].intersects(hits[j]) ||
+                           app.panel_at(over) == static_cast<int>(i) ||
+                           app.panel_at(over) == static_cast<int>(j),
+                       "Titles must never overlap; one that does not fit is left out");
+        expect(app.panel_at(over) < 0 || hits[app.panel_at(over)].size.x > 0,
+               "The file under the pointer must always show its title");
+        const auto shown =
+            std::count_if(hits.begin(), hits.end(), [](const auto& hit) { return hit.size.x > 0; });
+        expect(shown >= 1 && (app.panels.size() < 3 || shown < static_cast<int>(hits.size())),
+               "Far out, only the titles that fit may be drawn");
+        app.camera = camera;
+        app.zoom_animation.cancel(app.camera);
+    }
     static void run(Application& app, bool window_policy)
     {
         expect(app.initialize(), "The multi-agent canvas must initialize");
@@ -629,6 +657,7 @@ struct ApplicationTestAccess {
             test_chat_header_stacking(app);
             test_middle_click_overlays(app);
             test_intent_note_lives_on_the_canvas(app);
+            test_overview_titles(app);
             return;
         }
         test_spawn_and_context(app);

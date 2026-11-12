@@ -1,3 +1,4 @@
+#include "overview.h"
 #include "source_graph.h"
 #include "structure.h"
 
@@ -61,11 +62,64 @@ void check_enclosing_names()
            "A continued statement must still be named after its function");
 }
 
+void check_overview()
+{
+    const std::vector<std::string> cpp{"#include \"camera.h\"",
+                                       "",
+                                       "struct Camera {",
+                                       "    double zoom = 1;",
+                                       "    void fit(Vec2 size);",
+                                       "};",
+                                       "",
+                                       "void Camera::fit(Vec2 size)",
+                                       "{",
+                                       "    if (size.x > 0) {",
+                                       "        zoom = 1 / size.x;",
+                                       "    } else if (size.y > 0) {",
+                                       "        zoom = 2;",
+                                       "    }",
+                                       "    apply(size);",
+                                       "}"};
+    const auto code = text_outline("camera.cpp", cpp);
+    expect(code.size() == 2 && code[0].name == "fit" && code[0].line == 7 && code[0].last == 15 &&
+               code[1].name == "Camera" && code[1].last == 5,
+           "An outline must name definitions, longest first, and nothing inside them");
+    const std::vector<std::string> python{
+        "import os",       "", "class Store:",  "    def save(self):",
+        "        write()", "", "print(Store())"};
+    const auto script = text_outline("store.py", python);
+    expect(script.size() == 2 && script[0].name == "Store" && script[1].name == "save",
+           "Indented languages must be outlined without braces, and calls left out");
+    const std::vector<std::string> prose{"# Canvas",  "intro", "## Install", "```",
+                                         "# not one", "```",   "## Use"};
+    const auto headings = text_outline("README.md", prose);
+    expect(headings.size() == 3 && headings[0].name == "Install" && headings[0].last == 5 &&
+               headings[1].name == "Canvas",
+           "Prose must be outlined by its headings, ignoring fenced code");
+    const std::vector<std::pair<std::string, CanvasRect>> apart{
+        {"a.cpp", {{0, 0}, {100, 100}}},
+        {"b.cpp", {{200, 0}, {100, 300}}},
+        {"tests/a.cpp", {{600, 0}, {100, 100}}}};
+    const auto regions = folder_regions(apart);
+    expect(regions.size() == 2 && regions[0].folder.empty() && regions[0].bounds.size.x == 300 &&
+               regions[0].bounds.size.y == 300,
+           "Each folder whose files sit together must be one region around them");
+    auto mixed = apart;
+    mixed[2].second.origin = {120, 20};
+    expect(folder_regions(mixed).size() == 1 && folder_regions(mixed)[0].folder == "tests",
+           "A folder with another folder's file in its midst must not be drawn as a region");
+    std::vector<CanvasRect> taken;
+    expect(claim_label(taken, {{0, 0}, {50, 10}}) && !claim_label(taken, {{40, 5}, {50, 10}}) &&
+               claim_label(taken, {{60, 0}, {50, 10}}) && taken.size() == 2,
+           "A label must be left out when it would cover one already placed");
+}
+
 int main()
 {
     try {
         check_folder_layout();
         check_enclosing_names();
+        check_overview();
         std::vector<FoldBlock> folds{{1, 8, true}, {3, 5, true}, {10, 13, false}};
         const auto view = fold_view(15, folds);
         expect(view.source_lines == std::vector<int>({0, 1, 9, 10, 11, 12, 13, 14}),
