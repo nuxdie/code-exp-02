@@ -61,7 +61,7 @@ void Application::flush_agent()
 {
     if (chat && chat->client)
         for (auto& message : chat->conversation.outgoing())
-            chat->client->send(std::move(message));
+            chat->client->send(message);
 }
 void Application::poll_agent_window()
 {

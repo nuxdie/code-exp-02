@@ -23,7 +23,7 @@ GpuPath connection_curve(Vec2 start, Vec2 end)
 
 // The box a word occupies on the canvas, or its fold row's end when the line is folded away.
 CanvasRect Application::word_bounds(const SourcePanel& panel, int line, std::size_t begin,
-                                    std::size_t end)
+                                    std::size_t end) const
 {
     if (panel.folded.source_lines.empty() || panel.text.empty())
         return {};

@@ -44,6 +44,7 @@
 #include <span>
 #include <thread>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 using namespace std::chrono_literals;
@@ -53,7 +54,7 @@ class Application {
 
   public:
     static constexpr int reload_exit_code = 75;
-    explicit Application(const std::string& directory = "") : launch_directory(directory) {}
+    explicit Application(std::string directory = "") : launch_directory(std::move(directory)) {}
     const std::string& directory() const { return launch_directory; }
     int run();
     ~Application();
@@ -183,7 +184,8 @@ class Application {
     void add_connection_link(ConnectionLink link);
     void text_connections();
     bool receive_connections(const lsp::Message& message);
-    CanvasRect word_bounds(const SourcePanel& panel, int line, std::size_t begin, std::size_t end);
+    CanvasRect word_bounds(const SourcePanel& panel, int line, std::size_t begin,
+                           std::size_t end) const;
     CanvasRect connection_box(const ConnectionEnd& end);
     void connect_boxes(std::vector<GpuPath>& paths, const CanvasRect& from, const CanvasRect& to,
                        std::array<float, 4> color, float width);
@@ -413,9 +415,9 @@ class Application {
     void apply_project_change(const ProjectChange& change);
     void refresh_project_geometry(bool settle = true);
     void apply_styles(SourcePanel& panel);
-    Viewport viewport();
+    Viewport viewport() const;
     void hide_popup();
-    void show_popup(std::string text, Vec2 origin, bool syntax = false);
+    void show_popup(const std::string& text, Vec2 origin, bool syntax = false);
     SourceHit hit_test(Vec2 screen);
     int panel_at(Vec2 screen);
     int query_at_pointer(const std::string& method);
@@ -459,7 +461,7 @@ class Application {
     void draw_outline(SourcePanel& panel, const Viewport& view, std::vector<CanvasRect>& taken);
     DocumentView& overview_label(const std::string& text);
     void draw_fold_toggle();
-    CanvasRect fold_toggle_bounds(const SourcePanel& panel, int line);
+    CanvasRect fold_toggle_bounds(const SourcePanel& panel, int line) const;
     SourceHit fold_at(Vec2 screen);
     void draw_popup();
     void style_shortcuts(int layout_width);

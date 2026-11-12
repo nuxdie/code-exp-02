@@ -62,7 +62,7 @@ LayoutHandle Application::make_line(std::string_view line, const std::vector<Tok
     return layout;
 }
 
-Viewport Application::viewport()
+Viewport Application::viewport() const
 {
     return {0, 0, static_cast<double>(std::max(1, width)),
             static_cast<double>(std::max(1, height))};
@@ -132,7 +132,7 @@ void Application::draw_files(const Viewport& view)
     }
 }
 
-CanvasRect Application::fold_toggle_bounds(const SourcePanel& panel, int line)
+CanvasRect Application::fold_toggle_bounds(const SourcePanel& panel, int line) const
 {
     int text_width = 0;
     pango_layout_get_pixel_size(panel.lines[line].get(), &text_width, nullptr);

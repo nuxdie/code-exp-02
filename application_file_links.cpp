@@ -41,10 +41,11 @@ bool Application::open_link(const std::string& destination)
         return false;
     if (destination.starts_with("http://") || destination.starts_with("https://")) {
         // GLib passes the URL as one argument and reaps the asynchronous browser launcher.
-        const char* arguments[]{"xdg-open", destination.c_str(), nullptr};
+        std::string program = "xdg-open", address = destination;
+        std::array<char*, 3> arguments{program.data(), address.data(), nullptr};
         GError* failure = nullptr;
-        const bool opened = g_spawn_async(nullptr, const_cast<char**>(arguments), nullptr,
-                                          G_SPAWN_SEARCH_PATH, nullptr, nullptr, nullptr, &failure);
+        const bool opened = g_spawn_async(nullptr, arguments.data(), nullptr, G_SPAWN_SEARCH_PATH,
+                                          nullptr, nullptr, nullptr, &failure);
         if (const GErrorHandle error{failure})
             std::cerr << "Open link: " << error->message << '\n';
         return opened;

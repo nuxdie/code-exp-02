@@ -65,7 +65,7 @@ void test_contextual_send(const std::string& root)
                                      "exactly CANVAS_SEND_OK.");
         acknowledged = acknowledged || !model.accepted_text.empty();
         for (auto& message : model.outgoing())
-            client.send(std::move(message));
+            client.send(message);
         if (acknowledged && has_test_reply(model) && model.active_turn.empty() &&
             model.title != "Conversation" && !checking_title) {
             client.send({{"id", 8999},

@@ -58,7 +58,7 @@ struct ApplicationTestAccess {
                "Selected source must retain its file and line when spawning on blank canvas");
         app.chat->conversation.thread_id = "original-thread";
         app.chat->input.set("Original draft λ");
-        const auto original = app.chat.get();
+        auto* const original = app.chat.get();
         const Vec2 location{-140, 260};
         const auto camera = app.camera;
         app.spawn_agent_window(location, context);
@@ -79,7 +79,7 @@ struct ApplicationTestAccess {
             "Context must be visible locally and attached without manufacturing a human message");
         app.chat->input.set("New card draft");
         app.draw();
-        expect(app.chat->context_preview.document.text.find("Context included") == 0 &&
+        expect(app.chat->context_preview.document.text.starts_with("Context included") &&
                    app.chat->context_preview.document.text.contains("main.cpp:2") &&
                    app.chat->context_preview.document.text.contains("Camera::value") &&
                    !app.chat->context_preview.document.text.contains("Selected text:") &&

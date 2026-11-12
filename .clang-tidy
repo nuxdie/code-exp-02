@@ -11,7 +11,11 @@ Checks: >-
   readability-function-cognitive-complexity,
   readability-function-size,
   readability-redundant-control-flow,
-  modernize-use-nullptr
+  readability-container-contains,
+  performance-move-const-arg,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*'
 CheckOptions:

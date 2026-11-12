@@ -2,6 +2,8 @@
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
 
+#include <ranges>
+
 namespace {
 bool contains(const CanvasRect& bounds, Vec2 point)
 {
@@ -23,9 +25,9 @@ bool Application::chat_button(const XEvent& event, Vec2 pointer)
     if (event.xbutton.button == Button1) {
         ChatHit action{ChatHit::Kind::Title, {}};
         if (!contains(chat->header_bounds, pointer))
-            for (auto hit = chat->hits.rbegin(); hit != chat->hits.rend(); ++hit)
-                if (contains(hit->bounds, world)) {
-                    action = *hit;
+            for (const auto& hit : std::views::reverse(chat->hits))
+                if (contains(hit.bounds, world)) {
+                    action = hit;
                     break;
                 }
         const bool text = chat_over_text(pointer);
@@ -272,9 +274,10 @@ void Application::chat_selection(const XEvent& event)
                             static_cast<int>(text.size()));
             response.xselection.property = property;
         } else if (request.target == XInternAtom(display, "TARGETS", False)) {
-            const Atom targets[]{utf8, XA_STRING};
+            const std::array<Atom, 2> targets{utf8, XA_STRING};
             XChangeProperty(display, request.requestor, property, XA_ATOM, 32, PropModeReplace,
-                            reinterpret_cast<const unsigned char*>(targets), 2);
+                            reinterpret_cast<const unsigned char*>(targets.data()),
+                            static_cast<int>(targets.size()));
             response.xselection.property = property;
         }
         XSendEvent(display, request.requestor, False, 0, &response);

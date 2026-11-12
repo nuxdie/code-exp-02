@@ -17,11 +17,11 @@ std::string shell_quote(const std::string& text)
 std::string read_intent_view(const std::string& command)
 {
     std::string output;
-    if (FILE* pipe = popen(command.c_str(), "r")) {
+    if (Handle<FILE, pclose> pipe{popen(command.c_str(), "r")}) {
         std::array<char, 65536> buffer{};
-        while (const auto count = fread(buffer.data(), 1, buffer.size(), pipe))
+        while (const auto count = fread(buffer.data(), 1, buffer.size(), pipe.get()))
             output.append(buffer.data(), count);
-        if (pclose(pipe) != 0)
+        if (pclose(pipe.release()) != 0)
             output.clear();
     }
     return output;

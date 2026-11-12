@@ -115,7 +115,7 @@ struct ZoomAnimation {
         anchor = pointer;
     }
 
-    bool advance(Camera& camera, const Viewport& viewport, double seconds)
+    bool advance(Camera& camera, const Viewport& viewport, double seconds) const
     {
         if (!active(camera) || seconds <= 0)
             return false;

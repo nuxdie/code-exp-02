@@ -74,8 +74,9 @@ bool Application::canvas_shortcut_key(const XEvent& event)
     if (search.active)
         return search_key(event);
     KeySym key;
-    char text[8]{};
-    const auto length = XLookupString(&key_event, text, sizeof(text), &key, nullptr);
+    std::array<char, 8> text{};
+    const auto length =
+        XLookupString(&key_event, text.data(), static_cast<int>(text.size()), &key, nullptr);
     if (key == XK_F1) {
         show_shortcuts();
         return true;

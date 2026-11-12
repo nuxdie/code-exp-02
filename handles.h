@@ -1,17 +1,10 @@
 #pragma once
 
+#include "handle.h"
+
 #include <cairo.h>
 #include <glib-object.h>
 #include <pango/pango.h>
-
-#include <memory>
-
-// Owning handles for the C libraries. Each one releases with the library's own function,
-// so nothing that holds one needs a destructor.
-template <auto release> struct Releaser {
-    template <class Object> void operator()(Object* object) const { release(object); }
-};
-template <class Object, auto release> using Handle = std::unique_ptr<Object, Releaser<release>>;
 
 template <class Object> using GObjectHandle = Handle<Object, g_object_unref>;
 using GErrorHandle = Handle<GError, g_error_free>;

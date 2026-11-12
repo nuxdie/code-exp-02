@@ -84,7 +84,7 @@ void Application::draw_search()
         if (i == search.selected)
             renderer->rectangle(bounds, {0.89f, 0.93f, 1, 1});
         draw_search_match(search.matches[i], {origin.x + 8, origin.y + 3}, box_width - 56);
-        search.hits.push_back({bounds, i});
+        search.hits.emplace_back(bounds, i);
     }
     const auto count =
         search.more ? "First 200 matches" : std::format("{} matches", search.matches.size());

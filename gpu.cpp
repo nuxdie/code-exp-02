@@ -31,7 +31,7 @@ struct Vertex {
 void quad(std::vector<Vertex>& vertices, CanvasRect rect, GpuImage uv, std::array<float, 4> color,
           float mode)
 {
-    const float x = static_cast<float>(rect.origin.x), y = static_cast<float>(rect.origin.y);
+    const auto x = static_cast<float>(rect.origin.x), y = static_cast<float>(rect.origin.y);
     const float right = x + static_cast<float>(rect.size.x),
                 bottom = y + static_cast<float>(rect.size.y);
     auto vertex = [&](float px, float py, float u, float v) {
@@ -109,10 +109,10 @@ GLuint shader(GLenum type, const char* source)
     GLint compiled = 0;
     glGetShaderiv(result, GL_COMPILE_STATUS, &compiled);
     if (!compiled) {
-        char log[4096]{};
-        glGetShaderInfoLog(result, sizeof(log), nullptr, log);
+        std::array<char, 4096> log{};
+        glGetShaderInfoLog(result, static_cast<GLsizei>(log.size()), nullptr, log.data());
         glDeleteShader(result);
-        throw std::runtime_error(std::string("GPU shader failed: ") + log);
+        throw std::runtime_error(std::string("GPU shader failed: ") + log.data());
     }
     return result;
 }
@@ -140,9 +140,10 @@ struct GpuRenderer::Impl {
     void initialize(Display* connection, int screen, bool benchmark)
     {
         display = connection;
-        int attributes[] = {
+        std::array<int, 9> attributes{
             GLX_RGBA, GLX_DOUBLEBUFFER, GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8, None};
-        const Handle<XVisualInfo, XFree> visual{glXChooseVisual(display, screen, attributes)};
+        const Handle<XVisualInfo, XFree> visual{
+            glXChooseVisual(display, screen, attributes.data())};
         if (!visual)
             throw std::runtime_error("No OpenGL window visual available");
         colormap = XCreateColormap(display, RootWindow(display, screen), visual->visual, AllocNone);
@@ -408,10 +409,10 @@ void main() {
     void bind(GLuint buffer)
     {
         glBindBuffer(GL_ARRAY_BUFFER, buffer);
-        const GLint sizes[] = {2, 2, 4, 1};
-        const std::size_t offsets[] = {offsetof(Vertex, x), offsetof(Vertex, u),
-                                       offsetof(Vertex, r), offsetof(Vertex, mode)};
-        for (GLuint i = 0; i < 4; ++i) {
+        constexpr std::array<GLint, 4> sizes{2, 2, 4, 1};
+        constexpr std::array<std::size_t, 4> offsets{offsetof(Vertex, x), offsetof(Vertex, u),
+                                                     offsetof(Vertex, r), offsetof(Vertex, mode)};
+        for (GLuint i = 0; i < sizes.size(); ++i) {
             glEnableVertexAttribArray(i);
             glVertexAttribPointer(i, sizes[i], GL_FLOAT, GL_FALSE, sizeof(Vertex),
                                   reinterpret_cast<const void*>(offsets[i]));
@@ -574,8 +575,8 @@ void GpuRenderer::paths(GpuMesh& mesh, const std::vector<GpuPath>& paths)
             const double length = std::hypot(tip.x - previous.x, tip.y - previous.y);
             if (length < 0.001)
                 continue;
-            const float dx = static_cast<float>((tip.x - previous.x) / length);
-            const float dy = static_cast<float>((tip.y - previous.y) / length);
+            const auto dx = static_cast<float>((tip.x - previous.x) / length);
+            const auto dy = static_cast<float>((tip.y - previous.y) / length);
             vertices.insert(vertices.end(),
                             {vertex(tip, 0, 0), vertex(tip, -dx * 7 - dy * 3, -dy * 7 + dx * 3),
                              vertex(tip, -dx * 7 + dy * 3, -dy * 7 - dx * 3)});

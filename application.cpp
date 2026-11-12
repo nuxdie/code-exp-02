@@ -70,7 +70,7 @@ bool Application::initialize_window()
     window = renderer->window();
 
     XStoreName(display, window, "Source Code - White Window");
-    const unsigned long process = static_cast<unsigned long>(getpid());
+    const auto process = static_cast<unsigned long>(getpid());
     XChangeProperty(display, window, XInternAtom(display, "_NET_WM_PID", False), XA_CARDINAL, 32,
                     PropModeReplace, reinterpret_cast<const unsigned char*>(&process), 1);
     XSelectInput(display, window,

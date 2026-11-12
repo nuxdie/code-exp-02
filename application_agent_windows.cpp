@@ -1,3 +1,5 @@
+#include <ranges>
+
 #include "application.h"
 
 // A closed conversation that has something in it stays on the canvas as its title alone.
@@ -29,9 +31,9 @@ ChatCanvas* Application::chat_at(Vec2 pointer)
     };
     if (contains(chat))
         return chat.get();
-    for (auto card = chat_windows.rbegin(); card != chat_windows.rend(); ++card)
-        if (contains(*card))
-            return card->get();
+    for (auto& card : std::views::reverse(chat_windows))
+        if (contains(card))
+            return card.get();
     return nullptr;
 }
 bool Application::activate_chat(Vec2 pointer)

@@ -66,7 +66,7 @@ struct SystemTheme::Impl {
     struct Call {
         const char *destination, *path, *interface, *method;
     };
-    VariantHandle call(const Call& target, GVariant* params)
+    VariantHandle call(const Call& target, GVariant* params) const
     {
         if (!bus)
             return nullptr;

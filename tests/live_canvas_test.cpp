@@ -14,9 +14,10 @@ struct ApplicationTestAccess {
     {
         const auto deadline = Application::Clock::now() + 10s;
         while (!predicate() && Application::Clock::now() < deadline) {
-            pollfd fds[]{{app.project_watcher->event_fd(), POLLIN, 0},
-                         {app.language_server ? app.language_server->event_fd() : -1, POLLIN, 0}};
-            poll(fds, 2, 50);
+            std::array<pollfd, 2> fds{
+                {{app.project_watcher->event_fd(), POLLIN, 0},
+                 {app.language_server ? app.language_server->event_fd() : -1, POLLIN, 0}}};
+            poll(fds.data(), fds.size(), 50);
             app.poll_project();
             if (app.language_server)
                 for (const auto& message : app.language_server->take_messages())

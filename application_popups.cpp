@@ -12,7 +12,7 @@ void Application::hide_popup()
     popup_dismiss_due = Clock::time_point::max();
 }
 
-void Application::show_popup(std::string text, Vec2 origin, bool syntax)
+void Application::show_popup(const std::string& text, Vec2 origin, bool syntax)
 {
     shortcuts_visible = false;
     auto document = popup_document(text, syntax);

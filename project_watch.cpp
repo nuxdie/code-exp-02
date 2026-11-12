@@ -1,5 +1,6 @@
 #include "project_watch.h"
 
+#include "handle.h"
 #include "text.h"
 #include "wakeup.h"
 
@@ -15,6 +16,7 @@
 #include <mutex>
 #include <poll.h>
 #include <set>
+#include <span>
 #include <stdexcept>
 #include <sys/inotify.h>
 #include <thread>
@@ -29,12 +31,10 @@ constexpr std::uintmax_t largest_text = 256 * 1024;
 bool excluded_directory(const std::filesystem::path& path)
 {
     static const std::set<std::string> names{".git", ".cache", "__pycache__", "node_modules"};
-    for (const auto& part : path) {
+    return std::ranges::any_of(path, [](const auto& part) {
         const auto name = part.string();
-        if (names.contains(name) || name.starts_with("build"))
-            return true;
-    }
-    return false;
+        return names.contains(name) || name.starts_with("build");
+    });
 }
 // The files git tracks or would track, so each project's own ignore rules decide what is shown.
 std::vector<std::filesystem::path> git_files(const std::string& root)
@@ -45,14 +45,14 @@ std::vector<std::filesystem::path> git_files(const std::string& root)
     const auto command =
         "git -C " + quoted + "' ls-files -z --cached --others --exclude-standard 2>/dev/null";
     std::vector<std::filesystem::path> files;
-    auto* pipe = popen(command.c_str(), "r");
+    Handle<FILE, pclose> pipe{popen(command.c_str(), "r")};
     if (!pipe)
         return files;
     std::string output;
-    char buffer[65536];
-    for (std::size_t count; (count = fread(buffer, 1, sizeof(buffer), pipe)) > 0;)
-        output.append(buffer, count);
-    if (pclose(pipe) != 0)
+    std::array<char, 65536> buffer;
+    for (std::size_t count; (count = fread(buffer.data(), 1, buffer.size(), pipe.get())) > 0;)
+        output.append(buffer.data(), count);
+    if (pclose(pipe.release()) != 0)
         return {};
     for (std::size_t begin = 0; begin < output.size();) {
         const auto end = output.find('\0', begin);
@@ -103,9 +103,10 @@ std::vector<std::filesystem::path> project_paths(const std::string& root, bool d
 bool binary_head(const std::filesystem::path& file)
 {
     std::ifstream input(file, std::ios::binary);
-    char head[8192];
-    input.read(head, sizeof(head));
-    return std::find(head, head + input.gcount(), '\0') != head + input.gcount();
+    std::array<char, 8192> head;
+    input.read(head.data(), static_cast<std::streamsize>(head.size()));
+    return std::ranges::contains(std::span(head).first(static_cast<std::size_t>(input.gcount())),
+                                 '\0');
 }
 } // namespace
 

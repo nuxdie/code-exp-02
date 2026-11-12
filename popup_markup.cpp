@@ -31,9 +31,10 @@ std::size_t web_url_length(std::string_view text, std::size_t begin)
 
 std::string decode_entities(std::string text)
 {
-    const std::pair<std::string_view, std::string_view> entities[] = {
-        {"&lt;", "<"},  {"&gt;", ">"},   {"&quot;", "\""}, {"&apos;", "'"},
-        {"&#39;", "'"}, {"&#x27;", "'"}, {"&nbsp;", " "},  {"&amp;", "&"}};
+    using Entity = std::pair<std::string_view, std::string_view>;
+    static constexpr std::array entities{
+        Entity{"&lt;", "<"},  Entity{"&gt;", ">"},   Entity{"&quot;", "\""}, Entity{"&apos;", "'"},
+        Entity{"&#39;", "'"}, Entity{"&#x27;", "'"}, Entity{"&nbsp;", " "},  Entity{"&amp;", "&"}};
     for (const auto& [entity, replacement] : entities) {
         std::size_t position = 0;
         while ((position = text.find(entity, position)) != std::string::npos) {
