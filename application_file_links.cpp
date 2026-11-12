@@ -40,7 +40,6 @@ bool Application::open_link(const std::string& destination)
     if (destination.empty())
         return false;
     if (destination.starts_with("http://") || destination.starts_with("https://")) {
-        // GLib passes the URL as one argument and reaps the asynchronous browser launcher.
         std::string program = "xdg-open", address = destination;
         std::array<char*, 3> arguments{program.data(), address.data(), nullptr};
         GError* failure = nullptr;

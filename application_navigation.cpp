@@ -122,7 +122,6 @@ lsp::Json Application::save_navigation()
                               {"relativeY", saved.relative_center.y}});
         return result;
     };
-    // Include an unfinished gesture without splitting it in the running app.
     auto back = navigation_history;
     auto forward = navigation_forward;
     if (pending_view && !same_view(saved_camera(*pending_view), camera)) {
@@ -155,7 +154,6 @@ void Application::load_navigation(const lsp::Json& state)
                     saved.camera.zoom >= Camera::min_zoom && saved.camera.zoom <= Camera::max_zoom)
                     result.push_back(saved);
             } catch (const lsp::Json::exception&) {
-                // Ignore a damaged history entry while keeping the rest of the session.
             }
         }
         return result;

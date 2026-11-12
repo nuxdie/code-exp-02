@@ -48,7 +48,6 @@ IntentView parse_intent_view(const nlohmann::json& view)
 
 std::array<float, 3> intent_color(const std::string& intent, double lightness)
 {
-    // Golden-angle steps keep neighbouring intents apart on the colour wheel.
     const double hue =
         std::fmod(static_cast<double>(std::hash<std::string>{}(intent) % 997) * 137.508, 360.0);
     const double chroma = (1 - std::abs(2 * lightness - 1)) * 0.62;

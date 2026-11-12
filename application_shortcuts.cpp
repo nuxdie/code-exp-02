@@ -105,14 +105,12 @@ bool Application::canvas_shortcut_key(const XEvent& event)
 
 void Application::style_shortcuts(int layout_width)
 {
-    // Keep byte offsets stable for selection while stacking key/action pairs on small windows.
     if (layout_width < 600) {
         auto stacked = popup_text;
         std::ranges::replace(stacked, '\t', '\n');
         pango_layout_set_text(popup_layout.get(), stacked.c_str(),
                               static_cast<int>(stacked.size()));
     }
-    // The guide is a reference sheet: UI text for actions, monospace for physical keys.
     pango_layout_set_font_description(popup_layout.get(), font_description("sans-serif", 14).get());
     const TabsHandle tabs{pango_tab_array_new(1, TRUE)};
     pango_tab_array_set_tab(tabs.get(), 0, PANGO_TAB_LEFT, std::min(280, layout_width / 2));
@@ -147,7 +145,6 @@ void Application::draw_shortcut_keys(Vec2 origin)
         PangoRectangle first{}, last{};
         pango_layout_index_to_pos(popup_layout.get(), static_cast<int>(begin), &first);
         pango_layout_index_to_pos(popup_layout.get(), static_cast<int>(begin + length), &last);
-        // A key label may wrap in a small window. Never draw across unrelated rows.
         if (first.y != last.y || last.x <= first.x)
             continue;
         const double x = origin.x + static_cast<double>(first.x) / PANGO_SCALE;

@@ -16,7 +16,6 @@ struct CanvasRect {
     }
 };
 
-// Stack shorter files in the shortest column, keeping the files independent.
 inline std::vector<CanvasRect> arrange_files(const std::vector<Vec2>& sizes, int columns = 3,
                                              double gap = 96)
 {
@@ -52,7 +51,6 @@ inline Vec2 canvas_size(const std::vector<CanvasRect>& files)
     return size;
 }
 
-// Place an automatically opened window beside its anchor without covering existing windows.
 inline CanvasRect place_canvas_window(CanvasRect bounds, const std::vector<CanvasRect>& occupied,
                                       double gap = 24)
 {
@@ -68,7 +66,6 @@ inline CanvasRect place_canvas_window(CanvasRect bounds, const std::vector<Canva
     return bounds;
 }
 
-// Shared scrollbar geometry and drag mapping for canvas windows.
 inline CanvasRect canvas_scrollbar_thumb(CanvasRect track, double content, double scroll)
 {
     if (track.size.y <= 0 || content <= track.size.y)

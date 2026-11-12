@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
-"""Intent store: who asked for each line, in their words, and why it was written that way.
-
-The store is language-agnostic. It knows three things:
-
-  intent  a short durable decision, close to the human's own wording
-  turn    one thing the human said, what the agent answered, and the lines that turn added
-  blame   for a line in the working tree, the turn (and so the intent) that introduced it
-
-Lines are identified by a hash of their text with whitespace removed, so attribution
-survives reformatting, moves between files, and edits around them.
-"""
+"""Track intent and source-line attribution."""
 
 import argparse
 import glob
@@ -56,7 +46,6 @@ def hashes(lines):
 
 
 def human_text(content):
-    """Split a recorded user message into what the human typed and where they were."""
     said, where = [], None
     for part in content:
         text = part.get("text", "") if isinstance(part, dict) else ""
@@ -89,7 +78,6 @@ def question_reply(text):
 
 
 def codex_turns(root, sessions):
-    """Read every Codex transcript recorded in this project and return its turns."""
     root = str(Path(root).resolve())
     turns = {}
     names = [name for folder in sessions
@@ -153,7 +141,6 @@ def git(root, *arguments):
 
 
 def commit_lines(root, commit):
-    """Added lines per path for one commit, ignoring the store itself."""
     changes, path = {}, None
     for line in git(root, "show", "--format=", "--unified=0", commit).splitlines():
         if line.startswith("+++ "):
@@ -164,12 +151,6 @@ def commit_lines(root, commit):
 
 
 def add_commits(root, turns, links):
-    """Fold in lines that were committed for a turn but never appear in its transcript.
-
-    `links` maps a commit to the turns it served. Committed lines are weaker evidence
-    than a transcript's own edits, so they are kept apart and only claim lines no
-    transcript explains.
-    """
     by_id = {turn["id"]: turn for turn in turns}
     for commit, turn_ids in links.items():
         targets = [by_id[turn_id] for turn_id in turn_ids if turn_id in by_id]
@@ -229,7 +210,6 @@ def save(root, store):
 
 
 def rebuild(root, sessions):
-    """Rebuild turns from the evidence on disk, keeping distilled intents and their links."""
     store = load(root)
     previous = {turn["id"]: (turn.get("intent"), turn.get("also")) for turn in store["turns"]}
     turns = codex_turns(root, sessions)
@@ -252,7 +232,6 @@ def rebuild(root, sessions):
 
 
 def working_changes(root, base):
-    """Lines added since `base`, including files Git does not track yet."""
     changes, path = {}, None
     for line in git(root, "diff", "--unified=0", base).splitlines():
         if line.startswith("+++ "):
@@ -270,11 +249,6 @@ def working_changes(root, base):
 
 
 def record(root, said, why, intent, base, identifier):
-    """Record a turn from the working tree, for agents whose transcripts are not read here.
-
-    Recording the same id again replaces that turn, so an agent can call this after
-    every step of a long answer.
-    """
     store = load(root)
     if intent and intent not in {item["id"] for item in store["intents"]}:
         raise SystemExit("Unknown intent: " + intent)
@@ -300,7 +274,6 @@ def slug(statement, taken):
 
 
 def assign(root, sessions, turn_id, intent, statement):
-    """Link a turn to the intent it served, creating the intent from a statement if new."""
     store = rebuild(root, sessions)
     known = {item["id"]: item for item in store["intents"]}
     if statement:
@@ -320,7 +293,6 @@ def assign(root, sessions, turn_id, intent, statement):
 
 
 def tracked_files(root):
-    """The project's files: what Git tracks, or everything visible when there is no Git."""
     try:
         return [name for name in git(root, "ls-files").splitlines() if name]
     except (subprocess.CalledProcessError, OSError):
@@ -333,7 +305,6 @@ def tracked_files(root):
 
 
 def blame_file(lines, path, same_path, anywhere, weak):
-    """Attribute each line to the turn that first introduced its text."""
     owners, unsure = [], []
     for line in lines:
         value = line_hash(line)
@@ -375,7 +346,6 @@ def blame_file(lines, path, same_path, anywhere, weak):
 
 
 def blame(root, store=None):
-    """Return {path: [turn index or None per line]} for every tracked text file."""
     store = store or load(root)
     same_path, anywhere, weak = {}, {}, {}
     for evidence in ("changes", "committed"):  # a transcript's own edits win over commits
@@ -402,7 +372,6 @@ def blame(root, store=None):
 
 
 def ranges(owners):
-    """Collapse per-line owners into [first_line, last_line, turn] runs (1-based)."""
     result, start = [], 0
     for index in range(1, len(owners) + 1):
         if index == len(owners) or owners[index] != owners[start]:
@@ -413,7 +382,6 @@ def ranges(owners):
 
 
 def view(root):
-    """Everything the canvas needs: intents, turns without hashes, and line ranges per file."""
     store = load(root)
     attribution = blame(root, store)
     turns = [{key: value for key, value in turn.items() if key not in EVIDENCE}

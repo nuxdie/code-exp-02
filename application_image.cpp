@@ -61,7 +61,6 @@ Application::ImagePreview Application::decode_image(const std::string& bytes)
 {
     ImagePreview preview;
     const GObjectHandle<GdkPixbufLoader> loader{gdk_pixbuf_loader_new()};
-    // Bound decode memory and texture size while preserving aspect ratio.
     g_signal_connect(loader.get(), "size-prepared",
                      G_CALLBACK(+[](GdkPixbufLoader* decoder, int width, int height, gpointer) {
                          const double scale = std::min(1.0, 2048.0 / std::max(width, height));

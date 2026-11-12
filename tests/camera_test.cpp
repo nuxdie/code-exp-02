@@ -57,7 +57,6 @@ void test_transforms()
         }
     }
 
-    // Interleave drag motion and wheel zoom without releasing the drag.
     for (bool zoom_first : {false, true}) {
         camera.reset(viewport);
         Vec2 pointer{280, 190};

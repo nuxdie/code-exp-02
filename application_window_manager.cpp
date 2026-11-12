@@ -48,7 +48,6 @@ Application::WindowKind Application::window_at(Vec2 pointer)
 {
     const auto world = camera.screen_to_world(pointer, viewport());
     const auto contains = CanvasWindowManager::contains;
-    // Reverse paint order is also the input order for every canvas surface.
     if (search.active)
         return WindowKind::Search;
     if (!popup_text.empty() && contains(popup_bounds, pointer))

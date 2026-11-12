@@ -300,7 +300,6 @@ struct LanguageServer::Impl {
         for (auto& existing : documents)
             if (existing.uri == document.uri)
                 existing.text = document.text;
-        // An older semantic request may still be in flight. Its result is versioned below.
         semantic_pending.erase(document.uri);
         refresh_structure(document.uri);
     }

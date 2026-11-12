@@ -22,7 +22,6 @@ struct PopupDocument {
 PopupDocument popup_document(std::string_view text, bool markup);
 std::vector<PopupSpan> web_links(std::string_view text);
 
-// Text that must appear exactly as written, with no markup interpreted.
 std::string popup_literal(std::string_view text);
 
 std::string hover_documentation(std::string_view markdown);

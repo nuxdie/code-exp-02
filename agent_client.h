@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-// JSON-RPC transport only; the conversation model owns history and request state.
 class AgentClient {
   public:
     using Json = nlohmann::json;

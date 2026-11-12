@@ -2,7 +2,6 @@
 
 #include "canvas.h"
 
-// All canvas cards use the same screen-space title and world-space drag policy.
 struct CanvasWindowManager {
     Vec2* moving = nullptr;
 

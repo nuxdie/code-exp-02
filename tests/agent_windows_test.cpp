@@ -538,7 +538,6 @@ struct ApplicationTestAccess {
                "Middle-clicking overlapping chats must close only the top card, retain its "
                "draft and clear its selection without panning");
         top->visible = true;
-        // The original is now active; click the inactive card outside its bounds.
         top->bounds.origin.x = 900;
         middle_click(app, point({920, 200}));
         expect(!top->visible && original->visible && app.chat.get() == original &&

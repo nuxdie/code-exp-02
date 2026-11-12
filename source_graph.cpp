@@ -104,7 +104,6 @@ std::vector<Dependency> file_dependencies(const std::vector<GraphFile>& files)
 }
 
 namespace {
-// Pull connected items together while anchoring each to its original order.
 std::vector<double> relax_order(std::vector<double> rank, const std::vector<Dependency>& edges)
 {
     if (edges.empty())
@@ -128,8 +127,6 @@ std::vector<double> relax_order(std::vector<double> rank, const std::vector<Depe
 } // namespace
 
 namespace {
-// Folders stand apart by enough for a name to fit between them when the whole project is in
-// view, which takes more canvas the bigger the project is.
 double folder_gap(const std::vector<Vec2>& folders)
 {
     double area = 0;
@@ -138,8 +135,6 @@ double folder_gap(const std::vector<Vec2>& folders)
     return std::clamp(0.06 * std::sqrt(area), 320.0, 1400.0);
 }
 
-// The number of columns that shapes the block most like a window, so a fitted view uses the
-// screen instead of a strip of it.
 int window_columns(const std::vector<Vec2>& sizes, double gap)
 {
     int best = 1;
@@ -154,8 +149,6 @@ int window_columns(const std::vector<Vec2>& sizes, double gap)
     }
     return best;
 }
-// One folder's files in columns. Unusually wide files go last, so they share columns
-// instead of widening everyone's.
 std::vector<CanvasRect> pack_folder(const std::vector<GraphFile>& files,
                                     std::vector<std::size_t>& members)
 {
@@ -230,7 +223,6 @@ GraphLayout folder_layout(const std::vector<GraphFile>& files, const std::vector
     }
     const double gap = folder_gap(group_sizes);
     const auto packed_groups = arrange_files(group_sizes, window_columns(group_sizes, gap), gap);
-    // Room around the canvas for a region's ground, and above it for the first row of names.
     for (std::size_t i = 0; i < order.size(); ++i)
         for (const auto index : groups[order[i]]) {
             result.files[index].origin.x += packed_groups[i].origin.x + gap / 4;

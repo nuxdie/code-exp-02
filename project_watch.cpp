@@ -25,7 +25,6 @@
 using namespace std::chrono_literals;
 
 namespace {
-// Text beyond this is generated or data, not something to read on a canvas.
 constexpr std::uintmax_t largest_text = 256 * 1024;
 
 bool excluded_directory(const std::filesystem::path& path)
@@ -36,7 +35,6 @@ bool excluded_directory(const std::filesystem::path& path)
         return names.contains(name) || name.starts_with("build");
     });
 }
-// The files git tracks or would track, so each project's own ignore rules decide what is shown.
 std::vector<std::filesystem::path> git_files(const std::string& root)
 {
     std::string quoted = "'";
@@ -256,7 +254,6 @@ struct ProjectWatcher::Impl {
                 alignas(inotify_event) std::array<char, 65536> buffer;
                 while (read(notify.get(), buffer.data(), buffer.size()) > 0) {
                 }
-                // Re-register deleted/recreated directories and refresh newly created trees.
                 watched.clear();
                 add_watches();
                 due = Clock::now() + settle;

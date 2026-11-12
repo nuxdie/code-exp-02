@@ -49,7 +49,6 @@ void Application::poll_intent_margin()
         return;
     const auto view = nlohmann::json::parse(loading.get(), nullptr, false);
     intent_margin.view = parse_intent_view(view);
-    // A pinned note survives edits as long as its line still serves the same intent.
     auto& margin = intent_margin;
     const auto* run =
         margin.pinned ? margin.view.run_at(margin.pinned_path, margin.pinned_line) : nullptr;
@@ -103,14 +102,11 @@ void Application::draw_intent_run(const SourcePanel& panel, const IntentRun& run
     const auto& intent = intent_margin.view.intent_of(run);
     const bool lit = !selected.empty() && intent == selected;
     if (lit) {
-        // Zoomed out, the lit lines are the picture; zoomed in, the code must stay legible.
         const auto tint = intent_color(intent, camera.zoom < readable_zoom ? 0.55 : 0.9);
         renderer->rectangle(bounds, {tint[0], tint[1], tint[2], 1});
     }
-    // Below a pixel a bar is noise, unless it is the intent being looked for.
     if (bounds.size.y < 1.5 && !lit)
         return;
-    // Lines whose turn has not been distilled into an intent yet still show who asked.
     const auto color =
         intent.empty() ? std::array<float, 3>{0.55f, 0.57f, 0.6f} : intent_color(intent, 0.5);
     const float strength = selected.empty() || lit ? 1.0f : 0.25f;
@@ -135,8 +131,6 @@ void Application::draw_intent_margin(const Viewport& view)
     }
 }
 
-// The note is a thing on the canvas: it sits left of the lines it explains and moves,
-// zooms and scrolls away with them like everything else.
 void Application::draw_intent_note()
 {
     auto& margin = intent_margin;
@@ -149,7 +143,6 @@ void Application::draw_intent_note()
             path = panels[hit->panel].path;
             if (const auto* found = margin.view.run_at(path, hit->line))
                 run = *found;
-            // Stay where the note first appeared while the pointer moves within its lines.
             const bool same = run && path == margin.hover_path && run->first == margin.hover_first;
             line = same ? margin.hover_line : hit->line;
             margin.hover_path = path;
@@ -178,7 +171,6 @@ void Application::draw_intent_note()
     renderer->draw(margin.note.mesh, {origin.x + 16 * zoom, origin.y + 10 * zoom}, zoom);
 }
 
-// Select the intent behind a source line, or clear the selection when asked again.
 void Application::select_intent_at(Vec2 pointer)
 {
     auto& margin = intent_margin;
@@ -224,7 +216,6 @@ bool Application::intent_margin_button(const XEvent& event, Vec2 pointer)
         return on_note && clear_intent_selection();
     if (on_note)
         return intent_margin.pinned.has_value();
-    // The gutter bar is the handle for the intent behind those lines.
     const auto hit = source_line_at(pointer);
     if (!hit || window_at(pointer) != WindowKind::Source)
         return false;
@@ -242,7 +233,6 @@ bool Application::intent_margin_key(const XEvent& event)
            clear_intent_selection();
 }
 
-// An agent names the decision its turn served; the store links the turn's lines to it.
 std::string Application::record_turn_intent(const lsp::Json& call)
 {
     const auto arguments = call.value("arguments", lsp::Json::object());
@@ -265,7 +255,6 @@ std::string Application::record_turn_intent(const lsp::Json& call)
     std::erase_if(intent_writes, [](const auto& write) {
         return write.wait_for(0s) == std::future_status::ready;
     });
-    // The store change is a project file change, which reloads the margin when it lands.
     intent_writes.push_back(
         std::async(std::launch::async, [command] { (void)std::system(command.c_str()); }));
     return intent.empty() ? "Recorded as a new decision: " + statement : "Recorded under " + intent;

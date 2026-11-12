@@ -87,7 +87,6 @@ class Application {
         std::vector<GraphFile> files;
         FileIndex index;
         std::vector<Dependency> edges;
-        // Where every file will be, decided before any is read and only adjusted in place.
         std::vector<CanvasRect> plan;
         lsp::Json session; // the saved canvas, when its positions can be trusted
         std::vector<std::size_t> panel_indices;

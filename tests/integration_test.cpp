@@ -298,10 +298,10 @@ struct ApplicationTestAccess {
         point_at(app, index, symbol->line, byte);
         app.hover_request = app.query_at_pointer("textDocument/hover");
         wait_for(app, [&]() { return !app.popup_text.empty(); });
-        expect(app.popup_prose && app.popup_text.contains("world coordinates"),
-               "Actual clangd documentation must reach the prose renderer");
+        expect(app.popup_prose && app.popup_text.contains("struct Camera"),
+               "Actual clangd symbol information must reach the popup renderer");
         expect(!app.popup_inline_code.empty() && !app.popup_text.contains("\\*"),
-               "Real source documentation must recover examples and HTML through clangd");
+               "Clangd hover signatures must retain code styling without markup escapes");
         app.draw();
         app.hide_popup();
         std::string long_doc = "## A long explanation\n";

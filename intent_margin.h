@@ -11,7 +11,6 @@
 #include <string>
 #include <vector>
 
-// A run of source lines introduced by one thing the human said.
 struct IntentRun {
     int first = 0, last = 0; // zero-based, inclusive
     int turn = -1;
@@ -21,7 +20,6 @@ struct IntentTurn {
     std::string said, why, intent;
 };
 
-// What the intent store knows about the working tree, ready to draw.
 struct IntentView {
     std::map<std::string, std::string> statements;
     std::vector<IntentTurn> turns;
@@ -33,13 +31,10 @@ struct IntentView {
 
 IntentView parse_intent_view(const nlohmann::json& view);
 
-// A stable colour per intent, expressed for the light theme.
 std::array<float, 3> intent_color(const std::string& intent, double lightness);
 
-// The sidenote for a run: the decision, and when asked, the words and reasoning behind it.
 std::string intent_note(const IntentView& view, const IntentRun& run, bool detailed);
 
-// Standing guidance for a new agent: the decisions already made, in the human's words.
 std::string intent_instructions(const IntentView& view);
 
 struct IntentMargin {

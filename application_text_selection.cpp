@@ -1,6 +1,5 @@
 #include "application.h"
 
-// What another program put in the selection it was asked for, when that is text.
 std::optional<std::string> Application::pasted_text(const XEvent& event)
 {
     Atom type = None;
@@ -39,7 +38,6 @@ bool Application::begin_text_selection(const XEvent& event, Vec2 pointer)
         text_selection = {};
         return false;
     }
-    // The grab only keeps a drag alive outside the window; a click works without it.
     XGrabPointer(display, window, False, ButtonPressMask | ButtonReleaseMask | PointerMotionMask,
                  GrabModeAsync, GrabModeAsync, None, text_cursor, CurrentTime);
     if (target.surface != TextSurface::Popup && !popup_text.empty())
@@ -100,7 +98,6 @@ void Application::selection_click(const XEvent& event)
 {
     const Vec2 pointer{static_cast<double>(event.xbutton.x), static_cast<double>(event.xbutton.y)};
     if (text_selection.surface == TextSurface::Source) {
-        // A click on a word asks about it; anywhere else in the text puts the arrows away.
         if (!open_document_link(pointer))
             show_connections_at(pointer);
     } else if (text_selection.surface == TextSurface::Popup) {
@@ -152,7 +149,6 @@ bool Application::selection_key(const XEvent& event)
     }
     if (key == XK_Escape && !text_selection.dragging) {
         selected_input().place(selected_input().cursor);
-        // The click that placed this caret also drew the arrows; one Escape undoes both.
         if (text_selection.surface == TextSurface::Source)
             clear_connections();
         text_selection = {};

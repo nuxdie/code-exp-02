@@ -319,7 +319,6 @@ bool reads_as_prose(std::string_view line, std::size_t body)
     const auto last = line.find_last_not_of(" \t");
     if (body > last || std::string_view(";{}\\").contains(line[last]))
         return false;
-    // Columns lined up with spaces are a table or a drawing; they need their fixed width.
     if (line.find("  ", body) < last)
         return false;
     return std::any_of(line.begin() + static_cast<std::ptrdiff_t>(body), line.end(),
@@ -342,7 +341,6 @@ std::optional<ProseLine> comment_prose(std::string_view line, const std::vector<
         const std::string text(marker);
         if (line.compare(first, text.size(), text) != 0)
             continue;
-        // "*/" closes a comment, and "*word" is not a comment's margin.
         const auto after = first + text.size();
         if (text == "*" && after < line.size() && line[after] != ' ')
             break;
@@ -351,7 +349,6 @@ std::optional<ProseLine> comment_prose(std::string_view line, const std::vector<
     }
     if (body < line.size() && line[body] == ' ')
         ++body;
-    // A margin with no words is a paragraph break: nothing to show.
     const auto rest = line.find_first_not_of(" \t", body);
     if ((body > first && rest == std::string::npos) || starts_at(line, first, "*/"))
         return ProseLine{first, line.size(), false};

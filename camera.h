@@ -22,25 +22,6 @@ struct Viewport {
     }
 };
 
-/**
- * @brief A camera keeps world coordinates independent of window pixels.
- *
- * ### A stable coordinate system
- *
- * Read the canvas in **world space**; use screen space only for interaction.
- * The viewport center is \(v\), the camera center is \(c\), and zoom is \(z\).
- *
- * \[s = v + z(w-c), \qquad w = c + \frac{s-v}{z}\]
- *
- * Panning and zooming preserve the world point beneath the pointer:
- *
- * ```cpp
- * camera.pan({12, 0});
- * camera.zoom_at(1.15, pointer, viewport);
- * ```
- *
- * <code>screen_to_world</code> and <code>world_to_screen</code> are inverses.
- */
 struct Camera {
     static constexpr double min_zoom = 0.005;
     static constexpr double max_zoom = 8.0;
@@ -65,7 +46,6 @@ struct Camera {
         center.y -= screen_delta.y / zoom;
     }
 
-    // Preserve the exact world point beneath the pointer, including at limits.
     void set_zoom_at(double value, Vec2 pointer, const Viewport& viewport)
     {
         const auto anchor = screen_to_world(pointer, viewport);
@@ -119,8 +99,6 @@ struct ZoomAnimation {
     {
         if (!active(camera) || seconds <= 0)
             return false;
-        // Exponential easing in log space gives the same feel at any scale
-        // and frame rate. New wheel input extends the existing destination.
         const double remaining = std::log(target / camera.zoom);
         const double next = std::abs(remaining) < 0.0001
                                 ? target

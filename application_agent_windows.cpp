@@ -2,7 +2,6 @@
 
 #include "application.h"
 
-// A closed conversation that has something in it stays on the canvas as its title alone.
 bool Application::kept_chat(const ChatCanvas& card)
 {
     return !card.visible && (!card.conversation.thread_id.empty() ||
@@ -52,7 +51,6 @@ bool Application::activate_chat(Vec2 pointer)
         }
     return false;
 }
-// Only an open conversation has an agent process behind it.
 void Application::start_agent_windows()
 {
     const bool disabled = std::getenv("SOURCE_CANVAS_DISABLE_AGENT");
@@ -70,7 +68,6 @@ void Application::start_agent_windows()
     }
 }
 
-// A click on a kept title opens the conversation again where it was.
 bool Application::reopen_chat(Vec2 pointer)
 {
     if (chat_at(pointer) != chat.get() || chat->visible)
@@ -153,8 +150,6 @@ void Application::dismiss_empty_chat(const XEvent& event, Vec2 pointer)
         chat_at(pointer) != chat.get())
         close_agent_window();
 }
-// Closing an open conversation leaves its title on the canvas; closing the title, or a
-// conversation with nothing in it, removes it for good.
 void Application::close_agent_window()
 {
     if (!chat->conversation.questions.empty() || chat->conversation.sending) {
@@ -181,7 +176,6 @@ void Application::close_agent_window()
     schedule_save();
 }
 
-// The room conversations take on the canvas: a card when open, a title when closed.
 std::vector<CanvasRect> Application::conversation_bounds() const
 {
     std::vector<CanvasRect> bounds;
@@ -198,8 +192,6 @@ std::vector<CanvasRect> Application::conversation_bounds() const
     return bounds;
 }
 
-// Conversations placed under an older arrangement would land on top of files: line them
-// up beside the project instead.
 void Application::shelve_conversations()
 {
     Vec2 next{graph.size.x + 240, 240};

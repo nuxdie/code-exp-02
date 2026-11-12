@@ -74,7 +74,6 @@ void Application::poll_project()
     const auto changes = project_watcher->take_changes();
     if (changes.empty())
         return;
-    // A popup the pointer is resting in is being read; file changes elsewhere leave it alone.
     if (!shortcuts_visible && !CanvasWindowManager::contains(popup_bounds, mouse_position))
         hide_popup();
     const auto dragged =

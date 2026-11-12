@@ -21,7 +21,6 @@ GpuPath connection_curve(Vec2 start, Vec2 end)
     return path;
 }
 
-// The box a word occupies on the canvas, or its fold row's end when the line is folded away.
 CanvasRect Application::word_bounds(const SourcePanel& panel, int line, std::size_t begin,
                                     std::size_t end) const
 {
@@ -60,8 +59,6 @@ const SymbolNode* enclosing_function(const std::vector<SymbolNode>& nodes, int l
     return nullptr;
 }
 
-// What to call a place that uses the subject: the function it sits in, from the language
-// server when it has outlined the file, else read from the text, else the line number.
 std::string use_name(const SourcePanel& panel, int line)
 {
     if (const auto* function = enclosing_function(panel.symbols, line))
@@ -76,8 +73,6 @@ std::string file_name(const std::string& path)
 }
 } // namespace
 
-// A click on a symbol makes it the subject: arrows then show where it is defined and
-// every place that uses it. A click elsewhere in the text puts the arrows away.
 void Application::show_connections_at(Vec2 pointer)
 {
     clear_connections();
@@ -95,7 +90,6 @@ void Application::show_connections_at(Vec2 pointer)
     mouse_position = pointer;
     connection_requests = {query_at_pointer("textDocument/definition"),
                            query_at_pointer("textDocument/references")};
-    // Files no language server understands still have words: show where else this one occurs.
     if (!connection_requests.first && !connection_requests.second) {
         hide_popup();
         text_connections();
@@ -114,7 +108,6 @@ bool Application::clear_connections()
     return shown;
 }
 
-// The same place named twice is one link with a count.
 void Application::add_connection_link(ConnectionLink link)
 {
     if (link.at == connection_subject.at)
@@ -128,7 +121,6 @@ void Application::add_connection_link(ConnectionLink link)
     connection_links.push_back(std::move(link));
 }
 
-// Every other whole-word occurrence of the subject's name, in any kind of file.
 void Application::text_connections()
 {
     const auto& name = connection_subject.name;
@@ -146,7 +138,6 @@ void Application::text_connections()
             }
 }
 
-// A language server's answer: where the subject is defined, or the places that use it.
 bool Application::receive_connections(const lsp::Message& message)
 {
     const bool defines = message.id == connection_requests.first;

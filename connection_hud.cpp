@@ -71,7 +71,6 @@ void separate_markers(const CanvasRect& view, std::vector<ConnectionMarker>& mar
                 box.origin.y = other->origin.y + other->size.y + 2;
         if (box.origin.y + box.size.y <= bottom)
             continue;
-        // A column that ran out of room continues upward from the bottom edge.
         box.origin.y = bottom - box.size.y;
         for (std::size_t pass = 0; pass < i; ++pass)
             if (const auto* other = blocker())
@@ -92,7 +91,6 @@ std::vector<MarkerPart> marker_parts(const std::vector<ConnectionLink>& links,
         if (link.name.empty())
             continue;
         if (++total > 3) {
-            // The rest share one part, which leads to the first of them.
             const auto first = total == 4 ? index : parts.back().link;
             parts.resize(4);
             parts.push_back({std::format("+{}", total - 3), first});
@@ -127,7 +125,6 @@ Vec2 border_point(const CanvasRect& box, Vec2 toward)
     const double dx = toward.x - middle.x, dy = toward.y - middle.y;
     if (dx == 0 && dy == 0)
         return middle;
-    // Scale the direction until it reaches the nearer pair of sides.
     const double horizontal = dx == 0 ? 1e9 : box.size.x / 2 / std::abs(dx);
     const double vertical = dy == 0 ? 1e9 : box.size.y / 2 / std::abs(dy);
     const double reach = std::min({horizontal, vertical, 1.0});

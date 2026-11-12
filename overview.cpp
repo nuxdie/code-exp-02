@@ -15,7 +15,6 @@ bool blank_or_closer(const std::string& row)
     return row.find_first_not_of(" \t})];,") == std::string::npos;
 }
 
-// A line that opens a definition: named by a keyword, or followed by its opening brace.
 std::string defined(const std::vector<std::string>& text, std::size_t line)
 {
     const auto& row = text[line];

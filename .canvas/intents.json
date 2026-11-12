@@ -128,6 +128,10 @@
   {
    "id": "useful-legible-contextual",
    "statement": "Everything drawn on screen must be useful, legible and contextual: a live game-like HUD that gives immediate utility, not a static map. Arrows never just point off screen."
+  },
+  {
+   "id": "get-rid-of-the-prose",
+   "statement": "Get rid of the prose in code comments and such."
   }
  ],
  "commits": {
@@ -3515,9 +3519,21 @@
    "at": "2026-11-12T20:45:14.776Z",
    "source": "transcript",
    "said": "get rid of it",
-   "why": "",
+   "why": "Removed the benchmark mode and all its special cases.\n\nBuild, static analysis, and all 25 tests passed. Committed and pushed to `main` as `273fa8b`.",
    "intent": "machine-checked-clarity",
    "changes": {}
+  },
+  {
+   "id": "01a1d18e-91ce-7c20-8feb-a30b5a378eb2",
+   "thread": "01a1d18e-91c2-7d82-8566-2077dd4177e6",
+   "at": "2026-11-12T20:59:04.024Z",
+   "source": "transcript",
+   "said": "lets get rid of the prose in code comments and such",
+   "why": "",
+   "intent": "get-rid-of-the-prose",
+   "changes": {
+    "tests/integration_test.cpp": "b79286b 7dda3e7 66b4b89"
+   }
   }
  ]
 }

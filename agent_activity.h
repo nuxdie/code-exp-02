@@ -40,7 +40,6 @@ struct ActivityPulse {
     std::chrono::steady_clock::time_point began;
 };
 
-// Only live, successful file-change notifications create actors; history is never replayed.
 class AgentActivity {
   public:
     using Clock = std::chrono::steady_clock;

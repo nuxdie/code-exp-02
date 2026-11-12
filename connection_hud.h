@@ -6,7 +6,6 @@
 #include <string_view>
 #include <vector>
 
-// A word in a file.
 struct ConnectionEnd {
     std::string uri;
     int line = 0;
@@ -17,14 +16,12 @@ struct ConnectionEnd {
     }
 };
 
-// The symbol the arrows are about: the one that was clicked.
 struct ConnectionSubject {
     ConnectionEnd at;
     std::string name, file;
     bool active = false;
 };
 
-// One place related to the subject.
 struct ConnectionLink {
     ConnectionEnd at;
     std::string name; // what to call it: the symbol, or the function a use sits in
@@ -33,8 +30,6 @@ struct ConnectionLink {
     int count = 1;
 };
 
-// What lies off screen in one file, drawn on the window edge nearest to it.
-// One clickable word of a marker: the file, or a function that uses the subject.
 struct MarkerPart {
     std::string text;
     std::size_t link = 0; // the place it flies to
@@ -53,27 +48,19 @@ GpuPath connection_curve(Vec2 start, Vec2 end);
 bool inside(const CanvasRect& view, Vec2 point);
 Vec2 center(const CanvasRect& box);
 
-// The point on a box's border facing another point: where an arrow should touch it.
 Vec2 border_point(const CanvasRect& box, Vec2 toward);
 
-// Where the straight line from a point inside the view to a point outside it leaves the view.
 Vec2 view_exit(const CanvasRect& view, Vec2 from, Vec2 to);
 
-// An arrow for the direction of something off screen.
 const char* direction_glyph(const CanvasRect& view, Vec2 target);
 
-// A marker's box: touching `anchor` on the view's edge and lying wholly inside the view.
 CanvasRect marker_box(const CanvasRect& view, Vec2 anchor, Vec2 size);
 
-// Move overlapping boxes apart along the edge they sit on, keeping them inside the view.
 void separate_markers(const CanvasRect& view, std::vector<ConnectionMarker>& markers);
 
-// "camera.h  zoom, pan +3": the file, then its most frequent names, each its own part.
 std::vector<MarkerPart> marker_parts(const std::vector<ConnectionLink>& links,
                                      const std::vector<std::size_t>& members);
 
-// The part of a marker under a point, or null.
 const MarkerPart* marker_part_at(const ConnectionMarker& marker, Vec2 point);
 
-// The identifier around a byte of a line, as [begin, end); empty when there is none.
 std::pair<std::size_t, std::size_t> word_at(std::string_view line, std::size_t byte);

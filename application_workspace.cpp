@@ -3,7 +3,6 @@
 #include <type_traits>
 
 namespace {
-// The window can close while a worker is busy. Tasks own their inputs and never touch the UI.
 template <class Work> auto load_in_background(Work work)
 {
     std::packaged_task<std::invoke_result_t<Work>()> task(std::move(work));
@@ -47,7 +46,6 @@ void Application::begin_workspace_load()
                 workspace_build = candidate.string();
         std::filesystem::create_directories(workspace_build);
     }
-    // Positions saved under an older arrangement are not worth restoring.
     auto session = read_session();
     if (session.is_object() && session.value("layout", "") == "folders")
         workspace_load->session = std::move(session);
@@ -109,18 +107,15 @@ void Application::advance_workspace_load()
     }
 }
 
-// How big a file's card will be, from its line and column counts alone.
 Vec2 Application::estimated_size(const ProjectFile& file, double cell) const
 {
     const double title = static_cast<double>(file.path.size()) * cell + 64;
-    // An image is shown at most 640 wide; its height is known only once it is decoded.
     if (project_image(file.path))
         return {std::max(title, 640.0), header_height + 360.0};
     return {std::max(title, file.columns * cell) + 36,
             header_height + static_cast<double>(file.rows) * line_height};
 }
 
-// A file whose real size differs from the plan moves only what was planned beneath it.
 void Application::settle_plan(std::size_t index, Vec2 size)
 {
     auto& load = *workspace_load;
@@ -138,7 +133,6 @@ void Application::settle_plan(std::size_t index, Vec2 size)
         panels[i].bounds.origin = load.plan[load.panel_indices[i]].origin;
 }
 
-// The plan becomes the canvas. Only if real sizes made files collide is it arranged again.
 void Application::finish_plan()
 {
     graph.files.clear();
@@ -154,14 +148,11 @@ void Application::finish_plan()
             }
 }
 
-// Every file gets its place before any is read: where it was last time, or for a project
-// seen for the first time, where its line and column counts say it will fit.
 void Application::prepare_workspace_preview(std::vector<ProjectFile> files)
 {
     auto& load = *workspace_load;
     const auto saved = load.session.is_object() ? load.session.value("files", lsp::Json::object())
                                                 : lsp::Json::object();
-    // Files the saved canvas does not know come last, so they can join their folder.
     std::ranges::stable_partition(files, [&](const auto& file) {
         return !load.session.is_object() || saved.contains(file.path);
     });
@@ -257,8 +248,6 @@ bool Application::add_workspace_panel()
     return true;
 }
 
-// While files arrive the canvas is already the canvas: a file not read yet is a faint
-// card where it will be.
 void Application::draw_workspace_preview(const Viewport& view)
 {
     auto& load = *workspace_load;
@@ -324,7 +313,6 @@ void Application::poll_directory_picker()
     }
     if (directory.string() == workspace_root)
         return;
-    // Keep the old workspace intact until its session and services have shut down.
     save_session();
     launch_directory = directory.string();
     reload_requested = true;

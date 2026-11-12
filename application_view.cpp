@@ -1,8 +1,6 @@
 #include "application.h"
 
 namespace {
-// Prose is set as prose: a serif face, upright, with the comment marker left out. Text in
-// backticks stays in the code face.
 void set_as_prose(PangoAttrList* attributes, std::string_view line, const ProseLine& prose,
                   const char* code_family)
 {
@@ -125,7 +123,6 @@ void Application::draw_files(const Viewport& view)
                 {0.92f, 0.95f, 1, 1});
         }
         draw_source_selection(panel, origin);
-        // One cached GPU mesh per file; navigation only updates uniforms.
         const Vec2 mesh_origin{origin.x,
                                origin.y + (panel.image ? header_height * camera.zoom : 0)};
         renderer->draw(panel.mesh, mesh_origin, camera.zoom);

@@ -17,7 +17,6 @@ std::size_t utf16_to_byte(std::string_view text, int column);
 int byte_to_utf16(std::string_view text, std::size_t byte);
 std::string frame(const Json& message);
 
-// The stream may split a header or body anywhere, or contain several messages.
 class Framer {
   public:
     void append(std::string_view data);

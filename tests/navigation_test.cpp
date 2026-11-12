@@ -26,7 +26,6 @@ struct ApplicationTestAccess {
         app.handle_key(event);
     }
 
-    // One step of a continuous pan, as a drag or wheel gesture makes it.
     static void pan(Application& app, Vec2 delta)
     {
         app.remember_view(true);

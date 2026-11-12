@@ -1,8 +1,5 @@
 #include "application.h"
 
-// What the canvas says when the code is too small to read. Every label sits on the thing it
-// names; one that would cover another is left out rather than moved somewhere untrue.
-
 namespace {
 constexpr double readable_zoom = 0.35;
 constexpr double region_margin = 70;
@@ -22,14 +19,12 @@ DocumentView& Application::overview_label(const std::string& text)
     return label;
 }
 
-// A folder is a region: a faint ground under its files.
 void Application::draw_regions(const Viewport& view)
 {
     std::vector<std::pair<std::string, CanvasRect>> files;
     files.reserve(panels.size());
     for (const auto& panel : panels)
         files.emplace_back(panel.path, panel.bounds);
-    // While a project is still being read, the planned places stand in for the files.
     if (workspace_load) {
         files.clear();
         for (std::size_t i = 0; i < workspace_load->plan.size(); ++i)
@@ -66,8 +61,6 @@ void Application::draw_region_names(const Viewport& view, std::vector<CanvasRect
     }
 }
 
-// Names of what a file defines, over code that is too small to read. A name appears once
-// its definition is tall enough on screen to sit behind it.
 void Application::draw_outline(SourcePanel& panel, const Viewport& view,
                                std::vector<CanvasRect>& taken)
 {
@@ -84,7 +77,6 @@ void Application::draw_outline(SourcePanel& panel, const Viewport& view,
         const int row = panel.folded.display_lines[entry.line];
         const double tall =
             (panel.folded.display_lines[entry.last] - row + 1) * line_height * camera.zoom;
-        // Entries are longest first: once one is too short, so are the rest.
         if (tall < 14)
             break;
         const double y = origin.y + (header_height + row * line_height) * camera.zoom;
@@ -106,7 +98,6 @@ void Application::draw_headers(const Viewport& view)
     window_headers.clear();
     std::vector<CanvasRect> taken;
     draw_region_names(view, taken);
-    // The file under the pointer always has its title; after it, the longest files first.
     std::vector<std::size_t> order(panels.size());
     std::iota(order.begin(), order.end(), 0);
     const int hovered = panel_at(mouse_position);

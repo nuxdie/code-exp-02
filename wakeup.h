@@ -10,7 +10,6 @@
 #include <utility>
 #include <vector>
 
-// A file descriptor that closes itself.
 class FileDescriptor {
   public:
     FileDescriptor() = default;
@@ -36,7 +35,6 @@ class FileDescriptor {
     int descriptor = -1;
 };
 
-// Wakes a poll() on another thread. Raising it twice before it is read wakes once.
 class WakeSignal {
   public:
     WakeSignal() : event(eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC))
@@ -61,7 +59,6 @@ class WakeSignal {
     FileDescriptor event;
 };
 
-// What one thread hands to another; fd() becomes readable when there is something to take.
 template <class Item> class Mailbox {
   public:
     [[nodiscard]] int fd() const { return signal.fd(); }
@@ -73,7 +70,6 @@ template <class Item> class Mailbox {
         }
         signal.raise();
     }
-    // Several at once, so the reader never sees part of a batch.
     void post(std::vector<Item> batch)
     {
         if (batch.empty())
@@ -84,7 +80,6 @@ template <class Item> class Mailbox {
         }
         signal.raise();
     }
-    // Interrupts the reader's poll() with nothing new to take.
     void wake() const { signal.raise(); }
     [[nodiscard]] std::vector<Item> take()
     {

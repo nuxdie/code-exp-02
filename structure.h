@@ -48,7 +48,6 @@ inline bool reveal_line(int line, std::vector<FoldBlock>& blocks)
     return changed;
 }
 
-// Something a file defines, and the lines it spans.
 struct OutlineEntry {
     std::string name;
     int line = 0, last = 0;
@@ -105,7 +104,6 @@ inline bool listed(const std::vector<std::string>& words, std::string_view word)
     return std::ranges::find(words, word) != words.end();
 }
 
-// "class Store:" or "fn zoom_at(" name what follows the keyword.
 inline std::string named_by_keyword(std::string_view row, std::size_t first)
 {
     static const std::vector<std::string> kinds{
@@ -124,12 +122,10 @@ inline std::string named_by_keyword(std::string_view row, std::size_t first)
     return "";
 }
 
-// "void Application::draw(double y)" names the word before its parenthesis.
 inline std::string named_by_call(std::string_view row)
 {
     const auto call = row.find('(');
     const auto last = row.find_last_not_of(" \t");
-    // A statement, or one that continues on the next line, declares nothing.
     if (call == std::string::npos || call == 0 ||
         std::string_view(";,(+-*/=&|<.?").contains(row[last]))
         return "";
@@ -141,7 +137,6 @@ inline std::string named_by_call(std::string_view row)
     return std::string(row.substr(begin, end - begin));
 }
 
-// What a line declares, or nothing for control flow and plain statements.
 inline std::string declared(std::string_view row)
 {
     static const std::vector<std::string> control{"if",   "for",    "while",  "switch", "catch",
@@ -162,9 +157,6 @@ inline bool comment(std::string_view row, std::size_t first)
 }
 } // namespace structure_text
 
-// The name of the definition a line sits in, read from the text alone: the nearest less
-// indented line above that declares something, in any language with blocks. Empty when the
-// line is at the top level.
 inline std::string enclosing_name(const std::vector<std::string>& text, int line)
 {
     if (line < 0 || line >= std::ssize(text))
@@ -176,7 +168,6 @@ inline std::string enclosing_name(const std::vector<std::string>& text, int line
         const int depth = structure_text::indent(row);
         if (first == std::string::npos || depth >= limit || structure_text::comment(row, first))
             continue;
-        // A brace alone belongs to the line above it, at the same depth.
         const bool brace = row.find_first_not_of(" \t{") == std::string::npos;
         limit = brace ? depth + 1 : depth;
         const auto name = brace ? "" : structure_text::declared(row);

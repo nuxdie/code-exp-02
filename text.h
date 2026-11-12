@@ -6,7 +6,6 @@
 #include <string_view>
 #include <vector>
 
-// Whether `prefix` is what stands at `position`.
 [[nodiscard]] constexpr bool starts_at(std::string_view text, std::size_t position,
                                        std::string_view prefix)
 {
@@ -22,7 +21,6 @@
     return result;
 }
 
-// The lines of a text without their newlines. A final newline does not begin another line.
 [[nodiscard]] inline std::vector<std::string_view> lines_of(std::string_view text)
 {
     std::vector<std::string_view> lines;

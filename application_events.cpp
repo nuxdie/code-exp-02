@@ -335,7 +335,6 @@ void Application::begin_drag(const XEvent& event, Vec2 pointer, const Viewport& 
             }
         }
     }
-    // Keep receiving wheel presses while either pan button is held.
     if (XGrabPointer(display, window, False,
                      ButtonPressMask | ButtonReleaseMask | PointerMotionMask, GrabModeAsync,
                      GrabModeAsync, None, header >= 0 ? normal_cursor : drag_cursor,

@@ -86,7 +86,6 @@ void Application::update_mesh(SourcePanel& panel)
         renderer->upload(panel.header_mesh, {{panel.title.get(), {2, 0}}});
 }
 
-// Files gather by folder, so a folder is a region of the canvas with a name.
 void Application::relayout()
 {
     std::vector<GraphFile> files;
@@ -97,8 +96,6 @@ void Application::relayout()
     apply_graph_layout();
 }
 
-// A file that grew or shrank moves only what sits beneath it; the rest of the canvas stays
-// where it was.
 void Application::resize_in_place(const SourcePanel& panel, double old_height)
 {
     const double delta = panel.bounds.size.y - old_height;
@@ -110,8 +107,6 @@ void Application::resize_in_place(const SourcePanel& panel, double old_height)
     refresh_project_geometry(false);
 }
 
-// A file new to the canvas joins its folder: under the shortest column of the files already
-// there, or beside the project when it is the first of its folder.
 void Application::place_in_folder(SourcePanel& panel, const std::set<std::string>& unplaced)
 {
     const auto folder = std::filesystem::path(panel.path).parent_path();

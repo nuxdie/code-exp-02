@@ -111,7 +111,6 @@ struct ApplicationTestAccess {
         expect(glGetError() == GL_NO_ERROR &&
                    (!app.connection_markers.empty() || app.connection_mesh.vertices > 0),
                "Every link must end at a highlighted word or at a marker on the window edge");
-        // Far from everything, the subject and its definition are both markers to fly back to.
         app.camera.center.x += 60000;
         app.zoom_animation.cancel(app.camera);
         app.draw();

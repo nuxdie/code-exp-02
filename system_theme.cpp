@@ -27,7 +27,6 @@ std::optional<bool> preferred_dark_theme(unsigned preference)
 namespace {
 using VariantHandle = Handle<GVariant, g_variant_unref>;
 
-// Replies arrive wrapped in tuples and variants; the value is what is inside.
 VariantHandle unbox(GVariant* reply)
 {
     VariantHandle value{reply};
@@ -86,7 +85,6 @@ struct SystemTheme::Impl {
     }
     bool fallback()
     {
-        // Xfce exposes its actual current GTK theme through xfconf.
         const auto value =
             call({"org.xfce.Xfconf", "/org/xfce/Xfconf", "org.xfce.Xfconf", "GetProperty"},
                  g_variant_new("(ss)", "xsettings", "/Net/ThemeName"));

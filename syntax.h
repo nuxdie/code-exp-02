@@ -31,7 +31,6 @@ struct HighlightState {
     bool fenced = false; // inside a code fence of a prose file
 };
 
-// Words meant to be read: a line that is nothing but a comment, or a line of a document.
 // [begin, body) is the marker in front of the words, which is not shown.
 struct ProseLine {
     std::size_t begin = 0, body = 0;
@@ -53,6 +52,5 @@ struct StyledLine {
 Syntax semantic_syntax(std::string_view type);
 std::vector<Token> highlight(std::string_view line, HighlightState& state, bool cmake = false);
 
-// Tokens for one line of a file, and whether the line reads as prose.
 StyledLine style_line(std::string_view line, TextKind kind, HighlightState& state,
                       bool cmake = false);

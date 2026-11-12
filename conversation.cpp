@@ -153,7 +153,6 @@ void Conversation::request_failed(const std::string& method, const Json& failure
 {
     const auto detail = failure.value("message", "Agent request failed");
     if (method == "thread/resume" && fresh && detail.contains("no rollout found for thread id ")) {
-        // A thread without an accepted first message has no saved history to resume.
         thread_id.clear();
         submitted.clear();
         history_loading = sending = false;
@@ -201,7 +200,6 @@ void Conversation::history_page(const Json& result)
 void Conversation::put_item(const std::string& turn, const Json& item, int sequence)
 {
     const auto type = item.value("type", "");
-    // Reasoning items are internal; the canvas shows public conversation and activity only.
     if (type != "agentMessage" && type != "userMessage" && type != "commandExecution" &&
         type != "fileChange" && type != "plan")
         return;
@@ -447,7 +445,6 @@ void Conversation::start_title(const std::string& prompt)
 }
 void Conversation::start_title_thread(const Json& effective_config)
 {
-    // A separate ephemeral thread keeps metadata generation out of the user's conversation.
     Json config{{"web_search", "disabled"}, {"skills.include_instructions", false}};
     for (const auto* feature :
          {"shell_tool", "unified_exec", "apps", "plugins", "hooks", "memories", "multi_agent",
@@ -545,7 +542,6 @@ void Conversation::title_response(const std::string& stage, const Json& message)
 void Conversation::title_notification(const Json& message)
 {
     const auto params = message.value("params", Json::object());
-    // Hidden thread traffic must never appear as messages, activity or approval prompts.
     if (message.contains("id")) {
         queued.push_back({{"id", message["id"]},
                           {"error", {{"code", -32601}, {"message", "Tools disabled for titles"}}}});

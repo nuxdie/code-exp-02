@@ -25,13 +25,11 @@ void Application::load_agent_windows(const lsp::Json& state, const char* environ
     for (const auto& saved : state.value("additionalAgents", lsp::Json::array())) {
         auto card = std::make_unique<ChatCanvas>(workspace_root);
         load_agent_window(*card, saved);
-        // A closed conversation with nothing in it is not worth keeping.
         if (card->visible || kept_chat(*card))
             chat_windows.push_back(std::move(card));
     }
 }
 
-// The saved canvas for this project, or null when there is none to use.
 lsp::Json Application::read_session() const
 {
     if (std::getenv("SOURCE_CANVAS_DISABLE_SESSION"))
@@ -81,7 +79,6 @@ void Application::load_session()
         if (search.active)
             update_search();
         load_agent_windows(state, environment_thread);
-        // Positions saved under an older arrangement would scatter the folders again.
         const bool placed = state.value("layout", "") == "folders";
         restore_file_layouts(state.value("files", lsp::Json::object()), placed);
         if (!placed || !state.value("shelved", false))
@@ -96,7 +93,6 @@ void Application::load_session()
         load_navigation(state.value("cameraHistory", lsp::Json::object()));
         restore_window(state);
     } catch (const lsp::Json::exception&) {
-        // A partially written or older view-state file must never prevent opening the project.
     }
 }
 bool Application::restore_folds(SourcePanel& panel, const lsp::Json& saved)
@@ -114,7 +110,6 @@ bool Application::restore_folds(SourcePanel& panel, const lsp::Json& saved)
 
 void Application::restore_file_layouts(const lsp::Json& files, bool placed)
 {
-    // Files that appeared since the session was saved have no place yet.
     std::set<std::string> unplaced;
     for (auto& panel : panels) {
         const auto saved = files.value(panel.path, lsp::Json::object());

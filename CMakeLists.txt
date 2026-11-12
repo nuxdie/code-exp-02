@@ -74,7 +74,6 @@ foreach(
     configure_file("fonts/${font_file}" "fonts/${font_file}" COPYONLY)
 endforeach()
 
-# Discover project sources for formatting and build dependencies.
 file(
     GLOB_RECURSE VIEWER_SOURCES CONFIGURE_DEPENDS
     RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -98,7 +97,6 @@ list(FILTER VIEWER_SOURCES EXCLUDE REGEX
 list(REMOVE_ITEM VIEWER_SOURCES main.cpp camera.h canvas.h)
 list(PREPEND VIEWER_SOURCES main.cpp camera.h canvas.h)
 
-# Formatting is a required part of build configuration.
 find_program(
     CLANG_FORMAT_EXECUTABLE NAMES clang-format-18 clang-format REQUIRED
 )

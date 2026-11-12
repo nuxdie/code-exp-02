@@ -34,7 +34,6 @@ bool Application::initialize_window()
         return false;
     }
 
-    // Load the bundled font faces for this application only.
     std::error_code path_error;
     executable = std::filesystem::read_symlink("/proc/self/exe", path_error);
     if (path_error) {
@@ -83,7 +82,6 @@ bool Application::initialize_window()
     XDefineCursor(display, window, normal_cursor);
     active_cursor = normal_cursor;
 
-    // Pango shapes at one stable size. OpenGL handles all camera transforms.
     surface.reset(cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1));
     cr.reset(cairo_create(surface.get()));
     const FontOptionsHandle options{cairo_font_options_create()};
@@ -146,7 +144,6 @@ int Application::run_window()
     while (running) {
         if (!zoom_animation.active(camera))
             last_frame = Clock::now();
-        // Drain input before advancing the camera, including during animation.
         while (running && XPending(display) > 0) {
             XEvent event{};
             XNextEvent(display, &event);
@@ -257,8 +254,6 @@ void Application::update_timers(Clock::time_point now)
 
 void Application::wait_for_work(Clock::time_point next_frame)
 {
-    // Sleep until either new input or the next animation frame is due.
-    // An idle window blocks indefinitely and consumes no animation CPU.
     auto deadline = std::min({hover_due, popup_dismiss_due, save_due, agent_reconnect_due(),
                               chat_animation_due, activity_animation_due});
     if (redraw || zoom_animation.active(camera))

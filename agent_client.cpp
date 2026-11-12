@@ -67,7 +67,6 @@ struct AgentClient::Impl {
                 publish(std::move(message));
         }
     }
-    // Returns what is left to write.
     std::string_view write_some(std::string_view pending) const
     {
         const auto count = ::send(bridge.stream(), pending.data(), pending.size(), MSG_NOSIGNAL);

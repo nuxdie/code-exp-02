@@ -247,7 +247,6 @@ class InlineDocumentation {
         const auto end = line.find(delimiter, content);
         if (end == std::string::npos || end == content)
             return false;
-        // Escaped characters inside emphasis are still literal text, not markup.
         const auto text = inline_literals(line.substr(content, end - content));
         document.styles.push_back({offset + result.size(), text.size(),
                                    strong ? PopupStyle::Strong : PopupStyle::Emphasis});

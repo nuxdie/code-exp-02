@@ -39,7 +39,6 @@ struct GpuPath {
     bool arrow = true;
 };
 
-// Shapes are cached in VRAM. Camera movement never calls the text rasterizer.
 class GpuRenderer {
   public:
     GpuRenderer(Display* display, int screen);

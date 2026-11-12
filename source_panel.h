@@ -41,11 +41,8 @@ struct SourceHit {
     std::size_t byte = 0;
 };
 
-// The blocks of a text that can be folded, found from its braces alone. Long blocks that
-// are not inside another start collapsed, so a file opens as an outline of itself.
 std::vector<FoldBlock> brace_folds(std::string_view text, std::string_view path);
 
-// How many rows a text takes on its card once its long blocks are collapsed.
 int folded_rows(std::string_view text, std::string_view path);
 
 std::string fold_identity(const SourcePanel& panel, int line);

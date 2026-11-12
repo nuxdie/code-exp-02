@@ -7,7 +7,6 @@ constexpr std::array<float, 4> subject_color{0.55f, 0.45f, 0.10f, 0.9f};
 constexpr double edge_margin = 10;
 } // namespace
 
-// Where a word is on screen right now, or nothing when its file is not on the canvas.
 CanvasRect Application::connection_box(const ConnectionEnd& end)
 {
     const auto panel = std::ranges::find(panels, end.uri, &SourcePanel::uri);
@@ -18,7 +17,6 @@ CanvasRect Application::connection_box(const ConnectionEnd& end)
             {word.size.x * camera.zoom, word.size.y * camera.zoom}};
 }
 
-// An arrow from one box's border to another's, so it is clear which word it belongs to.
 void Application::connect_boxes(std::vector<GpuPath>& paths, const CanvasRect& from,
                                 const CanvasRect& to, std::array<float, 4> color, float width)
 {
@@ -28,13 +26,11 @@ void Application::connect_boxes(std::vector<GpuPath>& paths, const CanvasRect& f
     paths.push_back(std::move(path));
 }
 
-// A labelled marker on the window edge, in the direction of a word that is out of view.
 void Application::mark_connection(const CanvasRect& view, std::vector<std::size_t> members,
                                   const ConnectionEnd& end, std::vector<MarkerPart> parts)
 {
     const auto far = center(connection_box(end));
     parts.front().text = std::string(direction_glyph(view, far)) + " " + parts.front().text;
-    // Each part is its own piece of text, so each can be pointed at.
     double right = 12, tall = 0;
     std::string text;
     for (auto& part : parts) {
@@ -52,7 +48,6 @@ void Application::mark_connection(const CanvasRect& view, std::vector<std::size_
          std::move(text), std::move(parts)});
 }
 
-// Sort the links into words that are in view, highlighted, and markers for the rest.
 std::vector<std::size_t> Application::place_connection_ends(const CanvasRect& view)
 {
     std::map<std::pair<bool, std::string>, std::vector<std::size_t>> hidden;
@@ -73,7 +68,6 @@ std::vector<std::size_t> Application::place_connection_ends(const CanvasRect& vi
     return visible;
 }
 
-// Arrows between the subject and each end. The marker under the pointer stands out.
 void Application::connection_arrows(std::vector<GpuPath>& paths, const CanvasRect& subject,
                                     const std::vector<std::size_t>& visible, bool to_markers)
 {
@@ -94,10 +88,6 @@ void Application::connection_arrows(std::vector<GpuPath>& paths, const CanvasRec
                  &marker == pointed ? 0.95f : rest, &marker == pointed ? 2.5f : 1.5f);
 }
 
-// Place the subject's links for the current camera. Arrows run from the subject to where it
-// is defined, and from each use to the subject. An end that is in view is a highlighted
-// word. Ends that are not are gathered per file into one labelled marker on the window
-// edge in that file's direction, the subject included, so no arrow runs off the screen.
 void Application::layout_connections()
 {
     const CanvasRect view{
@@ -124,7 +114,6 @@ void Application::layout_connections()
                         {{connection_subject.file + "  " + connection_subject.name}});
     }
     separate_markers(view, connection_markers);
-    // Arrows meet the subject itself, or the marker standing for it while it is out of view.
     for (const auto& marker : connection_markers)
         if (marker.links.empty())
             subject = marker.bounds;
@@ -144,7 +133,6 @@ void Application::draw_connections(const Viewport&)
         rebuild_connections();
     else if (moved || pointed != connection_pointed)
         layout_connections();
-    // Words are tinted beneath the text so the code stays legible.
     for (const auto& word : connection_words)
         renderer->rectangle(word.bounds,
                             {0.55f + word.color[0] * 0.45f, 0.55f + word.color[1] * 0.45f,
@@ -154,7 +142,6 @@ void Application::draw_connections(const Viewport&)
 
 void Application::draw_connection_markers()
 {
-    // The subject is underlined above the text, so it reads even on a highlighted line.
     const auto& chosen = connection_subject_box;
     if (chosen.size.x > 0)
         renderer->rectangle({{chosen.origin.x, chosen.origin.y + chosen.size.y - 2},
@@ -170,14 +157,12 @@ void Application::draw_connection_markers()
         for (const auto& part : marker.parts)
             renderer->draw(connection_labels[part.text].mesh,
                            {marker.bounds.origin.x + part.offset, marker.bounds.origin.y + 4}, 1);
-        // The word a click would fly to.
         if (const auto* part = marker_part_at(marker, mouse_position))
             renderer->rectangle({{marker.bounds.origin.x + part->offset,
                                   marker.bounds.origin.y + marker.bounds.size.y - 4},
                                  {part->width, 1.5}},
                                 {color[0], color[1], color[2], 1});
     }
-    // Labels are cached by their text; forget the ones no longer shown.
     for (auto label = connection_labels.begin(); label != connection_labels.end();) {
         const bool shown = std::ranges::any_of(connection_markers, [&](const auto& marker) {
             return std::ranges::any_of(marker.parts,
@@ -200,7 +185,6 @@ const ConnectionMarker* Application::connection_marker_at(Vec2 pointer)
     return nullptr;
 }
 
-// A marker is a way to get there.
 bool Application::connection_marker_button(const XEvent& event, Vec2 pointer)
 {
     if (!drag_button && event.xbutton.button == Button1)
@@ -212,7 +196,6 @@ bool Application::connection_marker_button(const XEvent& event, Vec2 pointer)
     const auto* marker = connection_marker_at(pointer);
     if (!marker || drag_button || event.xbutton.button != Button1)
         return false;
-    // The word under the pointer decides where to go; elsewhere on the marker, its first.
     const auto* part = marker_part_at(*marker, pointer);
     const auto at = marker->links.empty()
                         ? connection_subject.at
@@ -229,8 +212,6 @@ bool Application::connection_key(const XEvent& event)
            clear_connections();
 }
 
-// An agent editing out of sight is announced on the window edge in its direction, with the
-// file it is in; a click flies there.
 void Application::draw_agent_markers()
 {
     const CanvasRect view{
