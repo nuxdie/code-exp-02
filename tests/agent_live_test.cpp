@@ -13,8 +13,8 @@
 namespace {
 bool has_test_reply(const Conversation& model)
 {
-    return std::any_of(model.entries.begin(), model.entries.end(), [](const auto& entry) {
-        return entry.role == "Agent" && entry.text.find("CANVAS_SEND_OK") != std::string::npos;
+    return std::ranges::any_of(model.entries, [](const auto& entry) {
+        return entry.role == "Agent" && entry.text.contains("CANVAS_SEND_OK");
     });
 }
 bool handle_send_test_response(const nlohmann::json& message, AgentClient& client,

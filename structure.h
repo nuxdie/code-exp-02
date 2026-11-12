@@ -101,7 +101,7 @@ inline int indent(const std::string& row)
 
 inline bool listed(const std::vector<std::string>& words, const std::string& word)
 {
-    return std::find(words.begin(), words.end(), word) != words.end();
+    return std::ranges::find(words, word) != words.end();
 }
 
 // "class Store:" or "fn zoom_at(" name what follows the keyword.
@@ -130,7 +130,7 @@ inline std::string named_by_call(const std::string& row)
     const auto last = row.find_last_not_of(" \t");
     // A statement, or one that continues on the next line, declares nothing.
     if (call == std::string::npos || call == 0 ||
-        std::string(";,(+-*/=&|<.?").find(row[last]) != std::string::npos)
+        std::string_view(";,(+-*/=&|<.?").contains(row[last]))
         return "";
     const auto end = row.find_last_not_of(' ', call - 1) + 1;
     auto begin = end;

@@ -61,7 +61,7 @@ void Application::begin_workspace_load()
             file.rows = folded_rows(*text, file.path);
             file.columns = text_extent(*text).second;
         }
-        std::sort(files.begin(), files.end(), [](const auto& a, const auto& b) {
+        std::ranges::sort(files, [](const auto& a, const auto& b) {
             const int first = load_priority(a.path), second = load_priority(b.path);
             return first == second ? a.path < b.path : first < second;
         });
@@ -162,7 +162,7 @@ void Application::prepare_workspace_preview(std::vector<ProjectFile> files)
     const auto saved = load.session.is_object() ? load.session.value("files", lsp::Json::object())
                                                 : lsp::Json::object();
     // Files the saved canvas does not know come last, so they can join their folder.
-    std::stable_partition(files.begin(), files.end(), [&](const auto& file) {
+    std::ranges::stable_partition(files, [&](const auto& file) {
         return !load.session.is_object() || saved.contains(file.path);
     });
     const LayoutHandle sample{pango_layout_copy(base_layout.get())};

@@ -65,15 +65,15 @@ struct ApplicationTestAccess {
                "Workspace must resolve the explicit directory or environment override");
         expect(app.workspace_build == build.string(),
                "Language tools and generated files must use the selected project");
-        expect(std::all_of(app.panels.begin(), app.panels.end(),
-                           [&](const auto& panel) {
-                               return panel.path == file || panel.path == "compile_commands.json";
-                           }) &&
+        expect(std::ranges::all_of(app.panels,
+                                   [&](const auto& panel) {
+                                       return panel.path == file ||
+                                              panel.path == "compile_commands.json";
+                                   }) &&
                    app.panels.empty() == file.empty(),
                "Canvas must contain only the selected project's files");
         if (!file.empty()) {
-            const auto card = std::find_if(app.panels.begin(), app.panels.end(),
-                                           [&](const auto& panel) { return panel.path == file; });
+            const auto card = std::ranges::find(app.panels, file, &SourcePanel::path);
             expect(card != app.panels.end() && card->uri == lsp::file_uri((root / file).string()),
                    "Source cards and navigation must point into the selected project");
         }
@@ -97,16 +97,12 @@ struct ApplicationTestAccess {
         std::ofstream(root / "broken.jpg") << "invalid image";
         Application app(root.string());
         expect(app.initialize(), "Image workspace must initialize");
-        auto found = std::find_if(app.panels.begin(), app.panels.end(), [](const auto& panel) {
-            return panel.path == "assets/photo.PNG";
-        });
+        auto found = std::ranges::find(app.panels, "assets/photo.PNG", &SourcePanel::path);
         expect(found != app.panels.end() && found->image && found->mesh.texture &&
                    found->image_size.x == 640 && found->image_size.y == 320 &&
                    found->source.empty() && found->lines.empty(),
                "Binary images in assets must render with aspect ratio and no text content");
-        const auto vector =
-            std::find_if(app.panels.begin(), app.panels.end(),
-                         [](const auto& panel) { return panel.path == "assets/vector.svg"; });
+        const auto vector = std::ranges::find(app.panels, "assets/vector.svg", &SourcePanel::path);
         expect(vector != app.panels.end() && vector->mesh.texture && vector->image_size.x == 80,
                "SVG files must render as images instead of XML text");
         app.draw();
@@ -115,9 +111,7 @@ struct ApplicationTestAccess {
                            read_project(root.string()).at("assets/photo.PNG"));
         expect(found->mesh.texture && found->bounds.size.y == height,
                "Live image replacement must retain image geometry");
-        const auto broken =
-            std::find_if(app.panels.begin(), app.panels.end(),
-                         [](const auto& panel) { return panel.path == "broken.jpg"; });
+        const auto broken = std::ranges::find(app.panels, "broken.jpg", &SourcePanel::path);
         expect(broken != app.panels.end() && broken->image && !broken->mesh.texture &&
                    broken->mesh.vertices > 0,
                "Corrupt images must show an error card without failing workspace loading");
@@ -140,8 +134,8 @@ struct ApplicationTestAccess {
         expect(app.workspace_root == std::filesystem::canonical(project_root).string(),
                "Without a directory argument the viewer must open its own source tree");
         expect(app.workspace_build == project_build, "Own source must use the viewer build");
-        expect(std::any_of(app.panels.begin(), app.panels.end(),
-                           [](const auto& panel) { return panel.path == "main.cpp"; }),
+        expect(std::ranges::any_of(app.panels,
+                                   [](const auto& panel) { return panel.path == "main.cpp"; }),
                "The default canvas must include the app's main.cpp");
     }
 
@@ -170,7 +164,7 @@ struct ApplicationTestAccess {
         const std::string path = environment_path ? environment_path : "";
         setenv("PATH", (root / "empty").c_str(), 1);
         app.open_directory_picker();
-        expect(!app.directory_picker && app.popup_text.find("zenity") != std::string::npos,
+        expect(!app.directory_picker && app.popup_text.contains("zenity"),
                "A missing picker must explain which dependency to install");
         setenv("PATH", path.c_str(), 1);
         setenv("PICKER_WAIT", "1", 1);

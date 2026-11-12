@@ -1,4 +1,5 @@
 #include "syntax.h"
+#include "text.h"
 #include <algorithm>
 #include <cctype>
 #include <unordered_set>
@@ -153,7 +154,7 @@ class LineLexer {
             if (identifier(c) || c == '.' || c == '\'')
                 ++position;
             else if ((c == '+' || c == '-') &&
-                     std::string("eEpP").find(line[position - 1]) != std::string::npos)
+                     std::string_view("eEpP").contains(line[position - 1]))
                 ++position;
             else
                 break;
@@ -267,9 +268,9 @@ class LineLexer {
             ++position;
         const auto word = line.substr(begin, position - begin);
         const auto next = line.find_first_not_of(" \t", position);
-        if (keywords.count(word))
+        if (keywords.contains(word))
             return Syntax::Keyword;
-        if (types.count(word))
+        if (types.contains(word))
             return Syntax::Type;
         if (next != std::string::npos && line[next] == '(')
             return Syntax::Function;
@@ -304,16 +305,17 @@ TextKind text_kind(const std::string& path)
         ".mk", ".ex", ".exs",  ".ps1",  ".fish", ".awk", ".cmake"};
     static const std::unordered_set<std::string> hash_names{"Makefile", "Dockerfile", ".gitignore",
                                                             "CMakeLists.txt"};
-    if (prose.count(extension))
+    if (prose.contains(extension))
         return TextKind::Prose;
-    return hash.count(extension) || hash_names.count(name) ? TextKind::HashCode : TextKind::Code;
+    return hash.contains(extension) || hash_names.contains(name) ? TextKind::HashCode
+                                                                 : TextKind::Code;
 }
 
 namespace {
 bool reads_as_prose(const std::string& line, std::size_t body)
 {
     const auto last = line.find_last_not_of(" \t");
-    if (body > last || std::string(";{}\\").find(line[last]) != std::string::npos)
+    if (body > last || std::string_view(";{}\\").contains(line[last]))
         return false;
     // Columns lined up with spaces are a table or a drawing; they need their fixed width.
     if (line.find("  ", body) < last)
@@ -327,7 +329,7 @@ std::optional<ProseLine> comment_prose(const std::string& line, const std::vecto
     const auto first = line.find_first_not_of(" \t");
     if (first == std::string::npos)
         return std::nullopt;
-    const auto whole = std::find_if(tokens.begin(), tokens.end(), [&](const Token& token) {
+    const auto whole = std::ranges::find_if(tokens, [&](const Token& token) {
         return token.syntax == Syntax::Comment && token.begin <= first &&
                token.begin + token.length == line.size();
     });
@@ -349,7 +351,7 @@ std::optional<ProseLine> comment_prose(const std::string& line, const std::vecto
         ++body;
     // A margin with no words is a paragraph break: nothing to show.
     const auto rest = line.find_first_not_of(" \t", body);
-    if ((body > first && rest == std::string::npos) || line.compare(first, 3, "*/") == 0)
+    if ((body > first && rest == std::string::npos) || starts_at(line, first, "*/"))
         return ProseLine{first, line.size(), false};
     if (!reads_as_prose(line, body))
         return std::nullopt;
@@ -371,7 +373,7 @@ std::optional<ProseLine> document_prose(const std::string& line)
 StyledLine style_line(const std::string& line, TextKind kind, HighlightState& state, bool cmake)
 {
     if (kind == TextKind::Prose) {
-        if (line.compare(0, 3, "```") == 0) {
+        if (line.starts_with("```")) {
             state.fenced = !state.fenced;
             return {};
         }
@@ -381,7 +383,7 @@ StyledLine style_line(const std::string& line, TextKind kind, HighlightState& st
     StyledLine result{highlight(line, state, cmake), std::nullopt};
     const auto first = line.find_first_not_of(" \t");
     const bool hash = kind == TextKind::HashCode && first != std::string::npos &&
-                      line[first] == '#' && line.compare(first, 2, "#!") != 0;
+                      line[first] == '#' && !starts_at(line, first, "#!");
     if (hash)
         result.tokens = {{first, line.size() - first, Syntax::Comment}};
     if (kind != TextKind::Prose)

@@ -114,8 +114,7 @@ void Application::open_search_match(std::size_t index)
     if (index >= search.matches.size())
         return;
     const auto& match = search.matches[index];
-    const auto panel = std::find_if(panels.begin(), panels.end(),
-                                    [&](const auto& entry) { return entry.path == match.path; });
+    const auto panel = std::ranges::find(panels, match.path, &SourcePanel::path);
     if (panel == panels.end())
         return;
     if (panel->text.empty()) {

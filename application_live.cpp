@@ -22,9 +22,8 @@ void Application::replace_source(int index, const std::string& source)
     auto updated = make_panel(old.path, source);
     for (auto& fold : updated.folds) {
         const auto key = fold_identity(updated, fold.first);
-        const auto previous =
-            std::find_if(old.folds.begin(), old.folds.end(),
-                         [&](const auto& other) { return fold_identity(old, other.first) == key; });
+        const auto previous = std::ranges::find_if(
+            old.folds, [&](const auto& other) { return fold_identity(old, other.first) == key; });
         if (previous != old.folds.end())
             fold.collapsed = previous->collapsed;
     }
@@ -37,7 +36,7 @@ void Application::replace_source(int index, const std::string& source)
     updated.header_mesh = old.header_mesh;
     updated.version = old.version;
     auto* server = server_for(old);
-    if (server && opened_documents.count(old.uri)) {
+    if (server && opened_documents.contains(old.uri)) {
         ++updated.version;
         server->change({updated.uri, source});
     }
@@ -47,8 +46,7 @@ void Application::replace_source(int index, const std::string& source)
 
 void Application::apply_project_change(const ProjectChange& change)
 {
-    auto found = std::find_if(panels.begin(), panels.end(),
-                              [&](const auto& panel) { return panel.path == change.path; });
+    auto found = std::ranges::find(panels, change.path, &SourcePanel::path);
     if (!change.source) {
         if (found == panels.end())
             return;
@@ -87,8 +85,7 @@ void Application::poll_project()
     refresh_symbol_sources(changes);
     load_intent_margin();
     auto index_for = [&](const std::string& path) {
-        const auto found = std::find_if(panels.begin(), panels.end(),
-                                        [&](const auto& panel) { return panel.path == path; });
+        const auto found = std::ranges::find(panels, path, &SourcePanel::path);
         return found == panels.end() ? -1 : static_cast<int>(found - panels.begin());
     };
     if (!dragged.empty()) {

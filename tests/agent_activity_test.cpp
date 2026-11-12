@@ -134,8 +134,7 @@ struct ApplicationTestAccess {
         expect(app.initialize(), "Activity canvas must initialize");
         app.chat->conversation.thread_id = "one";
         app.chat->conversation.title = "Refactor";
-        auto found = std::find_if(app.panels.begin(), app.panels.end(),
-                                  [](const auto& panel) { return panel.path == "main.cpp"; });
+        auto found = std::ranges::find(app.panels, "main.cpp", &SourcePanel::path);
         expect(found != app.panels.end(), "Fixture source must be visible");
         found->folds = {{1, 3, true}};
         app.update_mesh(*found);

@@ -10,8 +10,7 @@ constexpr double edge_margin = 10;
 // Where a word is on screen right now, or nothing when its file is not on the canvas.
 CanvasRect Application::connection_box(const ConnectionEnd& end)
 {
-    const auto panel = std::find_if(panels.begin(), panels.end(),
-                                    [&](const auto& source) { return source.uri == end.uri; });
+    const auto panel = std::ranges::find(panels, end.uri, &SourcePanel::uri);
     if (panel == panels.end() || end.line >= static_cast<int>(panel->text.size()))
         return {};
     const auto word = word_bounds(*panel, end.line, end.begin, end.end);
@@ -180,11 +179,10 @@ void Application::draw_connection_markers()
     }
     // Labels are cached by their text; forget the ones no longer shown.
     for (auto label = connection_labels.begin(); label != connection_labels.end();) {
-        const bool shown = std::any_of(
-            connection_markers.begin(), connection_markers.end(), [&](const auto& marker) {
-                return std::any_of(marker.parts.begin(), marker.parts.end(),
-                                   [&](const auto& part) { return part.text == label->first; });
-            });
+        const bool shown = std::ranges::any_of(connection_markers, [&](const auto& marker) {
+            return std::ranges::any_of(marker.parts,
+                                       [&](const auto& part) { return part.text == label->first; });
+        });
         if (shown) {
             ++label;
             continue;
@@ -219,9 +217,7 @@ bool Application::connection_marker_button(const XEvent& event, Vec2 pointer)
     const auto at = marker->links.empty()
                         ? connection_subject.at
                         : connection_links[(part ? *part : marker->parts.front()).link].at;
-    const auto& text = std::find_if(panels.begin(), panels.end(), [&](const auto& panel) {
-                           return panel.uri == at.uri;
-                       })->text[at.line];
+    const auto& text = std::ranges::find(panels, at.uri, &SourcePanel::uri)->text[at.line];
     const lsp::Json position{{"line", at.line}, {"character", lsp::byte_to_utf16(text, at.begin)}};
     return jump_to({{"uri", at.uri}, {"range", {{"start", position}, {"end", position}}}});
 }
@@ -244,7 +240,7 @@ void Application::draw_agent_markers()
     std::vector<ConnectionMarker> boxes;
     std::vector<std::string> shown;
     for (const auto& [id, agent] : agent_activity.agents) {
-        const auto panel = std::find_if(panels.begin(), panels.end(), [&](const auto& source) {
+        const auto panel = std::ranges::find_if(panels, [&](const auto& source) {
             return agent.touch && source.path == agent.touch->path;
         });
         if (!agent.bounds || panel == panels.end())
@@ -277,7 +273,7 @@ void Application::draw_agent_markers()
                        {box.bounds.origin.x + 12, box.bounds.origin.y + 4}, 1);
     }
     for (auto label = agent_marker_labels.begin(); label != agent_marker_labels.end();) {
-        if (std::find(shown.begin(), shown.end(), label->first) != shown.end()) {
+        if (std::ranges::find(shown, label->first) != shown.end()) {
             ++label;
             continue;
         }

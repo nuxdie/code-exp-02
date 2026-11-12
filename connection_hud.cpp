@@ -52,7 +52,7 @@ CanvasRect marker_box(const CanvasRect& view, Vec2 anchor, Vec2 size)
 
 void separate_markers(const CanvasRect& view, std::vector<ConnectionMarker>& markers)
 {
-    std::sort(markers.begin(), markers.end(), [](const auto& a, const auto& b) {
+    std::ranges::sort(markers, [](const auto& a, const auto& b) {
         return a.bounds.origin.y != b.bounds.origin.y ? a.bounds.origin.y < b.bounds.origin.y
                                                       : a.bounds.origin.x < b.bounds.origin.x;
     });
@@ -82,8 +82,8 @@ std::vector<MarkerPart> marker_parts(const std::vector<ConnectionLink>& links,
                                      const std::vector<std::size_t>& members)
 {
     auto order = members;
-    std::stable_sort(order.begin(), order.end(),
-                     [&](auto a, auto b) { return links[a].count > links[b].count; });
+    std::ranges::stable_sort(order,
+                             [&](auto a, auto b) { return links[a].count > links[b].count; });
     std::vector<MarkerPart> parts{{links[order.front()].file, order.front()}};
     std::size_t total = 0;
     for (const auto index : order) {

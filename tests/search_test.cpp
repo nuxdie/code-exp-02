@@ -36,12 +36,12 @@ struct ApplicationTestAccess {
                "Global search must include file names and every occurrence, ignoring case");
         expect(app.search.matches.front().filename,
                "Matching file names must precede content hits");
-        expect(std::count_if(app.search.matches.begin(), app.search.matches.end(),
-                             [](const auto& match) { return match.filename; }) == 1,
+        expect(std::ranges::count_if(app.search.matches,
+                                     [](const auto& match) { return match.filename; }) == 1,
                "A matching file name must be distinguished from content hits");
         query(app, "CAFÉ");
         expect(app.search.matches.size() == 1 &&
-                   app.search.matches.front().preview.find("café") != std::string::npos,
+                   app.search.matches.front().preview.contains("café"),
                "Unicode case-insensitive search must retain the original source text");
         query(app, "[literal]");
         expect(app.search.matches.size() == 1,
@@ -63,8 +63,8 @@ struct ApplicationTestAccess {
         query(app, "return 42");
         key(app, XK_Return);
         expect(app.focused_line && app.focused_line->line == 3 &&
-                   std::none_of(app.panels.front().folds.begin(), app.panels.front().folds.end(),
-                                [](const auto& fold) { return fold.collapsed; }),
+                   std::ranges::none_of(app.panels.front().folds,
+                                        [](const auto& fold) { return fold.collapsed; }),
                "Jumping to a hidden match must reveal its enclosing blocks");
         app.open_search();
         query(app, "needle.h");
@@ -120,8 +120,8 @@ struct ApplicationTestAccess {
                "Slash and question mark must remain ordinary text in the composer");
         key(app, XK_Escape);
         key(app, XK_slash, ShiftMask);
-        expect(app.shortcuts_visible && app.popup_text.find("Ctrl+Shift+A") != std::string::npos &&
-                   app.popup_text.find("Ctrl+V") != std::string::npos,
+        expect(app.shortcuts_visible && app.popup_text.contains("Ctrl+Shift+A") &&
+                   app.popup_text.contains("Ctrl+V"),
                "Question mark must open the complete shortcut guide");
         app.draw();
         expect(std::string(pango_font_description_get_family(

@@ -33,8 +33,7 @@ void Application::receive_agent_activity(const lsp::Json& message)
 
 std::optional<CanvasRect> Application::activity_bounds(const ActivityTouch& touch)
 {
-    const auto found = std::find_if(panels.begin(), panels.end(),
-                                    [&](const auto& panel) { return panel.path == touch.path; });
+    const auto found = std::ranges::find(panels, touch.path, &SourcePanel::path);
     if (found == panels.end()) {
         const auto removed = activity_deleted.find(touch.path);
         if (removed == activity_deleted.end())
@@ -64,7 +63,7 @@ void Application::advance_agent_activity()
             ++it;
     }
     for (auto it = activity_labels.begin(); it != activity_labels.end();) {
-        if (!agent_activity.agents.count(it->first)) {
+        if (!agent_activity.agents.contains(it->first)) {
             renderer->release(it->second.mesh);
             it = activity_labels.erase(it);
         } else

@@ -59,7 +59,7 @@ Application::WindowKind Application::window_at(Vec2 pointer)
     };
     if (hit_chat(chat))
         return WindowKind::Chat;
-    if (std::any_of(chat_windows.begin(), chat_windows.end(), hit_chat))
+    if (std::ranges::any_of(chat_windows, hit_chat))
         return WindowKind::Chat;
     for (const auto& bounds : header_hits)
         if (contains(bounds, pointer))

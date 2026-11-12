@@ -74,18 +74,15 @@ struct ApplicationTestAccess {
                "Spawning must preserve the old card and give the new card an independent draft and "
                "thread");
         expect(
-            app.chat->conversation.canvas_context.find("Camera") != std::string::npos &&
+            app.chat->conversation.canvas_context.contains("Camera") &&
                 app.chat->conversation.entries.front().role == "Context",
             "Context must be visible locally and attached without manufacturing a human message");
         app.chat->input.set("New card draft");
         app.draw();
         expect(app.chat->context_preview.document.text.find("Context included") == 0 &&
-                   app.chat->context_preview.document.text.find("main.cpp:2") !=
-                       std::string::npos &&
-                   app.chat->context_preview.document.text.find("Camera::value") !=
-                       std::string::npos &&
-                   app.chat->context_preview.document.text.find("Selected text:") ==
-                       std::string::npos &&
+                   app.chat->context_preview.document.text.contains("main.cpp:2") &&
+                   app.chat->context_preview.document.text.contains("Camera::value") &&
+                   !app.chat->context_preview.document.text.contains("Selected text:") &&
                    app.prompt_source_range(app.panels.front()) == std::pair{begin, begin + 5} &&
                    app.text_selection.surface == TextSurface::Inactive &&
                    app.chat->editor.origin.y > app.chat->bounds.origin.y &&
@@ -117,8 +114,7 @@ struct ApplicationTestAccess {
                    app.chat_windows.front()->conversation.fresh &&
                    app.chat_windows.front()->composing &&
                    app.chat_windows.front()->bounds.size.y > 90 &&
-                   app.chat_windows.front()->context_preview.document.text.find("main.cpp:2") !=
-                       std::string::npos &&
+                   app.chat_windows.front()->context_preview.document.text.contains("main.cpp:2") &&
                    app.chat_windows.front()->context["path"] == "main.cpp",
                "Hot reload must preserve every card, independent draft and source context");
         app.chat->disabled = true;
@@ -147,8 +143,7 @@ struct ApplicationTestAccess {
                    app.chat->bounds.origin.y > world.y && app.popup_text.empty(),
                "Right-click must open a focused input below its source context without a menu");
         expect(app.chat->bounds.size.y > 90 && app.chat->editor.size.y == 90 &&
-                   app.chat->context_preview.document.text.find("Source excerpt:") ==
-                       std::string::npos &&
+                   !app.chat->context_preview.document.text.contains("Source excerpt:") &&
                    app.prompt_source_range(app.panels.front()).has_value() &&
                    app.chat->body.size.y == 0 && app.chat->conversation.thread_id.empty(),
                "An unsent input must have no conversation body or thread");
@@ -187,7 +182,7 @@ struct ApplicationTestAccess {
         app.chat_action({ChatHit::Kind::Send, {}}, {});
         app.draw();
         expect(app.chat->composing && app.chat->input.text == "Launch agent" &&
-                   app.chat->status.source.find("disabled") != std::string::npos &&
+                   app.chat->status.source.contains("disabled") &&
                    app.chat->bounds.size.y > app.chat->editor.size.y,
                "Unavailable agents must show the reason in the popup and preserve the draft");
         app.chat->disabled = false;
@@ -195,7 +190,7 @@ struct ApplicationTestAccess {
         app.chat->conversation.error.clear();
         app.chat_action({ChatHit::Kind::Send, {}}, {});
         app.draw();
-        expect(app.chat->status.source.find("connecting") != std::string::npos &&
+        expect(app.chat->status.source.contains("connecting") &&
                    app.chat->conversation.outgoing().empty(),
                "Enter during connection must show feedback without submitting the draft");
         app.chat->input.set("");
@@ -206,9 +201,8 @@ struct ApplicationTestAccess {
         app.chat->input.set("Start here λ");
         app.draw();
         const auto input_origin = app.chat->editor.origin;
-        const auto send =
-            std::find_if(app.chat->hits.begin(), app.chat->hits.end(),
-                         [](const auto& hit) { return hit.kind == ChatHit::Kind::Send; });
+        const auto send = std::ranges::find_if(
+            app.chat->hits, [](const auto& hit) { return hit.kind == ChatHit::Kind::Send; });
         expect(send == app.chat->hits.end(), "The compact input must have no Send button");
         XEvent key{};
         key.type = KeyPress;
@@ -233,8 +227,8 @@ struct ApplicationTestAccess {
                    bottom_right.y <= view.y + view.height && !app.zoom_animation.active(app.camera),
                "Opening a conversation from a prompt must bring the full card into view");
         app.draw();
-        expect(std::none_of(app.chat->hits.begin(), app.chat->hits.end(),
-                            [](const auto& hit) { return hit.kind == ChatHit::Kind::Send; }),
+        expect(std::ranges::none_of(
+                   app.chat->hits, [](const auto& hit) { return hit.kind == ChatHit::Kind::Send; }),
                "The conversation input must have no Send button");
         expect(std::abs(app.chat->editor.origin.x - input_origin.x) < 0.001 &&
                    std::abs(app.chat->editor.origin.y - input_origin.y) < 0.001,
@@ -249,14 +243,14 @@ struct ApplicationTestAccess {
         app.chat->context = {{"workspace", app.workspace_root},
                              {"visible_files", {"main.cpp", "camera.h"}}};
         app.draw();
-        expect(app.chat->context_preview.document.text.find("Workspace: " + app.workspace_root) !=
-                       std::string::npos &&
-                   app.chat->context_preview.document.text.find(
-                       "Visible files: main.cpp, camera.h") != std::string::npos,
-               "Blank-canvas prompts must disclose their workspace and visible-file context");
+        expect(
+            app.chat->context_preview.document.text.contains("Workspace: " + app.workspace_root) &&
+                app.chat->context_preview.document.text.contains(
+                    "Visible files: main.cpp, camera.h"),
+            "Blank-canvas prompts must disclose their workspace and visible-file context");
         app.chat->context["selected_text"] = std::string(12000, 'x') + "λ";
         app.draw();
-        expect(app.chat->context_preview.document.text.find("…") != std::string::npos &&
+        expect(app.chat->context_preview.document.text.contains("…") &&
                    app.chat->bounds.size.y <= 354 && app.chat->editor.size.y == 90 &&
                    app.chat->editor.origin.y + 90 ==
                        app.chat->bounds.origin.y + app.chat->bounds.size.y &&
@@ -481,7 +475,7 @@ struct ApplicationTestAccess {
                                {"command", "private command text"}}}}}});
             app.draw();
             expect(app.chat->content_height == 36 && app.chat_entry_source(0).empty() &&
-                       !app.chat->messages.count("hidden-command") &&
+                       !app.chat->messages.contains("hidden-command") &&
                        app.chat_animation_due != Application::Clock::time_point::max(),
                    "Work must stay visible between actions while commands stay hidden");
         }
@@ -662,7 +656,7 @@ struct ApplicationTestAccess {
         expect(app.panel_at(over) < 0 || hits[app.panel_at(over)].size.x > 0,
                "The file under the pointer must always show its title");
         const auto shown =
-            std::count_if(hits.begin(), hits.end(), [](const auto& hit) { return hit.size.x > 0; });
+            std::ranges::count_if(hits, [](const auto& hit) { return hit.size.x > 0; });
         expect(shown >= 1 && (app.panels.size() < 3 || shown < static_cast<int>(hits.size())),
                "Far out, only the titles that fit may be drawn");
         app.camera = camera;

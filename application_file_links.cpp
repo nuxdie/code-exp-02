@@ -68,10 +68,10 @@ bool Application::open_link(const std::string& destination)
             line = *previous;
         }
     }
-    const auto file =
-        path.compare(0, 7, "file://") == 0          ? std::filesystem::path(lsp::uri_path(path))
-        : std::filesystem::path(path).is_absolute() ? std::filesystem::path(path)
-                                                    : std::filesystem::path(workspace_root) / path;
+    const auto file = path.starts_with("file://") ? std::filesystem::path(lsp::uri_path(path))
+                      : std::filesystem::path(path).is_absolute()
+                          ? std::filesystem::path(path)
+                          : std::filesystem::path(workspace_root) / path;
     return jump_to({{"uri", lsp::file_uri(file.lexically_normal().string())},
                     {"range", {{"start", {{"line", line}, {"character", column}}}}}});
 }
@@ -122,8 +122,7 @@ bool Application::open_document_link(Vec2 pointer)
 }
 void Application::language_links(const lsp::Message& message)
 {
-    const auto found = std::find_if(panels.begin(), panels.end(),
-                                    [&](const auto& panel) { return panel.uri == message.uri; });
+    const auto found = std::ranges::find(panels, message.uri, &SourcePanel::uri);
     if (found == panels.end())
         return;
     found->links = message.result.is_array() ? message.result : lsp::Json::array();

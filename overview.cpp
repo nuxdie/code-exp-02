@@ -33,7 +33,7 @@ std::string defined(const std::vector<std::string>& text, std::size_t line)
     while (next < text.size() && text[next].find_first_not_of(" \t") == std::string::npos)
         ++next;
     return next < text.size() && text[next].find_first_not_of(" \t{") == std::string::npos &&
-                   text[next].find('{') != std::string::npos
+                   text[next].contains('{')
                ? name
                : "";
 }
@@ -60,7 +60,7 @@ std::vector<OutlineEntry> headings(const std::vector<std::string>& text)
     bool fenced = false;
     for (std::size_t line = 0; line < text.size(); ++line) {
         const auto& row = text[line];
-        if (row.compare(0, 3, "```") == 0)
+        if (row.starts_with("```"))
             fenced = !fenced;
         const auto level = row.find_first_not_of('#');
         if (fenced || level == 0 || level == std::string::npos || level > 3 || row[level] != ' ')
@@ -75,9 +75,8 @@ std::vector<OutlineEntry> headings(const std::vector<std::string>& text)
 
 void longest_first(std::vector<OutlineEntry>& entries)
 {
-    std::stable_sort(entries.begin(), entries.end(), [](const auto& a, const auto& b) {
-        return a.last - a.line > b.last - b.line;
-    });
+    std::ranges::stable_sort(
+        entries, [](const auto& a, const auto& b) { return a.last - a.line > b.last - b.line; });
 }
 
 void add_symbols(std::vector<OutlineEntry>& result, const std::vector<SymbolNode>& nodes, int depth)
@@ -144,7 +143,7 @@ folder_regions(const std::vector<std::pair<std::string, CanvasRect>>& files)
     }
     std::vector<FolderRegion> result;
     for (const auto& [folder, bounds] : folders) {
-        const bool mixed = std::any_of(files.begin(), files.end(), [&](const auto& file) {
+        const bool mixed = std::ranges::any_of(files, [&](const auto& file) {
             const Vec2 middle{file.second.origin.x + file.second.size.x / 2,
                               file.second.origin.y + file.second.size.y / 2};
             return folder_of(file.first) != folder && middle.x > bounds.origin.x &&

@@ -110,7 +110,7 @@ void Application::draw_headers(const Viewport& view)
     std::vector<std::size_t> order(panels.size());
     std::iota(order.begin(), order.end(), 0);
     const int hovered = panel_at(mouse_position);
-    std::stable_sort(order.begin(), order.end(), [&](auto a, auto b) {
+    std::ranges::stable_sort(order, [&](auto a, auto b) {
         const bool first = static_cast<int>(a) == hovered, second = static_cast<int>(b) == hovered;
         return first != second ? first : panels[a].bounds.size.y > panels[b].bounds.size.y;
     });

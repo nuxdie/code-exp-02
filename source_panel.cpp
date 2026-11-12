@@ -12,9 +12,7 @@ std::string fold_identity(const SourcePanel& panel, int line)
     auto text = panel.text[line];
     if (line > 0 && text.find_first_not_of(" \t{") == std::string::npos)
         text = panel.text[line - 1];
-    text.erase(std::remove_if(text.begin(), text.end(),
-                              [](unsigned char c) { return std::isspace(c) || c == '{'; }),
-               text.end());
+    std::erase_if(text, [](unsigned char c) { return std::isspace(c) || c == '{'; });
     return text;
 }
 
@@ -24,7 +22,7 @@ void collapse_long_blocks(std::vector<FoldBlock>& folds)
     for (auto& block : folds) {
         if (block.last - block.first < 60)
             continue;
-        const bool nested = std::any_of(folds.begin(), folds.end(), [&](const auto& other) {
+        const bool nested = std::ranges::any_of(folds, [&](const auto& other) {
             return other.first < block.first && other.last >= block.last;
         });
         block.collapsed = !nested;
@@ -62,7 +60,7 @@ std::vector<FoldBlock> brace_folds(const std::string& text, const std::string& p
 
 int folded_rows(const std::string& text, const std::string& path)
 {
-    const int lines = static_cast<int>(std::count(text.begin(), text.end(), '\n')) +
+    const int lines = static_cast<int>(std::ranges::count(text, '\n')) +
                       (!text.empty() && text.back() != '\n' ? 1 : 0);
     return static_cast<int>(fold_view(lines, brace_folds(text, path)).source_lines.size());
 }

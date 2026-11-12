@@ -150,8 +150,7 @@ void Conversation::thread_ready(const std::string& method, const Json& result)
 void Conversation::request_failed(const std::string& method, const Json& failure)
 {
     const auto detail = failure.value("message", "Agent request failed");
-    if (method == "thread/resume" && fresh &&
-        detail.find("no rollout found for thread id ") != std::string::npos) {
+    if (method == "thread/resume" && fresh && detail.contains("no rollout found for thread id ")) {
         // A thread without an accepted first message has no saved history to resume.
         thread_id.clear();
         submitted.clear();
@@ -164,7 +163,7 @@ void Conversation::request_failed(const std::string& method, const Json& failure
     }
     if (method == "thread/turns/list") {
         history_loading = false;
-        if (detail.find("is not materialized yet") != std::string::npos)
+        if (detail.contains("is not materialized yet"))
             return;
     }
     error = detail;
@@ -185,7 +184,7 @@ void Conversation::history_page(const Json& result)
         if (turn.value("status", "") == "inProgress")
             active_turn = id;
     }
-    std::stable_sort(entries.begin(), entries.end(), [](const auto& a, const auto& b) {
+    std::ranges::stable_sort(entries, [](const auto& a, const auto& b) {
         return a.turn == b.turn ? a.sequence < b.sequence : a.turn < b.turn;
     });
     const auto cursor = string_value(result, "nextCursor");
@@ -205,8 +204,7 @@ void Conversation::put_item(const std::string& turn, const Json& item, int seque
         type != "fileChange" && type != "plan")
         return;
     const auto id = item.value("id", "");
-    auto found = std::find_if(entries.begin(), entries.end(),
-                              [&](const auto& entry) { return entry.id == id; });
+    auto found = std::ranges::find(entries, id, &ConversationEntry::id);
     if (found == entries.end()) {
         entries.push_back({});
         found = std::prev(entries.end());
@@ -235,8 +233,7 @@ void Conversation::put_item(const std::string& turn, const Json& item, int seque
 void Conversation::delta(const Json& params, bool output)
 {
     const auto id = params.value("itemId", "");
-    auto found = std::find_if(entries.begin(), entries.end(),
-                              [&](const auto& entry) { return entry.id == id; });
+    auto found = std::ranges::find(entries, id, &ConversationEntry::id);
     if (found == entries.end() && !output) {
         put_item(params.value("turnId", ""), {{"type", "agentMessage"}, {"id", id}, {"text", ""}});
         found = std::prev(entries.end());
@@ -565,8 +562,8 @@ void Conversation::title_notification(const Json& message)
         if (params.value("turn", Json::object()).value("status", "") != "completed" ||
             generated.find_first_not_of(" \t") == std::string::npos ||
             generated.find_first_of("\r\n") != std::string::npos ||
-            std::count_if(generated.begin(), generated.end(),
-                          [](unsigned char byte) { return (byte & 0xc0) != 0x80; }) > 36) {
+            std::ranges::count_if(generated,
+                                  [](unsigned char byte) { return (byte & 0xc0) != 0x80; }) > 36) {
             cancel_title();
         } else {
             title_result = generated;

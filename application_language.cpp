@@ -6,8 +6,7 @@ void Application::handle_message(const lsp::Message& message)
         std::cerr << "LSP response " << message.method << " id=" << message.id << '\n';
     if (message.error.empty() && receive_connections(message))
         return;
-    const auto panel = std::find_if(panels.begin(), panels.end(),
-                                    [&](const auto& entry) { return entry.uri == message.uri; });
+    const auto panel = std::ranges::find(panels, message.uri, &SourcePanel::uri);
     if (message.version > 0 && (panel == panels.end() || panel->version != message.version))
         return;
     if (!message.error.empty()) {
@@ -64,8 +63,7 @@ void Application::language_initialized(const lsp::Message& message)
 void Application::language_structure(const lsp::Message& message)
 {
 
-    auto found = std::find_if(panels.begin(), panels.end(),
-                              [&](const auto& panel) { return panel.uri == message.uri; });
+    auto found = std::ranges::find(panels, message.uri, &SourcePanel::uri);
     if (found == panels.end())
         return;
     if (message.method == "textDocument/documentSymbol") {
@@ -91,8 +89,7 @@ void Application::language_structure(const lsp::Message& message)
 void Application::language_styles(const lsp::Message& message)
 {
 
-    auto found = std::find_if(panels.begin(), panels.end(),
-                              [&](const auto& panel) { return panel.uri == message.uri; });
+    auto found = std::ranges::find(panels, message.uri, &SourcePanel::uri);
     if (found == panels.end())
         return;
     if (message.method == "textDocument/semanticTokens/full" && message.result.is_object()) {

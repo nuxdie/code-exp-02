@@ -42,7 +42,7 @@ std::string file_uri(const std::string& path)
 
 std::string uri_path(const std::string& uri)
 {
-    if (uri.compare(0, 7, "file://") != 0)
+    if (!uri.starts_with("file://"))
         return {};
     std::string path;
     for (std::size_t i = 7; i < uri.size(); ++i) {
@@ -306,9 +306,7 @@ struct LanguageServer::Impl {
     {
         send_message(
             {{"method", "textDocument/didClose"}, {"params", {{"textDocument", {{"uri", uri}}}}}});
-        documents.erase(std::remove_if(documents.begin(), documents.end(),
-                                       [&](const auto& document) { return document.uri == uri; }),
-                        documents.end());
+        std::erase_if(documents, [&](const auto& document) { return document.uri == uri; });
         versions.erase(uri);
         semantic_pending.erase(uri);
     }

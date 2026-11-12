@@ -32,8 +32,7 @@ struct ApplicationTestAccess {
     }
     static SourcePanel& panel(Application& app, const char* path)
     {
-        const auto found = std::find_if(app.panels.begin(), app.panels.end(),
-                                        [&](const auto& panel) { return panel.path == path; });
+        const auto found = std::ranges::find(app.panels, path, &SourcePanel::path);
         if (found == app.panels.end())
             throw std::runtime_error(std::string("Missing source panel: ") + path);
         return *found;
@@ -98,8 +97,8 @@ struct ApplicationTestAccess {
             return !app.connection_requests.first && !app.connection_requests.second &&
                    !app.connection_links.empty();
         });
-        const auto defined = std::find_if(app.connection_links.begin(), app.connection_links.end(),
-                                          [](const auto& link) { return link.defines; });
+        const auto defined = std::ranges::find_if(app.connection_links,
+                                                  [](const auto& link) { return link.defines; });
         expect(defined != app.connection_links.end() && defined->at.uri == target.uri &&
                    target.text[defined->at.line].substr(
                        defined->at.begin, defined->at.end - defined->at.begin) == "compute",
@@ -156,31 +155,27 @@ struct ApplicationTestAccess {
                "Dependency arrows must update to newly added files");
         wait_for(app, [&] {
             const auto& current = panel(app, "main.cpp");
-            return std::any_of(current.symbols.begin(), current.symbols.end(),
-                               [](const auto& symbol) { return symbol.name == "Changed"; });
+            return std::ranges::any_of(current.symbols,
+                                       [](const auto& symbol) { return symbol.name == "Changed"; });
         });
         std::ofstream(root / "main.cpp") << "int bad = missing_after_reload;\n";
         wait_for(app, [&] {
             const auto& current = panel(app, "main.cpp");
-            return current.source.find("missing_after_reload") != std::string::npos &&
-                   std::any_of(
-                       current.diagnostics.begin(), current.diagnostics.end(),
-                       [](const auto& diagnostic) {
-                           return diagnostic.value("message", "").find("missing_after_reload") !=
-                                  std::string::npos;
-                       });
+            return current.source.contains("missing_after_reload") &&
+                   std::ranges::any_of(current.diagnostics, [](const auto& diagnostic) {
+                       return diagnostic.value("message", "").find("missing_after_reload") !=
+                              std::string::npos;
+                   });
         });
         std::ofstream(root / "main.cpp") << updated;
         wait_for(app, [&] {
             const auto& current = panel(app, "main.cpp");
             return current.source == updated && !current.symbols.empty() &&
-                   std::none_of(
-                       current.diagnostics.begin(), current.diagnostics.end(),
-                       [](const auto& diagnostic) {
-                           return diagnostic.value("severity", 1) == 1 ||
-                                  diagnostic.value("message", "").find("missing_after_reload") !=
-                                      std::string::npos;
-                       });
+                   std::ranges::none_of(current.diagnostics, [](const auto& diagnostic) {
+                       return diagnostic.value("severity", 1) == 1 ||
+                              diagnostic.value("message", "").find("missing_after_reload") !=
+                                  std::string::npos;
+                   });
         });
         const auto uri = panel(app, "main.cpp").uri;
         app.handle_message({"textDocument/documentSymbol", uri, 99, lsp::Json::array(), {}, 1});

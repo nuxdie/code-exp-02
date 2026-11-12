@@ -1,5 +1,6 @@
 #include "project_watch.h"
 
+#include "text.h"
 #include "wakeup.h"
 
 #include <algorithm>
@@ -28,7 +29,7 @@ bool excluded_directory(const std::filesystem::path& path)
     static const std::set<std::string> names{".git", ".cache", "__pycache__", "node_modules"};
     for (const auto& part : path) {
         const auto name = part.string();
-        if (names.count(name) || name.compare(0, 5, "build") == 0)
+        if (names.contains(name) || name.starts_with("build"))
             return true;
     }
     return false;
@@ -108,12 +109,10 @@ bool binary_head(const std::filesystem::path& file)
 
 bool project_image(const std::string& path)
 {
-    auto extension = std::filesystem::path(path).extension().string();
-    std::transform(extension.begin(), extension.end(), extension.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    const auto extension = lowercase(std::filesystem::path(path).extension().string());
     static const std::set<std::string> images{".png",  ".jpg", ".jpeg", ".gif",  ".bmp",
                                               ".webp", ".svg", ".tif",  ".tiff", ".ico"};
-    return images.count(extension) != 0;
+    return images.contains(extension);
 }
 bool project_source(const std::string& path)
 {
@@ -163,7 +162,7 @@ std::optional<std::string> read_project_file(const std::string& root, const std:
     if (!file)
         return std::nullopt;
     std::string text{std::istreambuf_iterator<char>(file), {}};
-    if (project_image(path) || text.find('\0') == std::string::npos)
+    if (project_image(path) || !text.contains('\0'))
         return text;
     return std::nullopt;
 }
@@ -189,7 +188,7 @@ std::vector<ProjectChange> project_changes(const ProjectSnapshot& before,
             changes.push_back({path, text});
     }
     for (const auto& [path, text] : before)
-        if (!after.count(path))
+        if (!after.contains(path))
             changes.push_back({path, std::nullopt});
     return changes;
 }

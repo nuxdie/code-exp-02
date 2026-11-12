@@ -160,8 +160,7 @@ SourceHit Application::fold_at(Vec2 screen)
         if (row >= static_cast<int>(panel.folded.source_lines.size()))
             continue;
         const int line = panel.folded.source_lines[row];
-        const auto block = std::find_if(panel.folds.begin(), panel.folds.end(),
-                                        [&](const auto& fold) { return fold.first == line; });
+        const auto block = std::ranges::find(panel.folds, line, &FoldBlock::first);
         if (block == panel.folds.end())
             continue;
         const auto bounds = fold_toggle_bounds(panel, line);
@@ -183,8 +182,7 @@ void Application::draw_fold_toggle()
     if (hit.panel < 0)
         return;
     const auto& panel = panels[hit.panel];
-    const auto block = std::find_if(panel.folds.begin(), panel.folds.end(),
-                                    [&](const auto& fold) { return fold.first == hit.line; });
+    const auto block = std::ranges::find(panel.folds, hit.line, &FoldBlock::first);
     const auto bounds = fold_toggle_bounds(panel, hit.line);
     const auto point = camera.world_to_screen(bounds.origin, viewport());
     renderer->draw(fold_toggle_meshes[block->collapsed ? 1 : 0], point, camera.zoom);

@@ -4,9 +4,7 @@ void Application::open_chat_input(Vec2 pointer)
 {
     auto context = agent_context(pointer);
     auto position = camera.screen_to_world(pointer, viewport());
-    const auto panel = std::find_if(panels.begin(), panels.end(), [&](const auto& source) {
-        return source.path == context.value("path", "");
-    });
+    const auto panel = std::ranges::find(panels, context.value("path", ""), &SourcePanel::path);
     if (panel != panels.end() && !panel->folded.display_lines.empty() &&
         Viewport{panel->bounds.origin.x, panel->bounds.origin.y, panel->bounds.size.x,
                  panel->bounds.size.y}

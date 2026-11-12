@@ -161,8 +161,7 @@ bool Application::receive_connections(const lsp::Message& message)
         const auto range = location.contains("targetSelectionRange")
                                ? location["targetSelectionRange"]
                                : location.value("range", lsp::Json::object());
-        const auto panel = std::find_if(panels.begin(), panels.end(),
-                                        [&](const auto& source) { return source.uri == uri; });
+        const auto panel = std::ranges::find(panels, uri, &SourcePanel::uri);
         const int line = range.value("start", lsp::Json::object()).value("line", -1);
         if (panel == panels.end() || line < 0 || line >= static_cast<int>(panel->text.size()))
             continue;
@@ -192,14 +191,14 @@ void Application::refresh_symbol_sources(const std::vector<ProjectChange>& chang
     std::set<std::string> changed;
     const std::set<std::string> extensions{".c", ".cc", ".cpp", ".cxx", ".h", ".hpp"};
     for (const auto& change : changes)
-        if (extensions.count(std::filesystem::path(change.path).extension().string()))
+        if (extensions.contains(std::filesystem::path(change.path).extension().string()))
             changed.insert(change.path);
     if (changed.empty())
         return;
     // clangd can retain an unchanged caller's AST after its included header has moved.
     // Reparse open documents before resolving their uses against the new definitions.
     for (auto& panel : panels) {
-        if (!panel.cpp || !opened_documents.count(panel.uri) || changed.count(panel.path))
+        if (!panel.cpp || !opened_documents.contains(panel.uri) || changed.contains(panel.path))
             continue;
         ++panel.version;
         language_server->change({panel.uri, panel.source});

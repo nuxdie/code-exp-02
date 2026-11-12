@@ -114,7 +114,7 @@ bool Application::agents_pending()
     auto pending = [](const auto& card) {
         return card && (!card->conversation.questions.empty() || card->conversation.sending);
     };
-    return pending(chat) || std::any_of(chat_windows.begin(), chat_windows.end(), pending);
+    return pending(chat) || std::ranges::any_of(chat_windows, pending);
 }
 void Application::spawn_agent_window(Vec2 world, lsp::Json context)
 {
@@ -166,8 +166,8 @@ void Application::close_agent_window()
     if (text_selection.surface == TextSurface::Chat ||
         text_selection.surface == TextSurface::Composer)
         text_selection = {};
-    const auto open = std::find_if(chat_windows.begin(), chat_windows.end(),
-                                   [](const auto& card) { return card->visible; });
+    const auto open =
+        std::ranges::find_if(chat_windows, [](const auto& card) { return card->visible; });
     if ((!was_open || !kept_chat(*chat)) && !chat_windows.empty()) {
         const auto next = open == chat_windows.end() ? std::prev(chat_windows.end()) : open;
         chat = std::move(*next);

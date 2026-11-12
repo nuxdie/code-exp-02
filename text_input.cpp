@@ -44,7 +44,7 @@ void TextInput::insert(const std::string& value)
 {
     const auto [begin, end] = selection();
     std::string clean = value;
-    clean.erase(std::remove(clean.begin(), clean.end(), '\0'), clean.end());
+    std::erase(clean, '\0');
     text.replace(begin, end - begin, clean);
     cursor = anchor = begin + clean.size();
 }

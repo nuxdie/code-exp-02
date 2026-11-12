@@ -155,7 +155,7 @@ int Application::benchmark_run()
         milliseconds.push_back(
             std::chrono::duration<double, std::milli>(Clock::now() - start).count());
     }
-    std::sort(milliseconds.begin(), milliseconds.end());
+    std::ranges::sort(milliseconds);
     std::cout << "Zoom draw benchmark: median " << milliseconds[48] << " ms, p95 "
               << milliseconds[91] << " ms\n";
 

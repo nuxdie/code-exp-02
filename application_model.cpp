@@ -67,8 +67,7 @@ void Application::update_mesh(SourcePanel& panel)
         const int source = panel.folded.source_lines[i];
         const double y = header_height + static_cast<double>(i) * line_height;
         text.push_back({panel.lines[source].get(), {24, y}});
-        const auto block = std::find_if(panel.folds.begin(), panel.folds.end(),
-                                        [&](const auto& block) { return block.first == source; });
+        const auto block = std::ranges::find(panel.folds, source, &FoldBlock::first);
         if (block != panel.folds.end()) {
             if (block->collapsed) {
                 const auto summary = "  … " + std::to_string(block->last - block->first) + " lines";
@@ -120,21 +119,20 @@ void Application::place_in_folder(SourcePanel& panel, const std::set<std::string
     const auto folder = std::filesystem::path(panel.path).parent_path();
     std::map<double, double> columns;
     for (const auto& other : panels) {
-        if (&other == &panel || unplaced.count(other.path) ||
+        if (&other == &panel || unplaced.contains(other.path) ||
             std::filesystem::path(other.path).parent_path() != folder)
             continue;
         auto& bottom = columns[other.bounds.origin.x];
         bottom = std::max(bottom, other.bounds.origin.y + other.bounds.size.y);
     }
-    const auto shortest =
-        std::min_element(columns.begin(), columns.end(),
-                         [](const auto& a, const auto& b) { return a.second < b.second; });
+    const auto shortest = std::ranges::min_element(
+        columns, [](const auto& a, const auto& b) { return a.second < b.second; });
     panel.bounds.origin = columns.empty() ? Vec2{content_size.x + 480, 480}
                                           : Vec2{shortest->first, shortest->second + 96};
     for (bool moved = true; moved;) {
         moved = false;
         for (const auto& other : panels)
-            if (&other != &panel && !unplaced.count(other.path) &&
+            if (&other != &panel && !unplaced.contains(other.path) &&
                 panel.bounds.intersects(other.bounds)) {
                 panel.bounds.origin.y = other.bounds.origin.y + other.bounds.size.y + 96;
                 moved = true;
@@ -261,8 +259,7 @@ bool Application::jump_to(const lsp::Json& location)
                      : location.value("range", lsp::Json::object());
     if (uri.empty() || !range.contains("start"))
         return false;
-    auto found = std::find_if(panels.begin(), panels.end(),
-                              [&](const auto& panel) { return panel.uri == uri; });
+    auto found = std::ranges::find(panels, uri, &SourcePanel::uri);
     if (found == panels.end()) {
         const auto path = lsp::uri_path(uri);
         if (path.empty())
@@ -309,8 +306,7 @@ bool Application::jump_to(const lsp::Json& location)
 void Application::toggle_fold(int index, int source)
 {
     auto& panel = panels[index];
-    const auto found = std::find_if(panel.folds.begin(), panel.folds.end(),
-                                    [&](const auto& block) { return block.first == source; });
+    const auto found = std::ranges::find(panel.folds, source, &FoldBlock::first);
     if (found == panel.folds.end())
         return;
     found->collapsed = !found->collapsed;

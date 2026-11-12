@@ -71,7 +71,7 @@ std::vector<ActivityLines> activity_lines(const std::string& diff)
         changed.reset();
     };
     while (std::getline(input, line)) {
-        if (line.compare(0, 3, "@@ ") == 0) {
+        if (line.starts_with("@@ ")) {
             flush();
             const auto start = line.find('+');
             int number = 0;
@@ -114,7 +114,7 @@ bool AgentActivity::receive(const nlohmann::json& message, const std::string& ro
         return false;
     const auto id = item.value("id", "");
     const auto key = thread + ":" + id;
-    if (id.empty() || std::find(seen.begin(), seen.end(), key) != seen.end())
+    if (id.empty() || std::ranges::find(seen, key) != seen.end())
         return false;
     seen.push_back(key);
     if (seen.size() > 512)
@@ -194,9 +194,7 @@ void AgentActivity::advance(Clock::time_point now, const Resolve& resolve)
         else
             ++it;
     }
-    pulses.erase(std::remove_if(pulses.begin(), pulses.end(),
-                                [&](const auto& pulse) { return seconds(now, pulse.began) > 2.4; }),
-                 pulses.end());
+    std::erase_if(pulses, [&](const auto& pulse) { return seconds(now, pulse.began) > 2.4; });
     if (pulses.size() > 128)
         pulses.erase(pulses.begin(), pulses.end() - 128);
 }

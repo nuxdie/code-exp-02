@@ -1,6 +1,7 @@
 #include "system_theme.h"
 
 #include "handles.h"
+#include "text.h"
 #include "wakeup.h"
 
 #include <algorithm>
@@ -13,10 +14,7 @@
 
 bool theme_name_is_dark(std::string_view name)
 {
-    constexpr std::string_view dark = "dark";
-    return !std::ranges::search(name, dark, {}, [](unsigned char byte) {
-                return static_cast<char>(std::tolower(byte));
-            }).empty();
+    return lowercase(name).contains("dark");
 }
 std::optional<bool> preferred_dark_theme(unsigned preference)
 {

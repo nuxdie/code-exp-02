@@ -157,8 +157,7 @@ void Application::draw_intent_note()
             margin.hover_line = line;
         }
     }
-    const auto panel = std::find_if(panels.begin(), panels.end(),
-                                    [&](const auto& source) { return source.path == path; });
+    const auto panel = std::ranges::find(panels, path, &SourcePanel::path);
     if (!run || panel == panels.end() ||
         line >= static_cast<int>(panel->folded.display_lines.size()))
         return;
@@ -253,7 +252,7 @@ std::string Application::record_turn_intent(const lsp::Json& call)
     const auto turn = call.value("turnId", chat->conversation.active_turn);
     if (intent.empty() == statement.empty())
         throw std::runtime_error("Pass either intent or statement");
-    if (!intent.empty() && !intent_margin.view.statements.count(intent))
+    if (!intent.empty() && !intent_margin.view.statements.contains(intent))
         throw std::runtime_error("Unknown intent id: " + intent);
     if (turn.empty())
         throw std::runtime_error("No active turn to attribute");
@@ -264,12 +263,9 @@ std::string Application::record_turn_intent(const lsp::Json& call)
                          (intent.empty() ? " --statement " + shell_quote(statement)
                                          : " --intent " + shell_quote(intent)) +
                          " >/dev/null 2>&1";
-    intent_writes.erase(std::remove_if(intent_writes.begin(), intent_writes.end(),
-                                       [](const auto& write) {
-                                           return write.wait_for(std::chrono::seconds(0)) ==
-                                                  std::future_status::ready;
-                                       }),
-                        intent_writes.end());
+    std::erase_if(intent_writes, [](const auto& write) {
+        return write.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+    });
     // The store change is a project file change, which reloads the margin when it lands.
     intent_writes.push_back(
         std::async(std::launch::async, [command] { (void)std::system(command.c_str()); }));

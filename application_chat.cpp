@@ -8,8 +8,7 @@ void Application::initialize_chat()
     chat->disabled = benchmark || std::getenv("SOURCE_CANVAS_DISABLE_AGENT");
     load_session();
     if (!chat->placed) {
-        const auto main = std::find_if(panels.begin(), panels.end(),
-                                       [](const auto& panel) { return panel.path == "main.cpp"; });
+        const auto main = std::ranges::find(panels, "main.cpp", &SourcePanel::path);
         const auto origin = main == panels.end() ? Vec2{900, 0} : main->bounds.origin;
         chat->bounds.origin = {std::max(0.0, origin.x - chat->bounds.size.x - 96), origin.y};
         std::vector<CanvasRect> occupied;
@@ -115,7 +114,7 @@ double Application::chat_entry_height(std::size_t index)
     const auto found = chat->messages.find(entry.id);
     if (found != chat->messages.end() && found->second.layout)
         return found->second.size.y + 32;
-    const auto lines = std::count(entry.text.begin(), entry.text.end(), '\n') + 1;
+    const auto lines = std::ranges::count(entry.text, '\n') + 1;
     const auto wrapped = entry.text.size() / 75;
     return static_cast<double>(lines + wrapped + 1) * 24 + 28;
 }

@@ -108,9 +108,8 @@ struct ApplicationTestAccess {
         app.focus_chat();
         app.draw();
         const auto& view = app.chat->messages.at("selection-message");
-        const auto hit =
-            std::find_if(app.chat->hits.begin(), app.chat->hits.end(),
-                         [](const auto& h) { return h.kind == ChatHit::Kind::Message; });
+        const auto hit = std::ranges::find_if(
+            app.chat->hits, [](const auto& h) { return h.kind == ChatHit::Kind::Message; });
         expect(hit != app.chat->hits.end(), "The conversation message must be visible");
         const auto origin = app.camera.world_to_screen(hit->bounds.origin, app.viewport());
         const auto begin = view.document.text.find("Select");
@@ -189,9 +188,8 @@ struct ApplicationTestAccess {
         app.focus_chat();
         app.draw();
         const auto& view = app.chat->messages.at("links-message");
-        const auto hit =
-            std::find_if(app.chat->hits.begin(), app.chat->hits.end(),
-                         [](const auto& h) { return h.kind == ChatHit::Kind::Message; });
+        const auto hit = std::ranges::find_if(
+            app.chat->hits, [](const auto& h) { return h.kind == ChatHit::Kind::Message; });
         expect(hit != app.chat->hits.end(), "The link message must be visible");
         const auto message_origin = app.camera.world_to_screen(hit->bounds.origin, app.viewport());
         for (const auto& label : {std::string("Browser"), std::string("https://example.com/plain"),
@@ -224,9 +222,8 @@ struct ApplicationTestAccess {
             app.camera.world_to_screen(app.chat->bounds.origin, app.viewport());
         app.draw();
         const auto& updated = app.chat->messages.at("links-message");
-        const auto updated_hit =
-            std::find_if(app.chat->hits.begin(), app.chat->hits.end(),
-                         [](const auto& h) { return h.kind == ChatHit::Kind::Message; });
+        const auto updated_hit = std::ranges::find_if(
+            app.chat->hits, [](const auto& h) { return h.kind == ChatHit::Kind::Message; });
         const auto shortcut_point =
             glyph(updated.layout.get(), updated.document.text.find("Source") + 2,
                   app.camera.world_to_screen(updated_hit->bounds.origin, app.viewport()),

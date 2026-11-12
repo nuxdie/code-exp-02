@@ -1,4 +1,5 @@
 #include "source_graph.h"
+#include "text.h"
 
 #include <cmath>
 #include <filesystem>
@@ -22,14 +23,14 @@ std::string include_name(const std::string& line, bool& comment)
         if (first == std::string::npos)
             return {};
     }
-    if (line.compare(first, 2, "/*") == 0) {
+    if (starts_at(line, first, "/*")) {
         comment = line.find("*/", first + 2) == std::string::npos;
         return {};
     }
     if (line[first] != '#')
         return {};
     first = line.find_first_not_of(" \t", first + 1);
-    if (first == std::string::npos || line.compare(first, 7, "include") != 0)
+    if (first == std::string::npos || !starts_at(line, first, "include"))
         return {};
     first = line.find_first_not_of(" \t", first + 7);
     if (first == std::string::npos || line[first] != '"')
@@ -57,7 +58,7 @@ std::vector<int> build_targets(const std::string& line, const FileIndex& paths)
     if (first == std::string::npos || line[first] == '#')
         return targets;
     for (const auto& [path, target] : paths)
-        if (line.find(path) != std::string::npos)
+        if (line.contains(path))
             targets.push_back(target);
     return targets;
 }
@@ -166,8 +167,7 @@ std::vector<CanvasRect> pack_folder(const std::vector<GraphFile>& files,
     std::nth_element(widths.begin(), widths.begin() + widths.size() / 2, widths.end(),
                      [](Vec2 a, Vec2 b) { return a.x < b.x; });
     const double wide = 1.8 * widths[widths.size() / 2].x;
-    std::stable_partition(members.begin(), members.end(),
-                          [&](auto index) { return files[index].size.x <= wide; });
+    std::ranges::stable_partition(members, [&](auto index) { return files[index].size.x <= wide; });
     std::vector<Vec2> usual, broad;
     for (const auto index : members)
         (files[index].size.x <= wide ? usual : broad).push_back(files[index].size);
@@ -218,13 +218,13 @@ GraphLayout folder_layout(const std::vector<GraphFile>& files, const std::vector
     result.files.resize(files.size());
     std::vector<std::size_t> order(groups.size());
     std::iota(order.begin(), order.end(), 0);
-    std::stable_sort(order.begin(), order.end(),
-                     [&](auto a, auto b) { return group_order[a] < group_order[b]; });
+    std::ranges::stable_sort(order,
+                             [&](auto a, auto b) { return group_order[a] < group_order[b]; });
     std::vector<Vec2> group_sizes;
     for (const auto group : order) {
         auto& members = groups[group];
-        std::stable_sort(members.begin(), members.end(),
-                         [&](auto a, auto b) { return file_order[a] < file_order[b]; });
+        std::ranges::stable_sort(members,
+                                 [&](auto a, auto b) { return file_order[a] < file_order[b]; });
         const auto packed = pack_folder(files, members);
         group_sizes.push_back(canvas_size(packed));
         for (std::size_t i = 0; i < members.size(); ++i)

@@ -25,8 +25,7 @@ void test_html()
     const auto block = popup_document("<p>Example</p><pre><code class=\"language-cpp\">const int n "
                                       "= 42;\nreturn n &lt; 50;\n</code></pre>",
                                       true);
-    expect(block.text.find("<code") == std::string::npos &&
-               block.text.find("return n < 50;") != std::string::npos,
+    expect(!block.text.contains("<code") && block.text.contains("return n < 50;"),
            "HTML code blocks must strip tags and decode C++ operators");
     bool found_code = false;
     for (bool code : block.code_lines)
@@ -34,8 +33,7 @@ void test_html()
     expect(found_code, "HTML preformatted examples must be classified as highlighted code");
     const auto literal =
         popup_document("```cpp\nconst char* tag = \"<code>\";\n```\n`<code>`", true);
-    expect(literal.text.find("\"<code>\"") != std::string::npos &&
-               literal.text.find("\n<code>") != std::string::npos,
+    expect(literal.text.contains("\"<code>\"") && literal.text.contains("\n<code>"),
            "Literal HTML inside Markdown code must remain visible");
 }
 
@@ -45,9 +43,8 @@ void test_typography()
         popup_document("## Camera\nReadable **prose** and *emphasis* with `const int n = 2;`.\n- "
                        "[Details](https://example.com)\n```cpp\nreturn n;\n```",
                        true);
-    expect(doc.text.find("##") == std::string::npos && doc.text.find("**") == std::string::npos &&
-               doc.text.find("https://") == std::string::npos &&
-               doc.text.find("• Details") != std::string::npos,
+    expect(!doc.text.contains("##") && !doc.text.contains("**") && !doc.text.contains("https://") &&
+               doc.text.contains("• Details"),
            "Markdown markers must become headings, emphasis and readable links");
     expect(doc.styles.size() == 4 && doc.inline_code.size() == 1 && doc.code_lines.back(),
            "Prose typography, inline code and code blocks must coexist");
@@ -69,8 +66,7 @@ void test_links()
     expect(doc.styles[0].destination == "https://example.com/a_(b)?x=1&y=2" &&
                doc.styles[1].destination == "/tmp/space file.cpp:2:3",
            "Markdown destinations must preserve balanced parentheses and angle-wrapped paths");
-    expect(doc.text.find("under_score_path.") != std::string::npos &&
-               doc.text.find("<http") == std::string::npos,
+    expect(doc.text.contains("under_score_path.") && !doc.text.contains("<http"),
            "Bare URLs must retain underscores and autolinks must hide angle brackets");
     for (std::size_t i = 2; i < doc.styles.size(); ++i) {
         const auto& span = doc.styles[i];
@@ -110,10 +106,8 @@ camera.zoom_at(1.15, pointer, viewport);
 struct Camera {}
 ```)CLANGD";
     const auto doc = popup_document(hover_documentation(returned), true);
-    expect(doc.text.find("@brief") == std::string::npos &&
-               doc.text.find("\\*") == std::string::npos &&
-               doc.text.find("<code>") == std::string::npos &&
-               doc.text.find("camera.pan({12, 0});") != std::string::npos,
+    expect(!doc.text.contains("@brief") && !doc.text.contains("\\*") &&
+               !doc.text.contains("<code>") && doc.text.contains("camera.pan({12, 0});"),
            "Escaped clangd prose must recover headings, code examples and HTML without visible "
            "escapes");
     int code_lines = 0;

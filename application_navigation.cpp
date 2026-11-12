@@ -28,8 +28,7 @@ Application::SavedView Application::current_view()
 Camera Application::saved_camera(const SavedView& saved)
 {
     auto result = saved.camera;
-    const auto panel = std::find_if(panels.begin(), panels.end(),
-                                    [&](const auto& entry) { return entry.path == saved.path; });
+    const auto panel = std::ranges::find(panels, saved.path, &SourcePanel::path);
     if (panel != panels.end())
         result.center = {panel->bounds.origin.x + saved.relative_center.x,
                          panel->bounds.origin.y + saved.relative_center.y};

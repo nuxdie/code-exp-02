@@ -107,7 +107,7 @@ void Application::style_shortcuts(int layout_width)
     // Keep byte offsets stable for selection while stacking key/action pairs on small windows.
     if (layout_width < 600) {
         auto stacked = popup_text;
-        std::replace(stacked.begin(), stacked.end(), '\t', '\n');
+        std::ranges::replace(stacked, '\t', '\n');
         pango_layout_set_text(popup_layout.get(), stacked.c_str(),
                               static_cast<int>(stacked.size()));
     }

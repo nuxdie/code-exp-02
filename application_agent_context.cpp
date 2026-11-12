@@ -93,9 +93,7 @@ lsp::Json Application::agent_context(Vec2 pointer)
     }
     const auto selected = bounded_text(selected_text(), 12000);
     if (!selected.empty() && text_selection.surface == TextSurface::Source) {
-        const auto found = std::find_if(panels.begin(), panels.end(), [&](const auto& panel) {
-            return panel.path == text_selection.key;
-        });
+        const auto found = std::ranges::find(panels, text_selection.key, &SourcePanel::path);
         if (found != panels.end()) {
             const auto begin = text_selection.range.selection().first;
             const auto line =
@@ -174,8 +172,7 @@ void Application::refresh_agent_context()
     if (chat->context.empty())
         return;
     const auto path = chat->context.value("path", "");
-    const auto found = std::find_if(panels.begin(), panels.end(),
-                                    [&](const auto& panel) { return panel.path == path; });
+    const auto found = std::ranges::find(panels, path, &SourcePanel::path);
     if (found != panels.end()) {
         const auto line = std::clamp(chat->context.value("line", 1) - 1, 0,
                                      std::max(0, static_cast<int>(found->text.size()) - 1));
@@ -217,8 +214,7 @@ void Application::prepare_chat_prompt()
 void Application::render_agent_context()
 {
     auto& entries = chat->conversation.entries;
-    auto found = std::find_if(entries.begin(), entries.end(),
-                              [](const auto& entry) { return entry.id == "canvas-context"; });
+    auto found = std::ranges::find(entries, "canvas-context", &ConversationEntry::id);
     const auto path = chat->context.value("path", "");
     std::string text;
     if (!path.empty())

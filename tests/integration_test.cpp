@@ -64,7 +64,7 @@ struct ApplicationTestAccess {
     {
         app.show_popup("```cpp\nconst int value = 42;\n```", {60, 60}, true);
         app.draw();
-        expect(app.popup_text.find("```") == std::string::npos && app.popup_code_lines[0],
+        expect(!app.popup_text.contains("```") && app.popup_code_lines[0],
                "Popup code fences must become highlighted code");
         auto* attributes = pango_layout_get_attributes(app.popup_layout.get());
         auto* iterator = pango_attr_list_get_iterator(attributes);
@@ -124,8 +124,8 @@ struct ApplicationTestAccess {
     static void test_context_navigation(Application& app, int index)
     {
         auto& panel = app.panels[index];
-        const auto camera = std::find_if(panel.symbols.begin(), panel.symbols.end(),
-                                         [](const auto& node) { return node.name == "Camera"; });
+        const auto camera = std::ranges::find_if(
+            panel.symbols, [](const auto& node) { return node.name == "Camera"; });
         const auto byte = lsp::utf16_to_byte(panel.text[camera->line], camera->column);
         app.hide_popup();
         const auto point = point_at(app, index, camera->line, byte);
@@ -136,12 +136,12 @@ struct ApplicationTestAccess {
         wait_for(app, [&]() {
             return !app.connection_requests.second && !app.connection_links.empty();
         });
-        expect(std::any_of(app.connection_links.begin(), app.connection_links.end(),
-                           [](const auto& link) { return !link.defines; }),
+        expect(std::ranges::any_of(app.connection_links,
+                                   [](const auto& link) { return !link.defines; }),
                "A definition's arrows must lead to the places that use it");
         int usage = -1;
         for (std::size_t i = 0; i < panel.text.size(); ++i)
-            if (panel.text[i].find("const Camera&") != std::string::npos) {
+            if (panel.text[i].contains("const Camera&")) {
                 usage = static_cast<int>(i);
                 break;
             }
@@ -150,9 +150,9 @@ struct ApplicationTestAccess {
         const auto use_point = point_at(app, index, usage, use_byte);
         press_and_release(app, use_point);
         wait_for(app, [&]() {
-            return std::any_of(
-                app.connection_links.begin(), app.connection_links.end(),
-                [&](const auto& link) { return link.defines && link.at.line == camera->line; });
+            return std::ranges::any_of(app.connection_links, [&](const auto& link) {
+                return link.defines && link.at.line == camera->line;
+            });
         });
         app.draw();
         expect(!app.connection_words.empty() || !app.connection_markers.empty(),
@@ -242,11 +242,9 @@ struct ApplicationTestAccess {
         pango_layout_get_pixel_size(app.popup_layout.get(), nullptr, &popup_height);
         expect(popup_height < reading.size.y * 0.8,
                "Popup paragraphs and HTML-generated blank lines must use a compact reading rhythm");
-        expect(app.popup_text.find("</h3>") == std::string::npos,
-               "HTML heading tags must not leak into the popup");
+        expect(!app.popup_text.contains("</h3>"), "HTML heading tags must not leak into the popup");
         expect(app.popup_text == reading.document.text &&
-                   app.popup_text.find("const int first = 1;\n\nreturn first;") !=
-                       std::string::npos,
+                   app.popup_text.contains("const int first = 1;\n\nreturn first;"),
                "Compact typography must preserve code whitespace and markup byte ranges");
         const auto literal = app.popup_text.find("return first;");
         PangoRectangle bounds{};
@@ -294,15 +292,15 @@ struct ApplicationTestAccess {
     static void test_live_documentation(Application& app, int index)
     {
         auto& panel = app.panels[index];
-        const auto symbol = std::find_if(panel.symbols.begin(), panel.symbols.end(),
-                                         [](const auto& node) { return node.name == "Camera"; });
+        const auto symbol = std::ranges::find_if(
+            panel.symbols, [](const auto& node) { return node.name == "Camera"; });
         const auto byte = lsp::utf16_to_byte(panel.text[symbol->line], symbol->column);
         point_at(app, index, symbol->line, byte);
         app.hover_request = app.query_at_pointer("textDocument/hover");
         wait_for(app, [&]() { return !app.popup_text.empty(); });
-        expect(app.popup_prose && app.popup_text.find("world coordinates") != std::string::npos,
+        expect(app.popup_prose && app.popup_text.contains("world coordinates"),
                "Actual clangd documentation must reach the prose renderer");
-        expect(!app.popup_inline_code.empty() && app.popup_text.find("\\*") == std::string::npos,
+        expect(!app.popup_inline_code.empty() && !app.popup_text.contains("\\*"),
                "Real source documentation must recover examples and HTML through clangd");
         app.draw();
         app.hide_popup();

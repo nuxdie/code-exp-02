@@ -72,9 +72,8 @@ struct FeatureProbe {
         if (event.method == "textDocument/hover") {
             const auto contents = event.result.value("contents", Json());
             const auto text = hover_text(contents);
-            hover = contents.value("kind", "") == "markdown" &&
-                    text.find("increment") != std::string::npos &&
-                    text.find("```cpp") != std::string::npos;
+            hover = contents.value("kind", "") == "markdown" && text.contains("increment") &&
+                    text.contains("```cpp");
         }
         if (event.method == "textDocument/definition") {
             const auto location = event.result.is_array() ? event.result.at(0) : event.result;

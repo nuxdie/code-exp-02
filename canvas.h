@@ -28,8 +28,7 @@ inline std::vector<CanvasRect> arrange_files(const std::vector<Vec2>& sizes, int
     std::vector<int> assignments;
     std::vector<CanvasRect> result;
     for (const auto size : sizes) {
-        const int column =
-            static_cast<int>(std::min_element(heights.begin(), heights.end()) - heights.begin());
+        const int column = static_cast<int>(std::ranges::min_element(heights) - heights.begin());
         assignments.push_back(column);
         result.push_back({{0, heights[column]}, size});
         heights[column] += size.y + gap;
