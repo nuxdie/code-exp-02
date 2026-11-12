@@ -1,29 +1,26 @@
 #include "lsp.h"
 
+#include "process.h"
+#include "wakeup.h"
+
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cctype>
 #include <cerrno>
 #include <charconv>
 #include <chrono>
-#include <csignal>
 #include <cstdint>
-#include <cstring>
-#include <fcntl.h>
 #include <filesystem>
+#include <iterator>
 #include <map>
 #include <mutex>
 #include <poll.h>
 #include <set>
-#include <spawn.h>
 #include <stdexcept>
-#include <sys/eventfd.h>
 #include <sys/socket.h>
-#include <sys/wait.h>
 #include <thread>
 #include <unistd.h>
-
-extern char** environ;
 
 namespace lsp {
 std::string file_uri(const std::string& path)
@@ -187,114 +184,43 @@ std::atomic<int> next_request_id{2};
 
 struct LanguageServer::Impl {
     struct Request {
-        int id;
+        int id = 0;
         std::string method;
         std::string uri;
         Json params;
         int version = 0;
     };
-    int results_fd = -1, commands_fd = -1, stream = -1;
-    pid_t child = -1;
-    std::atomic<bool> stopping{false};
+    Mailbox<Message> results;
+    Mailbox<Request> commands;
     ServerOptions options;
-    std::mutex mutex;
-    std::vector<Request> commands;
-    std::vector<Message> results;
-    std::thread worker;
     std::string executable, root, build;
     std::vector<Document> documents;
+    std::stop_token stopping;
+    ChildProcess server;
 
     Impl(std::string executable, std::string root, std::string build,
          std::vector<Document> documents, ServerOptions options)
         : options(std::move(options)), executable(std::move(executable)), root(std::move(root)),
           build(std::move(build)), documents(std::move(documents))
     {
-        results_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-        commands_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-        if (results_fd < 0 || commands_fd < 0) {
-            if (results_fd >= 0)
-                ::close(results_fd);
-            if (commands_fd >= 0)
-                ::close(commands_fd);
-            throw std::runtime_error("Could not create LSP wakeup descriptors");
-        }
-        worker = std::thread([this] {
-            try {
-                run();
-            } catch (const std::exception& error) {
-                publish({"error", "", 0, {}, error.what()});
-            }
-            cleanup();
-        });
-    }
-
-    static void wake(int fd)
-    {
-        const std::uint64_t value = 1;
-        (void)!write(fd, &value, sizeof(value));
-    }
-    static void drain(int fd)
-    {
-        std::uint64_t value;
-        while (read(fd, &value, sizeof(value)) > 0) {
-        }
     }
 
     void publish(Message message)
     {
         message.language = options.language;
-        {
-            std::lock_guard<std::mutex> lock(mutex);
-            results.push_back(std::move(message));
-        }
-        wake(results_fd);
-    }
-
-    void enqueue(Request request)
-    {
-        {
-            std::lock_guard<std::mutex> lock(mutex);
-            commands.push_back(std::move(request));
-        }
-        wake(commands_fd);
+        results.post(std::move(message));
     }
 
     void spawn()
     {
-        int sockets[2];
-        if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sockets) != 0)
-            throw std::runtime_error("Could not create language server transport");
-        posix_spawn_file_actions_t actions;
-        posix_spawn_file_actions_init(&actions);
-        posix_spawn_file_actions_adddup2(&actions, sockets[1], STDIN_FILENO);
-        posix_spawn_file_actions_adddup2(&actions, sockets[1], STDOUT_FILENO);
-        posix_spawn_file_actions_addclose(&actions, sockets[0]);
-        posix_spawn_file_actions_addclose(&actions, sockets[1]);
-        const auto log = build + "/" + options.language + "-language-server.log";
-        posix_spawn_file_actions_addopen(&actions, STDERR_FILENO, log.c_str(),
-                                         O_WRONLY | O_CREAT | O_TRUNC, 0644);
         std::vector<std::string> arguments{executable};
         if (options.language == "cpp")
             arguments.insert(arguments.end(),
                              {"--compile-commands-dir=" + build, "--background-index",
                               "--header-insertion=never", "--log=error", "-j=2"});
         arguments.insert(arguments.end(), options.arguments.begin(), options.arguments.end());
-        std::vector<char*> argv;
-        for (auto& argument : arguments)
-            argv.push_back(argument.data());
-        argv.push_back(nullptr);
-        const int error =
-            posix_spawnp(&child, executable.c_str(), &actions, nullptr, argv.data(), environ);
-        posix_spawn_file_actions_destroy(&actions);
-        ::close(sockets[1]);
-        if (error) {
-            ::close(sockets[0]);
-            child = -1;
-            throw std::runtime_error("Could not start language server: " +
-                                     std::string(strerror(error)));
-        }
-        stream = sockets[0];
-        fcntl(stream, F_SETFL, fcntl(stream, F_GETFL) | O_NONBLOCK);
+        server = ChildProcess(arguments, "language server",
+                              build + "/" + options.language + "-language-server.log");
     }
 
     std::string outgoing;
@@ -482,20 +408,10 @@ struct LanguageServer::Impl {
                                              : Json::object()}}}});
     }
 
-    void collect_commands()
-    {
-        drain(commands_fd);
-        std::vector<Request> incoming;
-        {
-            std::lock_guard<std::mutex> lock(mutex);
-            incoming.swap(commands);
-        }
-        for (auto& command : incoming)
-            deferred.push_back(std::move(command));
-    }
+    void collect_commands() { std::ranges::move(commands.take(), std::back_inserter(deferred)); }
     void dispatch_deferred()
     {
-        if (!ready || stopping)
+        if (!ready || stopping.stop_requested())
             return;
         for (auto& command : deferred) {
             if (command.method == "change") {
@@ -515,8 +431,8 @@ struct LanguageServer::Impl {
     {
         if (outgoing.empty())
             return;
-        const auto sent =
-            send(stream, outgoing.data() + written, outgoing.size() - written, MSG_NOSIGNAL);
+        const auto sent = send(server.stream(), outgoing.data() + written,
+                               outgoing.size() - written, MSG_NOSIGNAL);
         if (sent > 0) {
             written += static_cast<std::size_t>(sent);
             if (written == outgoing.size()) {
@@ -528,10 +444,10 @@ struct LanguageServer::Impl {
     }
     bool read_messages()
     {
-        char bytes[65536];
-        const auto received = recv(stream, bytes, sizeof(bytes), 0);
+        std::array<char, 65536> bytes;
+        const auto received = recv(server.stream(), bytes.data(), bytes.size(), 0);
         if (received == 0) {
-            if (stopping)
+            if (stopping.stop_requested())
                 return false;
             throw std::runtime_error("Language server disconnected");
         }
@@ -540,7 +456,7 @@ struct LanguageServer::Impl {
                 return true;
             throw std::runtime_error("Language server read failed");
         }
-        framer.append({bytes, static_cast<std::size_t>(received)});
+        framer.append({bytes.data(), static_cast<std::size_t>(received)});
         while (auto message = framer.pop())
             handle_rpc(*message);
         return true;
@@ -550,7 +466,8 @@ struct LanguageServer::Impl {
         spawn();
         initialize_protocol();
         while (true) {
-            if (stopping && !shutdown_id) {
+            const bool leaving = stopping.stop_requested();
+            if (leaving && !shutdown_id) {
                 shutdown_id = next_request_id++;
                 send_message({{"id", shutdown_id}, {"method", "shutdown"}, {"params", nullptr}});
                 shutdown_deadline =
@@ -559,10 +476,11 @@ struct LanguageServer::Impl {
             if ((exit_sent && outgoing.empty()) ||
                 std::chrono::steady_clock::now() >= shutdown_deadline)
                 break;
-            pollfd fds[] = {
-                {stream, static_cast<short>(POLLIN | (outgoing.empty() ? 0 : POLLOUT)), 0},
-                {commands_fd, POLLIN, 0}};
-            const int count = poll(fds, 2, stopping ? 10 : -1);
+            std::array<pollfd, 2> fds{
+                {{server.stream(), static_cast<short>(POLLIN | (outgoing.empty() ? 0 : POLLOUT)),
+                  0},
+                 {commands.fd(), POLLIN, 0}}};
+            const int count = poll(fds.data(), fds.size(), leaving ? 10 : -1);
             if (count < 0) {
                 if (errno == EINTR)
                     continue;
@@ -578,38 +496,17 @@ struct LanguageServer::Impl {
         }
     }
 
-    void cleanup()
-    {
-        if (stream >= 0) {
-            ::close(stream);
-            stream = -1;
+    // Last, so the worker stops before anything it uses goes away.
+    std::jthread worker{[this](std::stop_token token) {
+        stopping = std::move(token);
+        const std::stop_callback wake(stopping, [this] { commands.wake(); });
+        try {
+            run();
+        } catch (const std::exception& error) {
+            publish({"error", "", 0, {}, error.what()});
         }
-        if (child > 0) {
-            for (int i = 0; i < 30; ++i) {
-                if (waitpid(child, nullptr, WNOHANG) != 0) {
-                    child = -1;
-                    break;
-                }
-                if (i == 10)
-                    kill(child, SIGTERM);
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            }
-            if (child > 0) {
-                kill(child, SIGKILL);
-                waitpid(child, nullptr, 0);
-                child = -1;
-            }
-        }
-    }
-
-    ~Impl()
-    {
-        stopping = true;
-        wake(commands_fd);
-        worker.join();
-        ::close(commands_fd);
-        ::close(results_fd);
-    }
+        server.stop(std::chrono::milliseconds(100));
+    }};
 };
 
 LanguageServer::LanguageServer(std::string executable, std::string root, std::string build,
@@ -621,38 +518,34 @@ LanguageServer::LanguageServer(std::string executable, std::string root, std::st
 LanguageServer::~LanguageServer() = default;
 int LanguageServer::event_fd() const
 {
-    return impl->results_fd;
+    return impl->results.fd();
 }
 
 std::vector<Message> LanguageServer::take_messages()
 {
-    Impl::drain(impl->results_fd);
-    std::vector<Message> messages;
-    std::lock_guard<std::mutex> lock(impl->mutex);
-    messages.swap(impl->results);
-    return messages;
+    return impl->results.take();
 }
 
 int LanguageServer::request(std::string method, std::string uri, Json params)
 {
     const int id = next_request_id++;
-    impl->enqueue({id, std::move(method), std::move(uri), std::move(params)});
+    impl->commands.post({id, std::move(method), std::move(uri), std::move(params)});
     return id;
 }
 
 void LanguageServer::open(Document document)
 {
-    impl->enqueue({0, "open", std::move(document.uri), std::move(document.text)});
+    impl->commands.post({0, "open", std::move(document.uri), std::move(document.text)});
 }
 } // namespace lsp
 
 namespace lsp {
 void LanguageServer::change(Document document)
 {
-    impl->enqueue({0, "change", std::move(document.uri), std::move(document.text)});
+    impl->commands.post({0, "change", std::move(document.uri), std::move(document.text)});
 }
 void LanguageServer::close(const std::string& uri)
 {
-    impl->enqueue({0, "close", uri, nullptr});
+    impl->commands.post({0, "close", uri, nullptr});
 }
 } // namespace lsp

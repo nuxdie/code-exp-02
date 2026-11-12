@@ -1,21 +1,22 @@
 #include "system_theme.h"
 
+#include "handles.h"
+#include "wakeup.h"
+
 #include <algorithm>
-#include <atomic>
 #include <cctype>
 #include <cstdlib>
 #include <gio/gio.h>
 #include <mutex>
-#include <sys/eventfd.h>
 #include <thread>
-#include <unistd.h>
+#include <utility>
 
-bool theme_name_is_dark(const std::string& name)
+bool theme_name_is_dark(std::string_view name)
 {
-    std::string lowered = name;
-    std::transform(lowered.begin(), lowered.end(), lowered.begin(),
-                   [](unsigned char byte) { return static_cast<char>(std::tolower(byte)); });
-    return lowered.find("dark") != std::string::npos;
+    constexpr std::string_view dark = "dark";
+    return !std::ranges::search(name, dark, {}, [](unsigned char byte) {
+                return static_cast<char>(std::tolower(byte));
+            }).empty();
 }
 std::optional<bool> preferred_dark_theme(unsigned preference)
 {
@@ -26,74 +27,78 @@ std::optional<bool> preferred_dark_theme(unsigned preference)
     return std::nullopt;
 }
 namespace {
-GVariant* unbox(GVariant* value)
+using VariantHandle = Handle<GVariant, g_variant_unref>;
+
+// Replies arrive wrapped in tuples and variants; the value is what is inside.
+VariantHandle unbox(GVariant* reply)
 {
-    while (value && (g_variant_is_of_type(value, G_VARIANT_TYPE_VARIANT) ||
-                     g_variant_is_of_type(value, G_VARIANT_TYPE_TUPLE))) {
-        if (!g_variant_n_children(value))
-            break;
-        auto* next = g_variant_get_child_value(value, 0);
-        g_variant_unref(value);
-        value = next;
-    }
+    VariantHandle value{reply};
+    while (value &&
+           (g_variant_is_of_type(value.get(), G_VARIANT_TYPE_VARIANT) ||
+            g_variant_is_of_type(value.get(), G_VARIANT_TYPE_TUPLE)) &&
+           g_variant_n_children(value.get()))
+        value.reset(g_variant_get_child_value(value.get(), 0));
     return value;
+}
+std::string setting(GSettings* settings, const char* key)
+{
+    const GStringHandle value{g_settings_get_string(settings, key)};
+    return value.get();
 }
 } // namespace
 struct SystemTheme::Impl {
-    int events = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-    GMainContext* context = g_main_context_new();
-    std::atomic<bool> stopping{false};
+    using MainContext = Handle<GMainContext, g_main_context_unref>;
+    WakeSignal events;
+    MainContext context{g_main_context_new()};
     std::mutex mutex;
     std::optional<bool> changed;
     std::optional<bool> current;
-    GDBusConnection* bus = nullptr;
-    GSettings* settings = nullptr;
-    std::thread worker;
+    GObjectHandle<GDBusConnection> bus;
+    GObjectHandle<GSettings> settings;
+    std::jthread worker;
 
-    Impl() : worker([this] { run(); }) {}
-    GVariant* call(const char* destination, const char* path, const char* interface,
-                   const char* method, GVariant* params)
+    Impl()
+        : worker([this](const std::stop_token& stopping) {
+              const std::stop_callback wake(stopping,
+                                            [this] { g_main_context_wakeup(context.get()); });
+              run(stopping);
+          })
+    {
+    }
+    struct Call {
+        const char *destination, *path, *interface, *method;
+    };
+    VariantHandle call(const Call& target, GVariant* params)
     {
         if (!bus)
             return nullptr;
-        return unbox(g_dbus_connection_call_sync(bus, destination, path, interface, method, params,
-                                                 nullptr, G_DBUS_CALL_FLAGS_NONE, 1200, nullptr,
-                                                 nullptr));
+        return unbox(g_dbus_connection_call_sync(bus.get(), target.destination, target.path,
+                                                 target.interface, target.method, params, nullptr,
+                                                 G_DBUS_CALL_FLAGS_NONE, 1200, nullptr, nullptr));
     }
     std::optional<bool> portal_preference()
     {
-        auto* value = call("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop",
-                           "org.freedesktop.portal.Settings", "Read",
-                           g_variant_new("(ss)", "org.freedesktop.appearance", "color-scheme"));
-        std::optional<bool> result;
-        if (value && g_variant_is_of_type(value, G_VARIANT_TYPE_UINT32))
-            result = preferred_dark_theme(g_variant_get_uint32(value));
-        if (value)
-            g_variant_unref(value);
-        return result;
+        const auto value =
+            call({"org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop",
+                  "org.freedesktop.portal.Settings", "Read"},
+                 g_variant_new("(ss)", "org.freedesktop.appearance", "color-scheme"));
+        if (value && g_variant_is_of_type(value.get(), G_VARIANT_TYPE_UINT32))
+            return preferred_dark_theme(g_variant_get_uint32(value.get()));
+        return std::nullopt;
     }
     bool fallback()
     {
         // Xfce exposes its actual current GTK theme through xfconf.
-        auto* value = call("org.xfce.Xfconf", "/org/xfce/Xfconf", "org.xfce.Xfconf", "GetProperty",
-                           g_variant_new("(ss)", "xsettings", "/Net/ThemeName"));
-        if (value && g_variant_is_of_type(value, G_VARIANT_TYPE_STRING)) {
-            const bool result = theme_name_is_dark(g_variant_get_string(value, nullptr));
-            g_variant_unref(value);
-            return result;
-        }
-        if (value)
-            g_variant_unref(value);
+        const auto value =
+            call({"org.xfce.Xfconf", "/org/xfce/Xfconf", "org.xfce.Xfconf", "GetProperty"},
+                 g_variant_new("(ss)", "xsettings", "/Net/ThemeName"));
+        if (value && g_variant_is_of_type(value.get(), G_VARIANT_TYPE_STRING))
+            return theme_name_is_dark(g_variant_get_string(value.get(), nullptr));
         if (settings) {
-            auto* scheme = g_settings_get_string(settings, "color-scheme");
-            const std::string preference = scheme;
-            g_free(scheme);
+            const auto preference = setting(settings.get(), "color-scheme");
             if (preference == "prefer-dark" || preference == "prefer-light")
                 return preference == "prefer-dark";
-            auto* name = g_settings_get_string(settings, "gtk-theme");
-            const bool result = theme_name_is_dark(name);
-            g_free(name);
-            return result;
+            return theme_name_is_dark(setting(settings.get(), "gtk-theme"));
         }
         const auto* name = std::getenv("GTK_THEME");
         return name && theme_name_is_dark(name);
@@ -102,15 +107,14 @@ struct SystemTheme::Impl {
     {
         const auto preference = portal_preference();
         const bool dark = preference ? *preference : fallback();
-        if (current && *current == dark)
+        if (current == dark)
             return;
         current = dark;
         {
-            std::lock_guard<std::mutex> lock(mutex);
+            const std::scoped_lock lock(mutex);
             changed = dark;
         }
-        const uint64_t wake = 1;
-        (void)!write(events, &wake, sizeof(wake));
+        events.raise();
     }
     // The GDBus callback ABI fixes the argument count.
     // NOLINTBEGIN(readability-function-size)
@@ -120,70 +124,59 @@ struct SystemTheme::Impl {
         static_cast<Impl*>(data)->refresh();
     }
     // NOLINTEND(readability-function-size)
-    void run()
+    void watch_settings()
     {
-        g_main_context_push_thread_default(context);
-        bus = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, nullptr);
+        using Schema = Handle<GSettingsSchema, g_settings_schema_unref>;
         auto* source = g_settings_schema_source_get_default();
-        auto* schema =
+        const Schema schema{
             source ? g_settings_schema_source_lookup(source, "org.gnome.desktop.interface", true)
-                   : nullptr;
-        if (schema) {
-            if (g_settings_schema_has_key(schema, "color-scheme") &&
-                g_settings_schema_has_key(schema, "gtk-theme")) {
-                settings = g_settings_new_full(schema, nullptr, nullptr);
-                g_signal_connect(settings, "changed",
-                                 G_CALLBACK(+[](GSettings*, gchar*, gpointer data) {
-                                     static_cast<Impl*>(data)->refresh();
-                                 }),
-                                 this);
-            }
-            g_settings_schema_unref(schema);
-        }
+                   : nullptr};
+        if (!schema || !g_settings_schema_has_key(schema.get(), "color-scheme") ||
+            !g_settings_schema_has_key(schema.get(), "gtk-theme"))
+            return;
+        settings.reset(g_settings_new_full(schema.get(), nullptr, nullptr));
+        g_signal_connect(settings.get(), "changed",
+                         G_CALLBACK(+[](GSettings*, gchar*, gpointer data) {
+                             static_cast<Impl*>(data)->refresh();
+                         }),
+                         this);
+    }
+    void run(const std::stop_token& stopping)
+    {
+        g_main_context_push_thread_default(context.get());
+        bus.reset(g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, nullptr));
+        watch_settings();
         guint portal = 0, xfce = 0;
         if (bus) {
             portal = g_dbus_connection_signal_subscribe(
-                bus, "org.freedesktop.portal.Desktop", "org.freedesktop.portal.Settings",
+                bus.get(), "org.freedesktop.portal.Desktop", "org.freedesktop.portal.Settings",
                 "SettingChanged", "/org/freedesktop/portal/desktop", "org.freedesktop.appearance",
                 G_DBUS_SIGNAL_FLAGS_NONE, signal, this, nullptr);
             xfce = g_dbus_connection_signal_subscribe(
-                bus, "org.xfce.Xfconf", "org.xfce.Xfconf", "PropertyChanged", nullptr, "xsettings",
-                G_DBUS_SIGNAL_FLAGS_NONE, signal, this, nullptr);
+                bus.get(), "org.xfce.Xfconf", "org.xfce.Xfconf", "PropertyChanged", nullptr,
+                "xsettings", G_DBUS_SIGNAL_FLAGS_NONE, signal, this, nullptr);
         }
         refresh();
-        while (!stopping)
-            g_main_context_iteration(context, true);
+        while (!stopping.stop_requested())
+            g_main_context_iteration(context.get(), true);
         if (bus) {
-            g_dbus_connection_signal_unsubscribe(bus, portal);
-            g_dbus_connection_signal_unsubscribe(bus, xfce);
-            g_object_unref(bus);
+            g_dbus_connection_signal_unsubscribe(bus.get(), portal);
+            g_dbus_connection_signal_unsubscribe(bus.get(), xfce);
         }
-        if (settings)
-            g_object_unref(settings);
-        g_main_context_pop_thread_default(context);
-    }
-    ~Impl()
-    {
-        stopping = true;
-        g_main_context_wakeup(context);
-        worker.join();
-        g_main_context_unref(context);
-        close(events);
+        bus.reset();
+        settings.reset();
+        g_main_context_pop_thread_default(context.get());
     }
 };
 SystemTheme::SystemTheme() : impl(std::make_unique<Impl>()) {}
 SystemTheme::~SystemTheme() = default;
 int SystemTheme::event_fd() const
 {
-    return impl->events;
+    return impl->events.fd();
 }
 std::optional<bool> SystemTheme::take_change()
 {
-    uint64_t event;
-    while (read(impl->events, &event, sizeof(event)) > 0) {
-    }
-    std::lock_guard<std::mutex> lock(impl->mutex);
-    auto result = impl->changed;
-    impl->changed.reset();
-    return result;
+    impl->events.clear();
+    const std::scoped_lock lock(impl->mutex);
+    return std::exchange(impl->changed, std::nullopt);
 }

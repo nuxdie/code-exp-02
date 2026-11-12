@@ -1,9 +1,9 @@
 #pragma once
 #include <memory>
 #include <optional>
-#include <string>
+#include <string_view>
 
-bool theme_name_is_dark(const std::string& name);
+bool theme_name_is_dark(std::string_view name);
 std::optional<bool> preferred_dark_theme(unsigned preference);
 
 class SystemTheme {

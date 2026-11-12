@@ -1,8 +1,11 @@
 #include "project_watch.h"
 
+#include "wakeup.h"
+
 #include <algorithm>
-#include <atomic>
+#include <array>
 #include <cctype>
+#include <cerrno>
 #include <chrono>
 #include <cstdio>
 #include <filesystem>
@@ -12,7 +15,6 @@
 #include <poll.h>
 #include <set>
 #include <stdexcept>
-#include <sys/eventfd.h>
 #include <sys/inotify.h>
 #include <thread>
 #include <unistd.h>
@@ -101,17 +103,6 @@ bool binary_head(const std::filesystem::path& file)
     char head[8192];
     input.read(head, sizeof(head));
     return std::find(head, head + input.gcount(), '\0') != head + input.gcount();
-}
-void signal_fd(int fd)
-{
-    const uint64_t value = 1;
-    (void)!write(fd, &value, sizeof(value));
-}
-void drain_fd(int fd)
-{
-    uint64_t value;
-    while (read(fd, &value, sizeof(value)) > 0) {
-    }
 }
 } // namespace
 
@@ -204,24 +195,25 @@ std::vector<ProjectChange> project_changes(const ProjectSnapshot& before,
 }
 
 struct ProjectWatcher::Impl {
+    static constexpr auto settle = std::chrono::milliseconds(120);
     std::string root;
     ProjectSnapshot snapshot;
-    int notify = -1, events = -1, stop = -1;
+    FileDescriptor notify{inotify_init1(IN_NONBLOCK | IN_CLOEXEC)};
+    WakeSignal stop;
     std::set<std::string> watched;
-    std::mutex mutex;
-    std::vector<ProjectChange> changes;
-    std::thread worker;
+    Mailbox<ProjectChange> changes;
+    std::jthread worker;
 
     Impl(std::string root, ProjectSnapshot initial)
         : root(std::move(root)), snapshot(std::move(initial))
     {
-        notify = inotify_init1(IN_NONBLOCK | IN_CLOEXEC);
-        events = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-        stop = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-        if (notify < 0 || events < 0 || stop < 0)
+        if (!notify)
             throw std::runtime_error("Could not create project watch descriptors");
         add_watches();
-        worker = std::thread([this] { run(); });
+        worker = std::jthread([this](const std::stop_token& stopping) {
+            const std::stop_callback wake(stopping, [this] { stop.raise(); });
+            run(stopping);
+        });
     }
     void add_watches()
     {
@@ -229,67 +221,49 @@ struct ProjectWatcher::Impl {
         directories.emplace_back(".");
         for (const auto& directory : directories) {
             const auto path = (std::filesystem::path(root) / directory).string();
-            if (watched.count(path))
+            if (watched.contains(path))
                 continue;
             const auto mask = IN_CLOSE_WRITE | IN_MOVED_TO | IN_MOVED_FROM | IN_CREATE | IN_DELETE |
                               IN_DELETE_SELF | IN_MOVE_SELF;
-            if (inotify_add_watch(notify, path.c_str(), mask) >= 0)
+            if (inotify_add_watch(notify.get(), path.c_str(), mask) >= 0)
                 watched.insert(path);
         }
     }
     void rescan()
     {
         auto next = read_project(root);
-        auto batch = project_changes(snapshot, next);
+        changes.post(project_changes(snapshot, next));
         snapshot = std::move(next);
-        if (batch.empty())
-            return;
-        {
-            std::lock_guard<std::mutex> lock(mutex);
-            changes.insert(changes.end(), std::make_move_iterator(batch.begin()),
-                           std::make_move_iterator(batch.end()));
-        }
-        signal_fd(events);
     }
-    void run()
+    void run(const std::stop_token& stopping)
     {
         using Clock = std::chrono::steady_clock;
         auto due = Clock::now();
-        for (;;) {
-            const int timeout =
-                due == Clock::time_point::max()
-                    ? -1
-                    : static_cast<int>(std::max<int64_t>(
-                          0,
-                          std::chrono::duration_cast<std::chrono::milliseconds>(due - Clock::now())
-                              .count()));
-            pollfd fds[]{{notify, POLLIN, 0}, {stop, POLLIN, 0}};
-            if (poll(fds, 2, timeout) < 0 && errno != EINTR)
+        while (!stopping.stop_requested()) {
+            int timeout = -1;
+            if (due != Clock::time_point::max()) {
+                const auto wait = std::chrono::ceil<std::chrono::milliseconds>(due - Clock::now());
+                timeout = static_cast<int>(std::max<std::int64_t>(0, wait.count()));
+            }
+            std::array<pollfd, 2> fds{{{notify.get(), POLLIN, 0}, {stop.fd(), POLLIN, 0}}};
+            if (poll(fds.data(), fds.size(), timeout) < 0 && errno != EINTR)
                 return;
             if (fds[1].revents)
                 return;
             if (fds[0].revents) {
-                alignas(inotify_event) char buffer[65536];
-                while (read(notify, buffer, sizeof(buffer)) > 0) {
+                alignas(inotify_event) std::array<char, 65536> buffer;
+                while (read(notify.get(), buffer.data(), buffer.size()) > 0) {
                 }
                 // Re-register deleted/recreated directories and refresh newly created trees.
                 watched.clear();
                 add_watches();
-                due = Clock::now() + std::chrono::milliseconds(120);
+                due = Clock::now() + settle;
             }
             if (Clock::now() >= due) {
                 rescan();
                 due = Clock::time_point::max();
             }
         }
-    }
-    ~Impl()
-    {
-        signal_fd(stop);
-        worker.join();
-        close(notify);
-        close(events);
-        close(stop);
     }
 };
 ProjectWatcher::ProjectWatcher(std::string root, ProjectSnapshot initial)
@@ -299,13 +273,9 @@ ProjectWatcher::ProjectWatcher(std::string root, ProjectSnapshot initial)
 ProjectWatcher::~ProjectWatcher() = default;
 int ProjectWatcher::event_fd() const
 {
-    return impl->events;
+    return impl->changes.fd();
 }
 std::vector<ProjectChange> ProjectWatcher::take_changes()
 {
-    drain_fd(impl->events);
-    std::lock_guard<std::mutex> lock(impl->mutex);
-    std::vector<ProjectChange> changes;
-    changes.swap(impl->changes);
-    return changes;
+    return impl->changes.take();
 }

@@ -146,6 +146,10 @@ foreach(source_path IN LISTS VIEWER_SOURCES)
     )
 endforeach()
 
+add_library(platform process.cpp)
+target_include_directories(platform PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(platform PUBLIC Threads::Threads)
+
 add_library(
     agent_connection agent_client.cpp conversation.cpp text_input.cpp
                      canvas_tools.cpp
@@ -154,7 +158,7 @@ target_include_directories(
     agent_connection PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 target_link_libraries(
-    agent_connection PUBLIC nlohmann_json::nlohmann_json Threads::Threads
+    agent_connection PUBLIC nlohmann_json::nlohmann_json platform
 )
 add_library(project_watch project_watch.cpp)
 target_include_directories(project_watch PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -162,7 +166,7 @@ target_link_libraries(project_watch PUBLIC Threads::Threads)
 
 add_library(language_server lsp.cpp)
 target_link_libraries(
-    language_server PUBLIC nlohmann_json::nlohmann_json Threads::Threads
+    language_server PUBLIC nlohmann_json::nlohmann_json platform
 )
 target_include_directories(language_server PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 find_program(LATEX_EXECUTABLE latex REQUIRED)

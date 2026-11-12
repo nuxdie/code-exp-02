@@ -12,7 +12,7 @@ class AgentClient {
     AgentClient(std::string python, std::string bridge);
     ~AgentClient();
     int event_fd() const;
-    void send(Json message);
+    void send(const Json& message);
     std::vector<Json> take_messages();
 
   private:

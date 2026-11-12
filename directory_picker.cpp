@@ -1,77 +1,79 @@
 #include "directory_picker.h"
 
+#include "handles.h"
+#include "wakeup.h"
+
 #include <atomic>
+#include <format>
 #include <gio/gio.h>
 #include <mutex>
 #include <stdexcept>
-#include <sys/eventfd.h>
 #include <thread>
-#include <unistd.h>
+#include <utility>
 
 struct DirectoryPicker::Impl {
-    int events = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-    GSubprocess* process = nullptr;
-    std::thread worker;
+    WakeSignal events;
+    GObjectHandle<GSubprocess> process;
     std::atomic<bool> finished{false};
     std::mutex mutex;
     std::optional<DirectorySelection> result;
+    std::jthread worker;
 
     Impl(const std::string& directory, unsigned long parent)
     {
-        if (events < 0)
-            throw std::runtime_error("Could not create the directory picker notification.");
-        const auto filename = "--filename=" + directory + "/";
-        const auto attach = "--attach=" + std::to_string(parent);
-        GError* error = nullptr;
-        process = g_subprocess_new(static_cast<GSubprocessFlags>(G_SUBPROCESS_FLAGS_STDOUT_PIPE |
-                                                                 G_SUBPROCESS_FLAGS_STDERR_SILENCE),
-                                   &error, "zenity", "--file-selection", "--directory", "--modal",
-                                   "--title=Open project directory", filename.c_str(),
-                                   attach.c_str(), nullptr);
-        if (!process) {
-            const std::string message = "Could not start the directory picker. Install zenity. " +
-                                        std::string(error->message);
-            g_error_free(error);
-            close(events);
-            throw std::runtime_error(message);
+        const auto filename = std::format("--filename={}/", directory);
+        const auto attach = std::format("--attach={}", parent);
+        GError* failure = nullptr;
+        process.reset(g_subprocess_new(
+            static_cast<GSubprocessFlags>(G_SUBPROCESS_FLAGS_STDOUT_PIPE |
+                                          G_SUBPROCESS_FLAGS_STDERR_SILENCE),
+            &failure, "zenity", "--file-selection", "--directory", "--modal",
+            "--title=Open project directory", filename.c_str(), attach.c_str(), nullptr));
+        if (const GErrorHandle error{failure}; !process)
+            throw std::runtime_error(std::format(
+                "Could not start the directory picker. Install zenity. {}", error->message));
+        worker = std::jthread([this] { run(); });
+    }
+
+    DirectorySelection wait() const
+    {
+        gchar* text = nullptr;
+        GError* failure = nullptr;
+        const bool communicated = g_subprocess_communicate_utf8(process.get(), nullptr, nullptr,
+                                                                &text, nullptr, &failure);
+        const GStringHandle output{text};
+        const GErrorHandle error{failure};
+        if (!communicated)
+            return {.directory = {}, .error = error->message};
+        if (g_subprocess_get_successful(process.get())) {
+            std::string directory = output ? output.get() : "";
+            // Zenity appends one newline; whitespace within the path is significant.
+            if (directory.ends_with('\n'))
+                directory.pop_back();
+            return {.directory = std::move(directory), .error = {}};
         }
-        worker = std::thread([this] { run(); });
+        // Leaving with status 1 is the user cancelling.
+        if (!g_subprocess_get_if_exited(process.get()) ||
+            g_subprocess_get_exit_status(process.get()) != 1)
+            return {.directory = {}, .error = "The directory picker could not open."};
+        return {};
     }
 
     void run()
     {
-        gchar* output = nullptr;
-        GError* error = nullptr;
-        DirectorySelection selection;
-        if (!g_subprocess_communicate_utf8(process, nullptr, nullptr, &output, nullptr, &error)) {
-            selection.error = error->message;
-            g_error_free(error);
-        } else if (g_subprocess_get_successful(process)) {
-            selection.directory = output ? output : "";
-            // Zenity appends one newline; whitespace within the path is significant.
-            if (!selection.directory.empty() && selection.directory.back() == '\n')
-                selection.directory.pop_back();
-        } else if (!g_subprocess_get_if_exited(process) ||
-                   g_subprocess_get_exit_status(process) != 1) {
-            selection.error = "The directory picker could not open.";
-        }
-        g_free(output);
+        auto selection = wait();
         {
-            std::lock_guard<std::mutex> lock(mutex);
+            const std::scoped_lock lock(mutex);
             result = std::move(selection);
         }
         finished = true;
-        const uint64_t wake = 1;
-        (void)!write(events, &wake, sizeof(wake));
+        events.raise();
     }
 
     ~Impl()
     {
         if (!finished)
-            g_subprocess_force_exit(process);
-        worker.join();
-        g_object_unref(process);
-        close(events);
+            g_subprocess_force_exit(process.get());
     }
 };
 
@@ -82,15 +84,11 @@ DirectoryPicker::DirectoryPicker(const std::string& directory, unsigned long par
 DirectoryPicker::~DirectoryPicker() = default;
 int DirectoryPicker::event_fd() const
 {
-    return impl->events;
+    return impl->events.fd();
 }
 std::optional<DirectorySelection> DirectoryPicker::take_result()
 {
-    uint64_t wake;
-    if (read(impl->events, &wake, sizeof(wake)) < 0)
-        return {};
-    std::lock_guard<std::mutex> lock(impl->mutex);
-    auto result = std::move(impl->result);
-    impl->result.reset();
-    return result;
+    impl->events.clear();
+    const std::scoped_lock lock(impl->mutex);
+    return std::exchange(impl->result, std::nullopt);
 }
