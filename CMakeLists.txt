@@ -1,6 +1,9 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.20)
 project(white_window LANGUAGES CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(X11 REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -147,7 +150,6 @@ add_library(
     agent_connection agent_client.cpp conversation.cpp text_input.cpp
                      canvas_tools.cpp
 )
-target_compile_features(agent_connection PUBLIC cxx_std_17)
 target_include_directories(
     agent_connection PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
 )
@@ -155,12 +157,10 @@ target_link_libraries(
     agent_connection PUBLIC nlohmann_json::nlohmann_json Threads::Threads
 )
 add_library(project_watch project_watch.cpp)
-target_compile_features(project_watch PUBLIC cxx_std_17)
 target_include_directories(project_watch PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(project_watch PUBLIC Threads::Threads)
 
 add_library(language_server lsp.cpp)
-target_compile_features(language_server PUBLIC cxx_std_17)
 target_link_libraries(
     language_server PUBLIC nlohmann_json::nlohmann_json Threads::Threads
 )
@@ -168,12 +168,10 @@ target_include_directories(language_server PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 find_program(LATEX_EXECUTABLE latex REQUIRED)
 find_program(DVISVGM_EXECUTABLE dvisvgm REQUIRED)
 add_library(source_graph source_graph.cpp)
-target_compile_features(source_graph PUBLIC cxx_std_17)
 target_include_directories(source_graph PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(source_graph PUBLIC language_server)
 
 add_library(gpu_renderer gpu.cpp)
-target_compile_features(gpu_renderer PUBLIC cxx_std_17)
 target_include_directories(gpu_renderer PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(
     gpu_renderer PUBLIC X11::X11 PkgConfig::TYPOGRAPHY PkgConfig::GPU
@@ -227,7 +225,6 @@ add_library(
     syntax.cpp
     source_panel.cpp
 )
-target_compile_features(application_core PUBLIC cxx_std_17)
 target_include_directories(
     application_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
                             "${CMAKE_CURRENT_BINARY_DIR}"
@@ -238,7 +235,6 @@ target_link_libraries(
 )
 
 add_executable(white_window main.cpp)
-target_compile_features(white_window PRIVATE cxx_std_17)
 target_include_directories(white_window PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(white_window PRIVATE application_core)
 
@@ -283,13 +279,11 @@ if(BUILD_TESTING)
     add_test(NAME agent_live COMMAND agent_live_tests)
     set_tests_properties(agent_live PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 20)
     add_executable(camera_tests tests/camera_test.cpp)
-    target_compile_features(camera_tests PRIVATE cxx_std_17)
     target_include_directories(
         camera_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
     )
     add_test(NAME camera COMMAND camera_tests)
     add_executable(canvas_tests tests/canvas_test.cpp)
-    target_compile_features(canvas_tests PRIVATE cxx_std_17)
     target_include_directories(
         canvas_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
     )
@@ -312,13 +306,11 @@ if(BUILD_TESTING)
     target_link_libraries(structure_tests PRIVATE source_graph language_server)
     add_test(NAME structure COMMAND structure_tests)
     add_executable(syntax_tests tests/syntax_test.cpp syntax.cpp)
-    target_compile_features(syntax_tests PRIVATE cxx_std_17)
     target_include_directories(
         syntax_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
     )
     add_test(NAME syntax COMMAND syntax_tests)
     add_executable(popup_tests tests/popup_test.cpp popup_markup.cpp)
-    target_compile_features(popup_tests PRIVATE cxx_std_17)
     target_include_directories(
         popup_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
     )

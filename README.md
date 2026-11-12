@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/nuxdie/code-exp-02/actions/workflows/quality.yml"><img src="https://github.com/nuxdie/code-exp-02/actions/workflows/quality.yml/badge.svg" alt="Quality checks"></a>
-  <img src="https://img.shields.io/badge/C%2B%2B-17-74c7ec?style=flat-square&labelColor=1b2028" alt="C++17">
+  <img src="https://img.shields.io/badge/C%2B%2B-23-74c7ec?style=flat-square&labelColor=1b2028" alt="C++23">
   <img src="https://img.shields.io/badge/Linux-X11-a6e3a1?style=flat-square&labelColor=1b2028" alt="Linux with X11">
   <img src="https://img.shields.io/badge/OpenGL-3.3-f9c88a?style=flat-square&labelColor=1b2028" alt="OpenGL 3.3">
 </p>
@@ -63,7 +63,7 @@ Press `/` to search file names and source text. Results update as you type; use 
 
 ## Get running
 
-The current target is **Linux with an X11 display and OpenGL 3.3 or newer**. Mesa software rendering also works for headless checks. Build with a C++17 compiler and CMake 3.16 or newer.
+The current target is **Linux with an X11 display and OpenGL 3.3 or newer**. Mesa software rendering also works for headless checks. Build with a C++23 compiler (GCC 13 or newer) and CMake 3.20 or newer.
 
 ### 1. Clone the project
 

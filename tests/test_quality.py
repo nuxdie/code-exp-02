@@ -53,7 +53,7 @@ class QualityPolicyTests(unittest.TestCase):
                               + "}\n" * 8 + "return 0;\n}\n")
             result = subprocess.run(
                 [QUALITY.tool("clang-tidy-18", "clang-tidy"), str(source),
-                 "--config-file=" + str(ROOT / ".clang-tidy"), "--", "-std=c++17"],
+                 "--config-file=" + str(ROOT / ".clang-tidy"), "--", "-std=c++23"],
                 text=True, capture_output=True,
             )
             self.assertNotEqual(result.returncode, 0)
