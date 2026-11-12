@@ -3269,6 +3269,29 @@
     "source_graph.cpp": "d2707ee 715f3c3 942a9f2 6a81d2e d41a8c1 acf1f08 084418d f0ac6cf ce4ce0e 5dc3726 f9e64de 28bc024 671a120 2e795e2 45d6279 7f9ef24 19c3b70 929e805 1d13f34 8d2bc5b 92d482b 6b3fa6a 5ec7b17 b13ba95 e3eafb4 b42e1f5 85f790b 577bfdd 77592dc 1f9c686 67ea24e c12d7df 5d9ea03 0a79c43",
     "tests/structure_test.cpp": "7cc8535 653f134 ab0747d 8f79bff 7db2a9e b4c5242"
    }
+  },
+  {
+   "id": "claude-2026-11-12-overview-names",
+   "at": "2026-11-12T00:12:37.194Z",
+   "source": "transcript",
+   "said": "work on 1 and 6",
+   "why": "Zoomed out, the canvas was unreadable dust under a pile of displaced titles. Folders are now named regions, files show the names of what they define while their code is too small to read, and a title is either on its file or absent.",
+   "intent": "useful-legible-contextual",
+   "changes": {
+    "CMakeLists.txt": "44f9c40 7adbcd3 8cd8d6c",
+    "README.md": "a218dd0",
+    "application.h": "c3b6a8e 5aa0daa 4364be5 5587258 f98d1d6 bd20e66 22d0af5",
+    "application_overview.cpp": "a98af7f f79c80f 2bea69e 715f3c3 c10a613 958c025 435a8c2 adb80e6 7f9ef24 a41ab5c 433039b dd80e30 a2c2c57 3a9f2ed e341643 6ebd6fa d79d4c9 20fdcc6 2f530d1 e694798 739d98d b52ecce 84faf8f 038acba 656e637 8ed8527 7ea9ec7 31c597f fef9f85 ba1f99d 4712d2d 734e330 dc1ac81 59d423e a486423 6d8377b 50b0bcb bfa553e e013ad1 a967cf8 1f3eff0 8adf98d 01eb280 a4d4c30 7a7815c a1bcd84 1639b6e 5808318 071917c 5a82638 4d62362 626381e c00a9ee f451581 b928676 46729b8 52ad660 6297fc5 23dad65 b384058 8c90d43 db2eeaf c7bbfe6 3277315 33212e3 c60356b 40f66da 6fed869 6cab7a1 c0673fe 9078ded 7987ebb 080a36c a13ce7a abde07d 6a73293 a40fd8b 7c06ca5 631bf32 eee1738 641edcc 84d63ec 7d060bc db42745 e5dc1a3 d6fbaa1 7e157a7 9404b2e b2725b7 061130e 92ce73d 1d6594f a6a737e d5d7dec e8b2f01 b7555d0 63616c0 a50e74a 1891955 821fad2 c640c31 4a7ad82 fb0e28a",
+    "application_view.cpp": "aa20bed",
+    "overview.cpp": "c3b6a8e 5f1bfe9 ba3f66c 715f3c3 516e640 b36397a de6ce02 a319845 68a362e a986cc3 538c06f e922067 5b7a669 0d9dd58 b0bf1c8 35b8f2e 403df10 a220929 5c2250e 0c794fa 1b7cd7e df127f8 f68fd6d 073b0ba 65e2c47 bb7aad4 950518f 3cd4916 c45cf02 0901c55 f0989c8 5988296 a3b6cb5 0649769 8adf98d ec410fe 81f611e db2eeaf 97c4e26 7803c01 c70245b d736066 2c55c6f 12946fc 9504bd3 9fcdffe 17f9e08 a278ccb 8aa15a2 fdeeac1 58fbb51 1a3f1de a693176 660728a 222b069 a177b2e d014382 ce7b309 f5743f8 e0b8a32 deabf19 8aa87ab 0f48f7a bdf4136 d1954e4 c90d845 a4faf5b 7f9ef24 bdba7ed 2c295f3 4d39d39 095b40c 669aa9a ecfe7e9 641ba72 2d57361 7e2c734 d33ccfc 891c083 327cefb 787156b cc35e5c b09ecc8 1e6e768 65854fb 682e310 47cd5e2 7068ab9 fcac45d 9e748e3 42240bf aaf1643 cb4cba9 792bdea fee429f 1cfdf92 400c06f da7dbb9 58d8c3c 3a886a2 d20eec4 776c25c 51c60db 207bf72 2580da8 e4ff1df ad03ac0 a972597 42d82a0 86237f6 aa7b815",
+    "overview.h": "d261915 e8a5514 82b67de 7ca5f02 11195f6 6bb664b 70a98bd fff88c5 7fe9b16 bdba7ed 31cb6e7 9202b50 e048ea2 8fe306b 0a51998 efface5 dab7320 11aed35 4c055c1 787156b 69ee222 2e09b8a 594df31",
+    "source_graph.cpp": "744d785 25297d4 8809041 ca1d337 7ed58ee ca78c12 4891448",
+    "source_panel.h": "2f3a55e cf8ec9e",
+    "structure.h": "91a0060 eeff9af b90234a 8878934",
+    "tests/agent_activity_test.cpp": "7e1ace2 fef9007",
+    "tests/agent_windows_test.cpp": "6867827 4be77d1 8aeefaf da55585 fef9007 326126a 9181150 cad85e9 d442834 bd97d01 77df0d2 5c0d9b4 878931d f60a72b 5f7b778 cfb1ea5 a1213e5 027807d cafb089 27978b0 f21f86e cabd1cb ca7afa8 ac5f657 1101f87 bbcd13a",
+    "tests/structure_test.cpp": "c3b6a8e 49a76af e67996b ed7dc8a 3344af6 9726a81 41a6f92 5a6dd6d eb14d0b ddf299d 3c4f1f5 7998749 9681c8f 339683b 9b06a25 20533b5 ce8a324 8fdac5d a9a0a07 3ac2d4c 54f7670 3df6be4 10c1b4f 816d2f8 032436e a981f02 9b80ac6 839f19c 63c3923 b5c0682 51ed507 81f8230 10e3333 f8adcaf 338c082 07b91d9 505c615 a73e88b 8117e17 53a05ca 97fa266 8157c85 1ad76d9 c367010 a13ce7a 8688559 0d71674 bbb2302 179cdbd"
+   }
   }
  ]
 }
