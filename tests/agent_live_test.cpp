@@ -10,6 +10,8 @@
 #include <stdexcept>
 #include <unistd.h>
 
+using namespace std::chrono_literals;
+
 namespace {
 bool has_test_reply(const Conversation& model)
 {
@@ -45,7 +47,7 @@ void test_contextual_send(const std::string& root)
     model.canvas_context = "Isolated canvas transport test. No project files are involved.";
     AgentClient client(TEST_PYTHON, TEST_BRIDGE);
     bool submitted = false, acknowledged = false, checking_title = false;
-    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(60);
+    const auto deadline = std::chrono::steady_clock::now() + 60s;
     while (std::chrono::steady_clock::now() < deadline) {
         pollfd fd{client.event_fd(), POLLIN, 0};
         poll(&fd, 1, 100);
@@ -101,7 +103,7 @@ int main()
         return 77;
     try {
         AgentClient client(TEST_PYTHON, TEST_BRIDGE);
-        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(15);
+        const auto deadline = std::chrono::steady_clock::now() + 15s;
         while (std::chrono::steady_clock::now() < deadline) {
             pollfd fd{client.event_fd(), POLLIN, 0};
             poll(&fd, 1, 100);

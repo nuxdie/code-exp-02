@@ -38,7 +38,7 @@ std::string source_excerpt(const SourcePanel& source, int line)
     const int first = std::max(0, line - 5);
     const int last = std::min(static_cast<int>(source.text.size()), line + 8);
     for (int i = first; i < last; ++i)
-        text += std::to_string(i + 1) + ": " + source.text[i] + "\n";
+        text += std::format("{}: {}\n", i + 1, source.text[i]);
     return bounded_text(std::move(text), 6000);
 }
 std::string preview_excerpt(std::string text)
@@ -59,7 +59,7 @@ std::string context_preview_text(const lsp::Json& context)
     std::string text = "Context included";
     const auto path = context.value("path", "");
     if (!path.empty()) {
-        text += "\n" + path + ":" + std::to_string(context.value("line", 1));
+        text += std::format("\n{}:{}", path, context.value("line", 1));
         const auto symbol = context.value("symbol", "");
         if (!symbol.empty())
             text += " · " + symbol;
@@ -160,7 +160,7 @@ Application::prompt_source_range(const SourcePanel& panel) const
     }
     const int line = context.value("line", 1) - 1;
     if (context.value("source_version", panel.version) != panel.version || line < 0 ||
-        line >= static_cast<int>(panel.text.size()))
+        line >= std::ssize(panel.text))
         return std::nullopt;
     std::size_t begin = 0;
     for (int i = 0; i < line; ++i)
@@ -218,8 +218,8 @@ void Application::render_agent_context()
     const auto path = chat->context.value("path", "");
     std::string text;
     if (!path.empty())
-        text = "[" + popup_literal(path) + ":" + std::to_string(chat->context.value("line", 1)) +
-               "](" + path + ":" + std::to_string(chat->context.value("line", 1)) + ")";
+        text = std::format("[{0}:{2}]({1}:{2})", popup_literal(path), path,
+                           chat->context.value("line", 1));
     const auto symbol = chat->context.value("symbol", "");
     if (!symbol.empty())
         text += (text.empty() ? "" : "\n") + popup_literal(symbol);

@@ -3,7 +3,7 @@
 namespace {
 // Prose is set as prose: a serif face, upright, with the comment marker left out. Text in
 // backticks stays in the code face.
-void set_as_prose(PangoAttrList* attributes, const std::string& line, const ProseLine& prose,
+void set_as_prose(PangoAttrList* attributes, std::string_view line, const ProseLine& prose,
                   const char* code_family)
 {
     auto add = [&](PangoAttribute* attribute, std::size_t begin, std::size_t end) {
@@ -33,11 +33,11 @@ void set_as_prose(PangoAttrList* attributes, const std::string& line, const Pros
 }
 } // namespace
 
-LayoutHandle Application::make_line(const std::string& line, const std::vector<Token>& tokens,
+LayoutHandle Application::make_line(std::string_view line, const std::vector<Token>& tokens,
                                     const ProseLine* prose)
 {
     LayoutHandle layout{pango_layout_copy(base_layout.get())};
-    pango_layout_set_text(layout.get(), line.c_str(), static_cast<int>(line.size()));
+    pango_layout_set_text(layout.get(), line.data(), static_cast<int>(line.size()));
     const AttributesHandle attributes{pango_attr_list_new()};
     pango_attr_list_insert(attributes.get(), pango_attr_font_features_new("liga=1,clig=1,calt=1"));
     for (const auto& token : tokens) {
@@ -157,7 +157,7 @@ SourceHit Application::fold_at(Vec2 screen)
         if (y < 0)
             continue;
         const int row = static_cast<int>(y / line_height);
-        if (row >= static_cast<int>(panel.folded.source_lines.size()))
+        if (row >= std::ssize(panel.folded.source_lines))
             continue;
         const int line = panel.folded.source_lines[row];
         const auto block = std::ranges::find(panel.folds, line, &FoldBlock::first);
@@ -237,7 +237,7 @@ void Application::draw_popup()
     }
 }
 
-void Application::add_popup_syntax(PangoAttrList* attributes, const std::string& text,
+void Application::add_popup_syntax(PangoAttrList* attributes, std::string_view text,
                                    std::size_t offset, HighlightState& state)
 {
     auto* font = pango_attr_font_desc_new(font_description(monospace_family, 14).get());
@@ -305,10 +305,8 @@ void Application::configure_document(PangoLayout* layout, const PopupDocument& d
     pango_attr_list_insert(attributes.get(), pango_attr_font_features_new("liga=1,clig=1,calt=1"));
     style_document_spans(attributes.get(), document.styles);
     HighlightState state;
-    std::istringstream input(document.text);
-    std::string line;
     std::size_t offset = 0, index = 0;
-    while (std::getline(input, line)) {
+    for (const std::string_view line : lines_of(document.text)) {
         if (index < document.code_lines.size() && document.code_lines[index])
             add_popup_syntax(attributes.get(), line, offset, state);
         else
@@ -340,11 +338,9 @@ void compact_popup_layout(PangoLayout* layout, const PopupDocument& document, bo
         scale->end_index = static_cast<guint>(span.begin + span.length);
         pango_attr_list_change(attributes.get(), scale);
     }
-    std::istringstream input(document.text);
-    std::string line;
     std::size_t offset = 0, row = 0;
     bool previous_blank = true;
-    while (std::getline(input, line)) {
+    for (const std::string_view line : lines_of(document.text)) {
         const bool blank = line.find_first_not_of(" \t\r") == std::string::npos;
         const bool code = row < document.code_lines.size() && document.code_lines[row];
         if (blank && !code && prose) {

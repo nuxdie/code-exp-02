@@ -11,7 +11,7 @@ constexpr double edge_margin = 10;
 CanvasRect Application::connection_box(const ConnectionEnd& end)
 {
     const auto panel = std::ranges::find(panels, end.uri, &SourcePanel::uri);
-    if (panel == panels.end() || end.line >= static_cast<int>(panel->text.size()))
+    if (panel == panels.end() || end.line >= std::ssize(panel->text))
         return {};
     const auto word = word_bounds(*panel, end.line, end.begin, end.end);
     return {camera.world_to_screen(word.origin, viewport()),

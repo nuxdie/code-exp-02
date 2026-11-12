@@ -10,12 +10,13 @@
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 struct ActivityLines {
     int first = -1, last = -1; // Zero based; -1 denotes the file header.
 };
-std::vector<ActivityLines> activity_lines(const std::string& diff);
+std::vector<ActivityLines> activity_lines(std::string_view diff);
 
 struct ActivityTouch {
     std::string path;

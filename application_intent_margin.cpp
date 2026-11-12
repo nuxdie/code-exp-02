@@ -45,7 +45,7 @@ void Application::load_intent_margin()
 void Application::poll_intent_margin()
 {
     auto& loading = intent_margin.loading;
-    if (!loading.valid() || loading.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
+    if (!loading.valid() || loading.wait_for(0s) != std::future_status::ready)
         return;
     const auto view = nlohmann::json::parse(loading.get(), nullptr, false);
     intent_margin.view = parse_intent_view(view);
@@ -158,8 +158,7 @@ void Application::draw_intent_note()
         }
     }
     const auto panel = std::ranges::find(panels, path, &SourcePanel::path);
-    if (!run || panel == panels.end() ||
-        line >= static_cast<int>(panel->folded.display_lines.size()))
+    if (!run || panel == panels.end() || line >= std::ssize(panel->folded.display_lines))
         return;
     const auto text = intent_note(margin.view, *run, margin.pinned.has_value());
     if (text.empty())
@@ -264,7 +263,7 @@ std::string Application::record_turn_intent(const lsp::Json& call)
                                          : " --intent " + shell_quote(intent)) +
                          " >/dev/null 2>&1";
     std::erase_if(intent_writes, [](const auto& write) {
-        return write.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+        return write.wait_for(0s) == std::future_status::ready;
     });
     // The store change is a project file change, which reloads the margin when it lands.
     intent_writes.push_back(

@@ -57,7 +57,7 @@ void Application::draw_chat_questions()
     chat->hits.push_back({ChatHit::Kind::Text, {point, document.size}, 0, document.layout.get()});
     if (user_input) {
         for (std::size_t i = 0; i < options.size(); ++i) {
-            auto& label = chat->messages["__option_" + std::to_string(i)];
+            auto& label = chat->messages[std::format("__option_{}", i)];
             update_document(label, options[i].value("label", ""),
                             static_cast<int>(chat->body.size.x - 24), false);
             const CanvasRect bounds{{point.x + 12, point.y + document.size.y + i * 30},

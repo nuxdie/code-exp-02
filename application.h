@@ -17,6 +17,7 @@
 #include "source_panel.h"
 #include "syntax.h"
 #include "system_theme.h"
+#include "text.h"
 #include "text_input.h"
 #include "viewer_config.h"
 #include <X11/cursorfont.h>
@@ -30,6 +31,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fontconfig/fontconfig.h>
+#include <format>
 #include <fstream>
 #include <future>
 #include <iostream>
@@ -40,10 +42,11 @@
 #include <poll.h>
 #include <set>
 #include <span>
-#include <sstream>
 #include <thread>
 #include <unordered_set>
 #include <vector>
+
+using namespace std::chrono_literals;
 
 class Application {
     friend struct ApplicationTestAccess;
@@ -393,7 +396,7 @@ class Application {
     void save_session();
     void schedule_save();
     int benchmark_run();
-    LayoutHandle make_line(const std::string& line, const std::vector<Token>& tokens,
+    LayoutHandle make_line(std::string_view line, const std::vector<Token>& tokens,
                            const ProseLine* prose = nullptr);
     SourcePanel make_panel(const std::string& path, const std::string& text,
                            ImagePreview* preview = nullptr);
@@ -469,7 +472,7 @@ class Application {
                             bool prose);
     void update_document(DocumentView& view, const std::string& source, int width,
                          bool prose = true);
-    void add_popup_syntax(PangoAttrList* attributes, const std::string& text, std::size_t offset,
+    void add_popup_syntax(PangoAttrList* attributes, std::string_view text, std::size_t offset,
                           HighlightState& state);
     void apply_diagnostics(const SourcePanel& panel, std::size_t line, PangoAttrList* attributes);
     void language_error(const lsp::Message& message);

@@ -21,7 +21,7 @@ bool Application::initialize()
         advance_workspace_load();
         if (workspace_load && (workspace_load->reading.valid() || workspace_load->detail.valid() ||
                                workspace_load->layout.valid()))
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::sleep_for(1ms);
     }
     return true;
 }
@@ -137,7 +137,7 @@ int Application::benchmark_run()
             visible = true;
             break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::this_thread::sleep_for(5ms);
     }
     if (!visible) {
         std::cerr << "Benchmark window did not become visible.\n";
@@ -209,7 +209,7 @@ int Application::run_window()
             draw();
             redraw = false;
             last_frame = now;
-            next_frame = now + std::chrono::microseconds(8333);
+            next_frame = now + 8333us;
         }
         if (XPending(display) > 0)
             continue;
@@ -297,36 +297,17 @@ void Application::wait_for_work(Clock::time_point next_frame)
 {
     // Sleep until either new input or the next animation frame is due.
     // An idle window blocks indefinitely and consumes no animation CPU.
-    int timeout = -1;
-    if (redraw || zoom_animation.active(camera)) {
-        timeout = static_cast<int>(std::max(
-            0.0,
-            std::ceil(
-                std::chrono::duration<double, std::milli>(next_frame - Clock::now()).count())));
-    }
-    if (hover_due != Clock::time_point::max()) {
-        const int hover_wait = static_cast<int>(std::max(
-            0.0, std::ceil(
-                     std::chrono::duration<double, std::milli>(hover_due - Clock::now()).count())));
-        timeout = timeout < 0 ? hover_wait : std::min(timeout, hover_wait);
-    }
-    if (popup_dismiss_due != Clock::time_point::max()) {
-        const int dismiss_wait = static_cast<int>(std::max(
-            0.0,
-            std::ceil(std::chrono::duration<double, std::milli>(popup_dismiss_due - Clock::now())
-                          .count())));
-        timeout = timeout < 0 ? dismiss_wait : std::min(timeout, dismiss_wait);
-    }
-    const auto pending =
-        std::min({save_due, agent_reconnect_due(), chat_animation_due, activity_animation_due});
-    if (pending != Clock::time_point::max()) {
-        const int delay = static_cast<int>(std::max(
-            0.0,
-            std::ceil(std::chrono::duration<double, std::milli>(pending - Clock::now()).count())));
-        timeout = timeout < 0 ? delay : std::min(timeout, delay);
-    }
+    auto deadline = std::min({hover_due, popup_dismiss_due, save_due, agent_reconnect_due(),
+                              chat_animation_due, activity_animation_due});
+    if (redraw || zoom_animation.active(camera))
+        deadline = std::min(deadline, next_frame);
     if (workspace_load)
-        timeout = timeout < 0 ? 8 : std::min(timeout, 8);
+        deadline = std::min(deadline, Clock::now() + 8ms);
+    int timeout = -1;
+    if (deadline != Clock::time_point::max()) {
+        const auto wait = std::chrono::ceil<std::chrono::milliseconds>(deadline - Clock::now());
+        timeout = static_cast<int>(std::max<std::int64_t>(0, wait.count()));
+    }
     std::vector<pollfd> connections = {
         {ConnectionNumber(display), POLLIN, 0},
         {wake_fd(language_server), POLLIN, 0},

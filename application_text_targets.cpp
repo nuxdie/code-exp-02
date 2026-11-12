@@ -53,7 +53,7 @@ TextTarget Application::source_text_target(Vec2 pointer)
             continue;
         const auto row =
             static_cast<int>((world.y - panel.bounds.origin.y - header_height) / line_height);
-        if (row < 0 || row >= static_cast<int>(panel.folded.source_lines.size()))
+        if (row < 0 || row >= std::ssize(panel.folded.source_lines))
             continue;
         const auto line = panel.folded.source_lines[row];
         int index = 0, trailing = 0;

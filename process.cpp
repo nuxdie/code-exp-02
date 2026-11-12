@@ -11,6 +11,8 @@
 #include <thread>
 #include <vector>
 
+using namespace std::chrono_literals;
+
 extern char** environ;
 
 namespace {
@@ -24,7 +26,7 @@ bool exited_within(pid_t child, std::chrono::milliseconds patience)
             return true;
         if (Clock::now() >= deadline)
             return false;
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(10ms);
     }
 }
 } // namespace
@@ -63,7 +65,7 @@ ChildProcess::ChildProcess(std::span<const std::string> arguments, const std::st
 ChildProcess& ChildProcess::operator=(ChildProcess&& other) noexcept
 {
     if (this != &other) {
-        stop(std::chrono::milliseconds(0));
+        stop(0ms);
         socket = std::move(other.socket);
         child = std::exchange(other.child, -1);
     }
@@ -72,7 +74,7 @@ ChildProcess& ChildProcess::operator=(ChildProcess&& other) noexcept
 
 ChildProcess::~ChildProcess()
 {
-    stop(std::chrono::milliseconds(0));
+    stop(0ms);
 }
 
 void ChildProcess::stop(std::chrono::milliseconds patience)
@@ -82,7 +84,7 @@ void ChildProcess::stop(std::chrono::milliseconds patience)
     if (leaving <= 0 || exited_within(leaving, patience))
         return;
     kill(leaving, SIGTERM);
-    if (exited_within(leaving, std::chrono::milliseconds(200)))
+    if (exited_within(leaving, 200ms))
         return;
     kill(leaving, SIGKILL);
     waitpid(leaving, nullptr, 0);

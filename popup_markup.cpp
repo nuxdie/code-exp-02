@@ -4,11 +4,11 @@
 #include <algorithm>
 #include <cctype>
 #include <charconv>
-#include <sstream>
+#include <format>
 #include <string_view>
 
 namespace {
-std::size_t web_url_length(const std::string& text, std::size_t begin)
+std::size_t web_url_length(std::string_view text, std::size_t begin)
 {
     const auto prefix = starts_at(text, begin, "https://") ? 8 : 7;
     if (!starts_at(text, begin, "http://") && prefix != 8)
@@ -54,12 +54,11 @@ std::string tag_name(std::string tag)
 
 class HtmlDocumentation {
   public:
-    std::string convert(const std::string& text)
+    std::string convert(std::string_view text)
     {
-        std::istringstream input(text);
-        std::string line, output;
+        std::string output;
         bool fenced = false;
-        while (std::getline(input, line)) {
+        for (const std::string_view line : lines_of(text)) {
             const auto first = line.find_first_not_of(" \t");
             const bool fence = first != std::string::npos &&
                                (starts_at(line, first, "```") || starts_at(line, first, "~~~"));
@@ -75,7 +74,7 @@ class HtmlDocumentation {
     bool pre = false;
     bool code = false;
 
-    std::string convert_tag(const std::string& name, const std::string& literal)
+    std::string convert_tag(std::string_view name, std::string_view literal)
     {
         if (name == "pre") {
             pre = true;
@@ -101,18 +100,18 @@ class HtmlDocumentation {
             name[2] >= '1' && name[2] <= '6')
             return "\n";
         if (pre || code)
-            return literal;
+            return std::string(literal);
         if (name == "br" || name == "p" || name == "/p" || name == "div" || name == "/div")
             return "\n";
         if (name == "li")
             return "\n• ";
-        const std::vector<std::string> formatting{"em", "/em", "strong", "/strong", "b",    "/b",
-                                                  "i",  "/i",  "a",      "/a",      "span", "/span",
-                                                  "ul", "/ul", "ol",     "/ol",     "/li"};
-        return std::ranges::find(formatting, name) != formatting.end() ? "" : literal;
+        static constexpr std::array<std::string_view, 17> formatting{
+            "em", "/em",  "strong", "/strong", "b",   "/b", "i",   "/i", "a",
+            "/a", "span", "/span",  "ul",      "/ul", "ol", "/ol", "/li"};
+        return std::ranges::contains(formatting, name) ? "" : std::string(literal);
     }
 
-    std::string convert_line(const std::string& line)
+    std::string convert_line(std::string_view line)
     {
         std::string result;
         std::size_t position = 0;
@@ -135,14 +134,15 @@ class HtmlDocumentation {
                 break;
             }
             const auto literal = line.substr(position, end - position + 1);
-            result += convert_tag(tag_name(line.substr(position + 1, end - position - 1)), literal);
+            result += convert_tag(
+                tag_name(std::string(line.substr(position + 1, end - position - 1))), literal);
             position = end + 1;
         }
         return decode_entities(result);
     }
 };
 
-std::string inline_literals(const std::string& source)
+std::string inline_literals(std::string_view source)
 {
     std::string result;
     for (std::size_t position = 0; position < source.size(); ++position) {
@@ -171,7 +171,7 @@ class InlineDocumentation {
     {
     }
 
-    std::string parse(const std::string& line)
+    std::string parse(std::string_view line)
     {
         std::size_t position = 0;
         while (position < line.size()) {
@@ -188,7 +188,7 @@ class InlineDocumentation {
     std::size_t offset;
     std::string result;
 
-    bool web_url(const std::string& line, std::size_t& position)
+    bool web_url(std::string_view line, std::size_t& position)
     {
         const bool angle = line[position] == '<';
         const auto begin = position + (angle ? 1 : 0);
@@ -202,7 +202,7 @@ class InlineDocumentation {
         return true;
     }
 
-    bool entity(const std::string& line, std::size_t& position)
+    bool entity(std::string_view line, std::size_t& position)
     {
         if (!starts_at(line, position, "&#"))
             return false;
@@ -218,7 +218,7 @@ class InlineDocumentation {
         return true;
     }
 
-    bool code(const std::string& line, std::size_t& position)
+    bool code(std::string_view line, std::size_t& position)
     {
         if (line[position] != '`')
             return false;
@@ -235,7 +235,7 @@ class InlineDocumentation {
         return true;
     }
 
-    bool emphasis(const std::string& line, std::size_t& position)
+    bool emphasis(std::string_view line, std::size_t& position)
     {
         const char marker = line[position];
         if (marker != '*' && marker != '_')
@@ -255,7 +255,7 @@ class InlineDocumentation {
         return true;
     }
 
-    bool link(const std::string& line, std::size_t& position)
+    bool link(std::string_view line, std::size_t& position)
     {
         if (line[position] != '[')
             return false;
@@ -276,7 +276,8 @@ class InlineDocumentation {
         auto destination = line.substr(middle + 2, end - middle - 2);
         if (destination.size() >= 2 && destination.front() == '<' && destination.back() == '>')
             destination = destination.substr(1, destination.size() - 2);
-        document.styles.push_back({offset + result.size(), length, PopupStyle::Link, destination});
+        document.styles.push_back(
+            {offset + result.size(), length, PopupStyle::Link, std::string(destination)});
         result += label;
         position = end + 1;
         return true;
@@ -300,7 +301,7 @@ bool format_prose(std::string& line)
     return heading;
 }
 
-std::string unescape_documentation(const std::string& line)
+std::string unescape_documentation(std::string_view line)
 {
     std::string result;
     for (std::size_t i = 0; i < line.size(); ++i) {
@@ -334,27 +335,28 @@ void add_web_links(PopupDocument& document)
 
 } // namespace
 
-std::vector<PopupSpan> web_links(const std::string& text)
+std::vector<PopupSpan> web_links(std::string_view text)
 {
     std::vector<PopupSpan> links;
     auto begin = text.find("http");
     while (begin != std::string::npos) {
         const auto length = web_url_length(text, begin);
         if (length)
-            links.push_back({begin, length, PopupStyle::Link, text.substr(begin, length)});
+            links.push_back(
+                {begin, length, PopupStyle::Link, std::string(text.substr(begin, length))});
         begin = text.find("http", begin + std::max(std::size_t{1}, length));
     }
     return links;
 }
 
-PopupDocument popup_document(const std::string& text, bool markup)
+PopupDocument popup_document(std::string_view text, bool markup)
 {
     PopupDocument document;
     HtmlDocumentation html;
-    std::istringstream input(markup ? html.convert(text) : text);
-    std::string line;
+    const std::string source = markup ? html.convert(text) : std::string(text);
     std::string fence;
-    while (std::getline(input, line)) {
+    for (const std::string_view row : lines_of(source)) {
+        std::string line(row);
         const auto first = line.find_first_not_of(" \t");
         const auto prefix = first == std::string::npos ? "" : line.substr(first, 3);
         if (markup && (prefix == "```" || prefix == "~~~")) {
@@ -381,13 +383,13 @@ PopupDocument popup_document(const std::string& text, bool markup)
     return document;
 }
 
-std::string hover_documentation(const std::string& markdown)
+std::string hover_documentation(std::string_view markdown)
 {
-    std::istringstream input(markdown);
-    std::string line, result;
+    std::string result;
     bool literal_fence = false;
     bool recovered_fence = false;
-    while (std::getline(input, line)) {
+    for (const std::string_view row : lines_of(markdown)) {
+        std::string line(row);
         const auto first = line.find_first_not_of(" \t");
         const bool fence = first != std::string::npos && starts_at(line, first, "```");
         if (fence && !recovered_fence)
@@ -411,12 +413,13 @@ std::string hover_documentation(const std::string& markdown)
     return result;
 }
 
-std::string popup_literal(const std::string& text)
+std::string popup_literal(std::string_view text)
 {
     std::string escaped;
     for (const char byte : text) {
         if (std::string_view("&<>*_`[]$\\#~-+").contains(byte))
-            escaped += "&#" + std::to_string(static_cast<unsigned char>(byte)) + ";";
+            escaped +=
+                std::format("&#{};", static_cast<unsigned>(static_cast<unsigned char>(byte)));
         else
             escaped += byte;
     }

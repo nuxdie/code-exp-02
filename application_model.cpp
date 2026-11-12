@@ -8,7 +8,7 @@ std::optional<std::size_t> source_line_hit(PangoLayout* layout, const std::strin
     if (!pango_layout_xy_to_index(layout, static_cast<int>(x * PANGO_SCALE),
                                   font_height * PANGO_SCALE / 2, &index, &trailing))
         return {};
-    if (index < 0 || index >= static_cast<int>(text.size()) ||
+    if (index < 0 || index >= std::ssize(text) ||
         std::isspace(static_cast<unsigned char>(text[index])))
         return {};
     return static_cast<std::size_t>(index);
@@ -37,9 +37,7 @@ SourcePanel Application::make_panel(const std::string& path, const std::string& 
     }
     HighlightState highlight_state;
     const auto kind = text_kind(path);
-    std::istringstream source(text);
-    std::string line;
-    while (std::getline(source, line)) {
+    for (const std::string_view line : lines_of(text)) {
         const auto styled = style_line(line, kind, highlight_state, panel.cmake);
         const auto& tokens = styled.tokens;
         auto layout = make_line(line, tokens, styled.prose ? &*styled.prose : nullptr);
@@ -48,7 +46,7 @@ SourcePanel Application::make_panel(const std::string& path, const std::string& 
         text_width = std::max(text_width, line_width);
         panel.lexical.emplace_back(pango_attr_list_ref(pango_layout_get_attributes(layout.get())));
         panel.lines.push_back(std::move(layout));
-        panel.text.push_back(line);
+        panel.text.emplace_back(line);
     }
     panel.bounds.size = {static_cast<double>(text_width + 4),
                          header_height + static_cast<double>(panel.lines.size()) * line_height};
@@ -70,7 +68,7 @@ void Application::update_mesh(SourcePanel& panel)
         const auto block = std::ranges::find(panel.folds, source, &FoldBlock::first);
         if (block != panel.folds.end()) {
             if (block->collapsed) {
-                const auto summary = "  … " + std::to_string(block->last - block->first) + " lines";
+                const auto summary = std::format("  … {} lines", block->last - block->first);
                 auto preview = make_line(summary, {{0, summary.size(), Syntax::Comment}});
                 int width = 0;
                 pango_layout_get_pixel_size(panel.lines[source].get(), &width, nullptr);
@@ -187,7 +185,7 @@ SourceHit Application::hit_test(Vec2 screen)
         if (x < 0 || x >= panel.bounds.size.x || y < 0)
             continue;
         const int row = static_cast<int>(y / line_height);
-        if (row >= static_cast<int>(panel.folded.source_lines.size()))
+        if (row >= std::ssize(panel.folded.source_lines))
             continue;
         const int line = panel.folded.source_lines[row];
         if (const auto byte =
@@ -280,7 +278,7 @@ bool Application::jump_to(const lsp::Json& location)
         found = std::prev(panels.end());
     }
     const int line = range["start"].value("line", 0);
-    if (line < 0 || line >= static_cast<int>(found->lines.size()))
+    if (line < 0 || line >= std::ssize(found->lines))
         return false;
     remember_view();
     const double old_height = found->bounds.size.y;

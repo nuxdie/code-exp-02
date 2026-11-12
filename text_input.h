@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <string>
+#include <string_view>
 #include <utility>
 
 class TextInput {
@@ -9,7 +10,7 @@ class TextInput {
     std::string text;
     std::size_t cursor = 0, anchor = 0;
     void set(std::string value);
-    void insert(const std::string& value);
+    void insert(std::string_view value);
     void erase(bool backwards);
     void move(int direction, bool extend);
     void line_end(bool end, bool extend);

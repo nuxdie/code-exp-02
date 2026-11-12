@@ -182,5 +182,5 @@ void Application::save_session()
 }
 void Application::schedule_save()
 {
-    save_due = Clock::now() + std::chrono::milliseconds(500);
+    save_due = Clock::now() + 500ms;
 }

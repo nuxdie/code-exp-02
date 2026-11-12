@@ -12,6 +12,7 @@
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
+#include <format>
 #include <iterator>
 #include <map>
 #include <mutex>
@@ -22,8 +23,10 @@
 #include <thread>
 #include <unistd.h>
 
+using namespace std::chrono_literals;
+
 namespace lsp {
-std::string file_uri(const std::string& path)
+std::string file_uri(std::string_view path)
 {
     const auto absolute = std::filesystem::absolute(path).lexically_normal().string();
     std::string uri = "file://";
@@ -40,7 +43,7 @@ std::string file_uri(const std::string& path)
     return uri;
 }
 
-std::string uri_path(const std::string& uri)
+std::string uri_path(std::string_view uri)
 {
     if (!uri.starts_with("file://"))
         return {};
@@ -96,7 +99,7 @@ int byte_to_utf16(std::string_view text, std::size_t byte)
 std::string frame(const Json& message)
 {
     const auto body = message.dump();
-    return "Content-Length: " + std::to_string(body.size()) + "\r\n\r\n" + body;
+    return std::format("Content-Length: {}\r\n\r\n{}", body.size(), body);
 }
 
 void Framer::append(std::string_view data)
@@ -147,8 +150,7 @@ std::vector<SemanticToken> semantic_tokens(const Json& data, const std::vector<s
             return {};
         line += delta;
         column = delta ? offset : column + offset;
-        if (line < 0 || line >= static_cast<int>(lines.size()) || type < 0 ||
-            type >= static_cast<int>(legend.size()))
+        if (line < 0 || line >= std::ssize(lines) || type < 0 || type >= std::ssize(legend))
             continue;
         const auto begin = utf16_to_byte(lines[line], column);
         const auto end = utf16_to_byte(lines[line], column + length);
@@ -468,8 +470,7 @@ struct LanguageServer::Impl {
             if (leaving && !shutdown_id) {
                 shutdown_id = next_request_id++;
                 send_message({{"id", shutdown_id}, {"method", "shutdown"}, {"params", nullptr}});
-                shutdown_deadline =
-                    std::chrono::steady_clock::now() + std::chrono::milliseconds(300);
+                shutdown_deadline = std::chrono::steady_clock::now() + 300ms;
             }
             if ((exit_sent && outgoing.empty()) ||
                 std::chrono::steady_clock::now() >= shutdown_deadline)
@@ -503,7 +504,7 @@ struct LanguageServer::Impl {
         } catch (const std::exception& error) {
             publish({"error", "", 0, {}, error.what()});
         }
-        server.stop(std::chrono::milliseconds(100));
+        server.stop(100ms);
     }};
 };
 

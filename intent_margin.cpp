@@ -1,9 +1,11 @@
 #include "intent_margin.h"
 
+#include "text.h"
+
 #include <algorithm>
 #include <cmath>
+#include <format>
 #include <functional>
-#include <sstream>
 
 const IntentRun* IntentView::run_at(const std::string& path, int line) const
 {
@@ -19,8 +21,7 @@ const IntentRun* IntentView::run_at(const std::string& path, int line) const
 const std::string& IntentView::intent_of(const IntentRun& run) const
 {
     static const std::string none;
-    return run.turn >= 0 && run.turn < static_cast<int>(turns.size()) ? turns[run.turn].intent
-                                                                      : none;
+    return run.turn >= 0 && run.turn < std::ssize(turns) ? turns[run.turn].intent : none;
 }
 
 IntentView parse_intent_view(const nlohmann::json& view)
@@ -81,7 +82,7 @@ std::string clipped(std::string text, std::size_t limit)
 
 std::string intent_note(const IntentView& view, const IntentRun& run, bool detailed)
 {
-    if (run.turn < 0 || run.turn >= static_cast<int>(view.turns.size()))
+    if (run.turn < 0 || run.turn >= std::ssize(view.turns))
         return "";
     const auto& turn = view.turns[run.turn];
     const auto statement = view.statements.find(turn.intent);
@@ -89,9 +90,9 @@ std::string intent_note(const IntentView& view, const IntentRun& run, bool detai
     if (!detailed)
         return distilled ? statement->second : clipped(turn.said, 160);
     std::string note = distilled ? "**" + statement->second + "**\n\n" : "";
-    std::istringstream said(clipped(turn.said, 600));
-    for (std::string line; std::getline(said, line);)
-        note += line.empty() ? "\n" : "*" + popup_literal(line) + "*\n";
+    const auto said = clipped(turn.said, 600);
+    for (const std::string_view line : lines_of(said))
+        note += line.empty() ? "\n" : std::format("*{}*\n", popup_literal(line));
     if (!turn.why.empty())
         note += "\n" + clipped(turn.why, 900);
     return note;

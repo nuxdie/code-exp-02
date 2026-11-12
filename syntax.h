@@ -1,6 +1,7 @@
 #pragma once
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 enum class Syntax {
@@ -42,16 +43,16 @@ enum class TextKind {
     HashCode, // "#" starts a comment
     Prose     // a document: every line is prose, except fenced code
 };
-TextKind text_kind(const std::string& path);
+TextKind text_kind(std::string_view path);
 
 struct StyledLine {
     std::vector<Token> tokens;
     std::optional<ProseLine> prose;
 };
 
-Syntax semantic_syntax(const std::string& type);
-std::vector<Token> highlight(const std::string& line, HighlightState& state, bool cmake = false);
+Syntax semantic_syntax(std::string_view type);
+std::vector<Token> highlight(std::string_view line, HighlightState& state, bool cmake = false);
 
 // Tokens for one line of a file, and whether the line reads as prose.
-StyledLine style_line(const std::string& line, TextKind kind, HighlightState& state,
+StyledLine style_line(std::string_view line, TextKind kind, HighlightState& state,
                       bool cmake = false);

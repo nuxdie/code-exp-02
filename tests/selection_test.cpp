@@ -131,7 +131,7 @@ struct ApplicationTestAccess {
     }
     static void expect_opened(const std::filesystem::path& log, const std::string& url)
     {
-        const auto deadline = Application::Clock::now() + std::chrono::seconds(2);
+        const auto deadline = Application::Clock::now() + 2s;
         while (Application::Clock::now() < deadline) {
             std::ifstream input(log);
             const std::string output{std::istreambuf_iterator<char>(input), {}};
@@ -139,7 +139,7 @@ struct ApplicationTestAccess {
                 std::filesystem::remove(log);
                 return;
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            std::this_thread::sleep_for(5ms);
         }
         expect(false, "Clicking a URL must pass the exact destination as one browser argument");
     }
@@ -246,7 +246,7 @@ struct ApplicationTestAccess {
             XGetWindowAttributes(app.display, app.window, &attributes);
             if (attributes.map_state == IsViewable)
                 break;
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            std::this_thread::sleep_for(5ms);
         }
         expect(attributes.map_state == IsViewable, "The selection test window must be mapped");
         test_source(app);

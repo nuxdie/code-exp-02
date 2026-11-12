@@ -12,6 +12,8 @@
 #include <sys/socket.h>
 #include <thread>
 
+using namespace std::chrono_literals;
+
 struct AgentClient::Impl {
     static constexpr std::size_t largest_message = 64 * 1024 * 1024;
     Mailbox<Json> received;
@@ -34,7 +36,7 @@ struct AgentClient::Impl {
                       publish({{"method", "canvas/disconnected"},
                                {"params", {{"message", error.what()}}}});
               }
-              bridge.stop(std::chrono::milliseconds(200));
+              bridge.stop(200ms);
           })
     {
     }

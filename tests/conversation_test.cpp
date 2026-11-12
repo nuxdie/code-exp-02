@@ -12,6 +12,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+using namespace std::chrono_literals;
+
 using Json = nlohmann::json;
 void expect(bool condition, const char* message)
 {
@@ -265,7 +267,7 @@ void test_bridge_error_survives_exit()
     std::vector<Json> messages;
     {
         AgentClient client(script.string(), "unused");
-        const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+        const auto deadline = std::chrono::steady_clock::now() + 500ms;
         while (std::chrono::steady_clock::now() < deadline) {
             pollfd fd{client.event_fd(), POLLIN, 0};
             poll(&fd, 1, 50);

@@ -40,10 +40,10 @@ void TextInput::place(std::size_t byte, bool extend)
     if (!extend)
         anchor = cursor;
 }
-void TextInput::insert(const std::string& value)
+void TextInput::insert(std::string_view value)
 {
     const auto [begin, end] = selection();
-    std::string clean = value;
+    std::string clean(value);
     std::erase(clean, '\0');
     text.replace(begin, end - begin, clean);
     cursor = anchor = begin + clean.size();

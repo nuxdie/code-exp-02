@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <thread>
 
+using namespace std::chrono_literals;
+
 namespace {
 unsigned preference = 1;
 void expect(bool condition, const char* message)
@@ -23,14 +25,14 @@ void read_setting(GDBusConnection*, const gchar*, const gchar*, const gchar*, co
 // NOLINTEND(readability-function-size)
 void await_theme(SystemTheme& theme, bool dark)
 {
-    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    const auto deadline = std::chrono::steady_clock::now() + 5s;
     while (std::chrono::steady_clock::now() < deadline) {
         while (g_main_context_iteration(nullptr, false)) {
         }
         const auto value = theme.take_change();
         if (value && *value == dark)
             return;
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::this_thread::sleep_for(5ms);
     }
     throw std::runtime_error("System theme did not follow the portal preference");
 }

@@ -91,10 +91,10 @@ struct ApplicationTestAccess {
         query(app, "return 42");
         expect(app.search.matches.size() == 1, "The live fixture must initially match");
         std::ofstream(root / "main.cpp") << "int replacement() { return 73; }\n";
-        const auto deadline = Application::Clock::now() + std::chrono::seconds(4);
+        const auto deadline = Application::Clock::now() + 4s;
         while (!app.search.matches.empty() && Application::Clock::now() < deadline) {
             app.poll_project();
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(10ms);
         }
         expect(app.search.active && app.search.matches.empty(),
                "Disk updates must refresh results without closing the active search");

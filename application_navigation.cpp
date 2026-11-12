@@ -41,8 +41,7 @@ void Application::remember_view(bool continuous)
         return;
     const auto now = Clock::now();
     const bool continuing =
-        continuous && navigation_continuous &&
-        (drag_button || now - navigation_input < std::chrono::milliseconds(350));
+        continuous && navigation_continuous && (drag_button || now - navigation_input < 350ms);
     if (!pending_view || !continuing) {
         finish_view();
         pending_view = current_view();

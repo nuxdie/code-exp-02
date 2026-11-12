@@ -69,8 +69,7 @@ void Application::advance_agent_activity()
         } else
             ++it;
     }
-    activity_animation_due =
-        agent_activity.active() ? now + std::chrono::milliseconds(16) : Clock::time_point::max();
+    activity_animation_due = agent_activity.active() ? now + 16ms : Clock::time_point::max();
 }
 
 void Application::draw_activity_highlights()

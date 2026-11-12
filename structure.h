@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <string>
+#include <string_view>
 #include <vector>
 
 struct FoldBlock {
@@ -88,7 +89,7 @@ inline std::vector<SymbolNode> symbol_tree(const lsp::Json& data)
 }
 
 namespace structure_text {
-inline int indent(const std::string& row)
+inline int indent(std::string_view row)
 {
     int width = 0;
     for (const char character : row) {
@@ -99,13 +100,13 @@ inline int indent(const std::string& row)
     return width;
 }
 
-inline bool listed(const std::vector<std::string>& words, const std::string& word)
+inline bool listed(const std::vector<std::string>& words, std::string_view word)
 {
     return std::ranges::find(words, word) != words.end();
 }
 
 // "class Store:" or "fn zoom_at(" name what follows the keyword.
-inline std::string named_by_keyword(const std::string& row, std::size_t first)
+inline std::string named_by_keyword(std::string_view row, std::size_t first)
 {
     static const std::vector<std::string> kinds{
         "class",    "struct", "enum",  "namespace", "def",    "fn",   "func",
@@ -118,13 +119,13 @@ inline std::string named_by_keyword(const std::string& row, std::size_t first)
         if (begin == std::string::npos)
             continue;
         const auto end = row.find_first_of(" \t(:{<;,", begin);
-        return row.substr(begin, end == std::string::npos ? end : end - begin);
+        return std::string(row.substr(begin, end == std::string::npos ? end : end - begin));
     }
     return "";
 }
 
 // "void Application::draw(double y)" names the word before its parenthesis.
-inline std::string named_by_call(const std::string& row)
+inline std::string named_by_call(std::string_view row)
 {
     const auto call = row.find('(');
     const auto last = row.find_last_not_of(" \t");
@@ -137,11 +138,11 @@ inline std::string named_by_call(const std::string& row)
     while (begin > 0 &&
            (std::isalnum(static_cast<unsigned char>(row[begin - 1])) || row[begin - 1] == '_'))
         --begin;
-    return row.substr(begin, end - begin);
+    return std::string(row.substr(begin, end - begin));
 }
 
 // What a line declares, or nothing for control flow and plain statements.
-inline std::string declared(const std::string& row)
+inline std::string declared(std::string_view row)
 {
     static const std::vector<std::string> control{"if",   "for",    "while",  "switch", "catch",
                                                   "else", "return", "do",     "elif",   "with",
@@ -154,7 +155,7 @@ inline std::string declared(const std::string& row)
     return name.empty() ? named_by_call(row) : name;
 }
 
-inline bool comment(const std::string& row, std::size_t first)
+inline bool comment(std::string_view row, std::size_t first)
 {
     const auto start = row.substr(first, 2);
     return start == "//" || start == "/*" || row[first] == '#' || row[first] == '*';
@@ -166,7 +167,7 @@ inline bool comment(const std::string& row, std::size_t first)
 // line is at the top level.
 inline std::string enclosing_name(const std::vector<std::string>& text, int line)
 {
-    if (line < 0 || line >= static_cast<int>(text.size()))
+    if (line < 0 || line >= std::ssize(text))
         return "";
     int limit = structure_text::indent(text[line]);
     for (int above = line - 1; above >= 0 && limit > 0; --above) {

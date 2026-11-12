@@ -27,11 +27,11 @@ struct ApplicationTestAccess {
     }
     static void await_symbols(Application& app)
     {
-        const auto deadline = Application::Clock::now() + std::chrono::seconds(8);
+        const auto deadline = Application::Clock::now() + 8s;
         while (app.panels.front().symbols.empty() && Application::Clock::now() < deadline) {
             for (const auto& message : app.language_server->take_messages())
                 app.handle_message(message);
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            std::this_thread::sleep_for(5ms);
         }
         expect(!app.panels.front().symbols.empty(),
                "The context fixture must have real language-server symbols");
@@ -657,7 +657,7 @@ struct ApplicationTestAccess {
                "The file under the pointer must always show its title");
         const auto shown =
             std::ranges::count_if(hits, [](const auto& hit) { return hit.size.x > 0; });
-        expect(shown >= 1 && (app.panels.size() < 3 || shown < static_cast<int>(hits.size())),
+        expect(shown >= 1 && (app.panels.size() < 3 || shown < std::ssize(hits)),
                "Far out, only the titles that fit may be drawn");
         app.camera = camera;
         app.zoom_animation.cancel(app.camera);

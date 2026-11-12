@@ -158,7 +158,7 @@ void Application::draw_chat_working(double y)
         const Vec2 point{bounds.origin.x + i * 12, y + 6 - lift};
         renderer->draw(dot.mesh, camera.world_to_screen(point, viewport()), camera.zoom);
     }
-    chat_animation_due = std::min(chat_animation_due, now + std::chrono::milliseconds(33));
+    chat_animation_due = std::min(chat_animation_due, now + 33ms);
 }
 
 void Application::draw_chat_controls()

@@ -1,11 +1,11 @@
 #include "source_panel.h"
 
 #include "syntax.h"
+#include "text.h"
 
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
-#include <sstream>
 
 std::string fold_identity(const SourcePanel& panel, int line)
 {
@@ -30,7 +30,7 @@ void collapse_long_blocks(std::vector<FoldBlock>& folds)
 }
 } // namespace
 
-std::vector<FoldBlock> brace_folds(const std::string& text, const std::string& path)
+std::vector<FoldBlock> brace_folds(std::string_view text, std::string_view path)
 {
     const auto name = std::filesystem::path(path).filename();
     const bool cmake = name == "CMakeLists.txt" || name.extension() == ".cmake";
@@ -38,9 +38,9 @@ std::vector<FoldBlock> brace_folds(const std::string& text, const std::string& p
     std::vector<FoldBlock> folds;
     std::vector<int> open;
     HighlightState state;
-    std::istringstream source(text);
-    std::string line;
-    for (int number = 0; std::getline(source, line); ++number)
+    int number = -1;
+    for (const std::string_view line : lines_of(text)) {
+        ++number;
         for (const auto& token : style_line(line, kind, state, cmake).tokens) {
             if (token.syntax != Syntax::Plain)
                 continue;
@@ -54,11 +54,12 @@ std::vector<FoldBlock> brace_folds(const std::string& text, const std::string& p
                 open.pop_back();
             }
         }
+    }
     collapse_long_blocks(folds);
     return folds;
 }
 
-int folded_rows(const std::string& text, const std::string& path)
+int folded_rows(std::string_view text, std::string_view path)
 {
     const int lines = static_cast<int>(std::ranges::count(text, '\n')) +
                       (!text.empty() && text.back() != '\n' ? 1 : 0);

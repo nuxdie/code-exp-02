@@ -13,7 +13,7 @@ void expect(bool condition, const char* message)
 struct ApplicationTestAccess {
     template <class Predicate> static void wait_for(Application& app, Predicate predicate)
     {
-        const auto deadline = Application::Clock::now() + std::chrono::seconds(20);
+        const auto deadline = Application::Clock::now() + 20s;
         while (!predicate() && Application::Clock::now() < deadline) {
             pollfd fd{app.language_server->event_fd(), POLLIN, 0};
             poll(&fd, 1, 50);
@@ -78,7 +78,7 @@ struct ApplicationTestAccess {
         motion.xmotion.x = static_cast<int>(app.popup_bounds.origin.x + 20);
         motion.xmotion.y = static_cast<int>(app.popup_bounds.origin.y + 20);
         app.handle_motion(motion);
-        app.update_timers(Application::Clock::now() + std::chrono::seconds(1));
+        app.update_timers(Application::Clock::now() + 1s);
         expect(!app.popup_text.empty(), "Popup must stay open while the pointer is inside");
         app.handle_button(click(app.mouse_position));
         app.handle_release(click(app.mouse_position));
@@ -87,10 +87,10 @@ struct ApplicationTestAccess {
         motion.xmotion.x = -10;
         motion.xmotion.y = -10;
         app.handle_motion(motion);
-        app.update_timers(Application::Clock::now() + std::chrono::milliseconds(100));
+        app.update_timers(Application::Clock::now() + 100ms);
         expect(!app.popup_text.empty(),
                "Crossing the popup gap must allow a dismissal grace period");
-        app.update_timers(Application::Clock::now() + std::chrono::seconds(1));
+        app.update_timers(Application::Clock::now() + 1s);
         expect(app.popup_text.empty(), "Popup must close after leaving it");
     }
 
@@ -327,12 +327,12 @@ struct ApplicationTestAccess {
         app.camera.fit(app.content_size, app.viewport());
         const int index = camera_panel(app);
         XWindowAttributes window{};
-        const auto mapped_deadline = Application::Clock::now() + std::chrono::seconds(2);
+        const auto mapped_deadline = Application::Clock::now() + 2s;
         while (Application::Clock::now() < mapped_deadline) {
             XGetWindowAttributes(app.display, app.window, &window);
             if (window.map_state == IsViewable)
                 break;
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(10ms);
         }
         expect(window.map_state == IsViewable,
                "The test window must be mapped before pointer events");

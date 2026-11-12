@@ -80,7 +80,7 @@ struct ApplicationTestAccess {
         reset(app);
         pan(app, {-40, 0});
         const auto first = app.camera;
-        app.navigation_input -= std::chrono::seconds(1);
+        app.navigation_input -= 1s;
         pan(app, {0, -40});
         expect(app.go_back() && same(app.camera, first), "A pause must separate gestures");
         expect(app.go_back() && same(app.camera, start),
@@ -98,7 +98,7 @@ struct ApplicationTestAccess {
         motion.xmotion.x = 120;
         motion.xmotion.y = 130;
         app.handle_motion(motion);
-        app.navigation_input -= std::chrono::seconds(1);
+        app.navigation_input -= 1s;
         motion.xmotion.x = 180;
         app.handle_motion(motion);
         XEvent release{};

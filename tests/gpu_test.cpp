@@ -10,6 +10,8 @@
 #include <thread>
 #include <vector>
 
+using namespace std::chrono_literals;
+
 void expect(bool condition, const char* message)
 {
     if (!condition)
@@ -126,7 +128,7 @@ int main()
                     visible = true;
                     break;
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                std::this_thread::sleep_for(5ms);
             }
             expect(visible, "GPU test window must be mapped before reading its framebuffer");
             auto* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1);

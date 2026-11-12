@@ -67,7 +67,7 @@ std::string use_name(const SourcePanel& panel, int line)
     if (const auto* function = enclosing_function(panel.symbols, line))
         return function->name.substr(function->name.rfind(':') + 1);
     const auto name = enclosing_name(panel.text, line);
-    return name.empty() ? "line " + std::to_string(line + 1) : name;
+    return name.empty() ? std::format("line {}", line + 1) : name;
 }
 
 std::string file_name(const std::string& path)
@@ -163,7 +163,7 @@ bool Application::receive_connections(const lsp::Message& message)
                                : location.value("range", lsp::Json::object());
         const auto panel = std::ranges::find(panels, uri, &SourcePanel::uri);
         const int line = range.value("start", lsp::Json::object()).value("line", -1);
-        if (panel == panels.end() || line < 0 || line >= static_cast<int>(panel->text.size()))
+        if (panel == panels.end() || line < 0 || line >= std::ssize(panel->text))
             continue;
         const auto& text = panel->text[line];
         const auto word =

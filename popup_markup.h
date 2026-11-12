@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -18,10 +19,10 @@ struct PopupDocument {
     std::vector<std::pair<std::size_t, std::size_t>> inline_code;
 };
 
-PopupDocument popup_document(const std::string& text, bool markup);
-std::vector<PopupSpan> web_links(const std::string& text);
+PopupDocument popup_document(std::string_view text, bool markup);
+std::vector<PopupSpan> web_links(std::string_view text);
 
 // Text that must appear exactly as written, with no markup interpreted.
-std::string popup_literal(const std::string& text);
+std::string popup_literal(std::string_view text);
 
-std::string hover_documentation(const std::string& markdown);
+std::string hover_documentation(std::string_view markdown);

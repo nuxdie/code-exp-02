@@ -20,6 +20,8 @@
 #include <thread>
 #include <unistd.h>
 
+using namespace std::chrono_literals;
+
 namespace {
 // Text beyond this is generated or data, not something to read on a canvas.
 constexpr std::uintmax_t largest_text = 256 * 1024;
@@ -107,18 +109,18 @@ bool binary_head(const std::filesystem::path& file)
 }
 } // namespace
 
-bool project_image(const std::string& path)
+bool project_image(std::string_view path)
 {
     const auto extension = lowercase(std::filesystem::path(path).extension().string());
     static const std::set<std::string> images{".png",  ".jpg", ".jpeg", ".gif",  ".bmp",
                                               ".webp", ".svg", ".tif",  ".tiff", ".ico"};
     return images.contains(extension);
 }
-bool project_source(const std::string& path)
+bool project_source(std::string_view path)
 {
     return !excluded_directory(path);
 }
-std::pair<int, int> text_extent(const std::string& text)
+std::pair<int, int> text_extent(std::string_view text)
 {
     int lines = 0, columns = 0, width = 0;
     for (const char character : text) {
@@ -194,7 +196,7 @@ std::vector<ProjectChange> project_changes(const ProjectSnapshot& before,
 }
 
 struct ProjectWatcher::Impl {
-    static constexpr auto settle = std::chrono::milliseconds(120);
+    static constexpr auto settle = 120ms;
     std::string root;
     ProjectSnapshot snapshot;
     FileDescriptor notify{inotify_init1(IN_NONBLOCK | IN_CLOEXEC)};

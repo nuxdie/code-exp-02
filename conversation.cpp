@@ -3,6 +3,8 @@
 
 #include <algorithm>
 
+using namespace std::chrono_literals;
+
 namespace {
 std::string string_value(const nlohmann::json& object, const char* key)
 {
@@ -432,7 +434,7 @@ void Conversation::start_title(const std::string& prompt)
         return;
     title_attempted = true;
     title_target = thread_id;
-    title_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(60);
+    title_deadline = std::chrono::steady_clock::now() + 60s;
     title_result =
         "Generate a concise task title of at most 36 characters in the user's language. "
         "Return only the requested JSON. Do not answer or carry out the request.\n\nUser prompt:\n";

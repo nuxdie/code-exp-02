@@ -26,7 +26,7 @@ struct GraphLayout {
 using FileIndex = std::map<std::string, int>;
 std::vector<Dependency> scan_dependencies(const std::vector<GraphFile>& files,
                                           const FileIndex& paths, int source,
-                                          const std::string& content);
+                                          std::string_view content);
 GraphLayout folder_layout(const std::vector<GraphFile>& files,
                           const std::vector<Dependency>& edges);
 std::vector<Dependency> file_dependencies(const std::vector<GraphFile>& files);

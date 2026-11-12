@@ -12,7 +12,7 @@ void expect(bool condition, const char* message)
 struct ApplicationTestAccess {
     template <class Predicate> static void wait_for(Application& app, Predicate predicate)
     {
-        const auto deadline = Application::Clock::now() + std::chrono::seconds(10);
+        const auto deadline = Application::Clock::now() + 10s;
         while (!predicate() && Application::Clock::now() < deadline) {
             pollfd fds[]{{app.project_watcher->event_fd(), POLLIN, 0},
                          {app.language_server ? app.language_server->event_fd() : -1, POLLIN, 0}};
@@ -337,13 +337,13 @@ struct ApplicationTestAccess {
     static void run(Application& app, const std::filesystem::path& root, bool symbols)
     {
         expect(app.initialize(), "Live canvas must initialize");
-        const auto deadline = Application::Clock::now() + std::chrono::seconds(2);
+        const auto deadline = Application::Clock::now() + 2s;
         XWindowAttributes attributes{};
         do {
             XGetWindowAttributes(app.display, app.window, &attributes);
             if (attributes.map_state == IsViewable)
                 break;
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(10ms);
         } while (Application::Clock::now() < deadline);
         expect(attributes.map_state == IsViewable, "Live canvas test window must be mapped");
         if (symbols) {

@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 using ProjectSnapshot = std::map<std::string, std::string>;
@@ -13,8 +14,8 @@ struct ProjectChange {
     std::optional<std::string> source;
 };
 
-bool project_image(const std::string& path);
-bool project_source(const std::string& path);
+bool project_image(std::string_view path);
+bool project_source(std::string_view path);
 struct ProjectFile {
     std::string path;
     std::uintmax_t bytes;
@@ -22,7 +23,7 @@ struct ProjectFile {
 };
 
 // How many lines a text has and how wide its longest is, in character cells.
-std::pair<int, int> text_extent(const std::string& text);
+std::pair<int, int> text_extent(std::string_view text);
 
 std::vector<ProjectFile> list_project_files(const std::string& root);
 std::optional<std::string> read_project_file(const std::string& root, const std::string& path);

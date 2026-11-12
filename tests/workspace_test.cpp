@@ -171,7 +171,7 @@ struct ApplicationTestAccess {
         const auto start = Application::Clock::now();
         app.open_directory_picker();
         app.directory_picker.reset();
-        expect(Application::Clock::now() - start < std::chrono::seconds(2),
+        expect(Application::Clock::now() - start < 2s,
                "Closing an active picker must terminate its process without waiting for input");
         unsetenv("PICKER_WAIT");
         app.open_search();

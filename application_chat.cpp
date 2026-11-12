@@ -77,7 +77,7 @@ void Application::poll_agent_window()
             if (chat->conversation.title != title)
                 schedule_save();
             if (message.value("method", "") == "canvas/disconnected")
-                chat->reconnect = Clock::now() + std::chrono::seconds(3);
+                chat->reconnect = Clock::now() + 3s;
             redraw = true;
         }
     }

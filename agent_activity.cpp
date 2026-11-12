@@ -1,9 +1,10 @@
 #include "agent_activity.h"
 
+#include "text.h"
+
 #include <charconv>
 #include <cmath>
 #include <filesystem>
-#include <sstream>
 
 namespace {
 double seconds(AgentActivity::Clock::time_point now, AgentActivity::Clock::time_point then)
@@ -58,11 +59,9 @@ std::vector<ActivityTouch> item_touches(const nlohmann::json& item, const std::s
 }
 } // namespace
 
-std::vector<ActivityLines> activity_lines(const std::string& diff)
+std::vector<ActivityLines> activity_lines(std::string_view diff)
 {
     std::vector<ActivityLines> result;
-    std::istringstream input(diff);
-    std::string line;
     int row = -1;
     std::optional<ActivityLines> changed;
     auto flush = [&] {
@@ -70,7 +69,7 @@ std::vector<ActivityLines> activity_lines(const std::string& diff)
             result.push_back(*changed);
         changed.reset();
     };
-    while (std::getline(input, line)) {
+    for (const std::string_view line : lines_of(diff)) {
         if (line.starts_with("@@ ")) {
             flush();
             const auto start = line.find('+');

@@ -77,9 +77,8 @@ void Application::poll_project()
     // A popup the pointer is resting in is being read; file changes elsewhere leave it alone.
     if (!shortcuts_visible && !CanvasWindowManager::contains(popup_bounds, mouse_position))
         hide_popup();
-    const auto dragged = dragged_panel >= 0 && dragged_panel < static_cast<int>(panels.size())
-                             ? panels[dragged_panel].path
-                             : "";
+    const auto dragged =
+        dragged_panel >= 0 && dragged_panel < std::ssize(panels) ? panels[dragged_panel].path : "";
     for (const auto& change : changes)
         apply_project_change(change);
     refresh_symbol_sources(changes);

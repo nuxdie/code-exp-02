@@ -11,8 +11,8 @@
 namespace lsp {
 using Json = nlohmann::json;
 
-std::string file_uri(const std::string& path);
-std::string uri_path(const std::string& uri);
+std::string file_uri(std::string_view path);
+std::string uri_path(std::string_view uri);
 std::size_t utf16_to_byte(std::string_view text, int column);
 int byte_to_utf16(std::string_view text, std::size_t byte);
 std::string frame(const Json& message);

@@ -6,10 +6,9 @@
 #include <map>
 #include <numeric>
 #include <set>
-#include <sstream>
 
 namespace {
-std::string include_name(const std::string& line, bool& comment)
+std::string include_name(std::string_view line, bool& comment)
 {
     auto first = line.find_first_not_of(" \t");
     if (first == std::string::npos)
@@ -36,7 +35,8 @@ std::string include_name(const std::string& line, bool& comment)
     if (first == std::string::npos || line[first] != '"')
         return {};
     const auto end = line.find('"', first + 1);
-    return end == std::string::npos ? std::string{} : line.substr(first + 1, end - first - 1);
+    return end == std::string::npos ? std::string{}
+                                    : std::string(line.substr(first + 1, end - first - 1));
 }
 int include_target(const std::string& name, const std::string& source, const FileIndex& paths)
 {
@@ -51,7 +51,7 @@ int include_target(const std::string& name, const std::string& source, const Fil
     }
     return -1;
 }
-std::vector<int> build_targets(const std::string& line, const FileIndex& paths)
+std::vector<int> build_targets(std::string_view line, const FileIndex& paths)
 {
     std::vector<int> targets;
     const auto first = line.find_first_not_of(" \t");
@@ -66,16 +66,14 @@ std::vector<int> build_targets(const std::string& line, const FileIndex& paths)
 
 std::vector<Dependency> scan_dependencies(const std::vector<GraphFile>& files,
                                           const FileIndex& paths, int source,
-                                          const std::string& content)
+                                          std::string_view content)
 {
     std::vector<Dependency> result;
     std::set<int> seen;
-    std::istringstream stream(content);
-    std::string line;
     bool comment = false;
     int number = -1;
     const bool build = files[source].path == "CMakeLists.txt";
-    while (std::getline(stream, line)) {
+    for (const std::string_view line : lines_of(content)) {
         ++number;
         const auto name = build ? std::string{} : include_name(line, comment);
         const auto targets =
@@ -146,7 +144,7 @@ int window_columns(const std::vector<Vec2>& sizes, double gap)
 {
     int best = 1;
     double error = 1e9;
-    for (int columns = 1; columns <= static_cast<int>(sizes.size()); ++columns) {
+    for (int columns = 1; columns <= std::ssize(sizes); ++columns) {
         const auto size = canvas_size(arrange_files(sizes, columns, gap));
         const double off = std::abs(std::log(size.x / std::max(1.0, size.y) / 1.7));
         if (off < error) {

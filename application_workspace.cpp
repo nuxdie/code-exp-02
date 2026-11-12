@@ -14,7 +14,7 @@ template <class Work> auto load_in_background(Work work)
 
 template <class Result> bool ready(std::future<Result>& future)
 {
-    return future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+    return future.wait_for(0s) == std::future_status::ready;
 }
 
 int load_priority(const std::string& path)
@@ -78,7 +78,7 @@ void Application::advance_workspace_load()
         prepare_workspace_preview(load.reading.get());
         return;
     }
-    const auto deadline = Clock::now() + std::chrono::milliseconds(8);
+    const auto deadline = Clock::now() + 8ms;
     while (load.next < load.files.size()) {
         if (!add_workspace_panel() || load.next == 1 || Clock::now() >= deadline)
             return;
@@ -251,7 +251,7 @@ bool Application::add_workspace_panel()
         load.plan[index] = panels.back().bounds;
     }
     if (Clock::now() >= load.draw_due) {
-        load.draw_due = Clock::now() + std::chrono::milliseconds(50);
+        load.draw_due = Clock::now() + 50ms;
         redraw = true;
     }
     return true;

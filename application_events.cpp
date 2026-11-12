@@ -44,9 +44,8 @@ void Application::handle_event(const XEvent& event)
         if (!drag_button) {
             mouse_position = {static_cast<double>(event.xcrossing.x),
                               static_cast<double>(event.xcrossing.y)};
-            popup_dismiss_due = search.active || shortcuts_visible
-                                    ? Clock::time_point::max()
-                                    : Clock::now() + std::chrono::milliseconds(300);
+            popup_dismiss_due = search.active || shortcuts_visible ? Clock::time_point::max()
+                                                                   : Clock::now() + 300ms;
             mouse_position = {-1, -1};
             redraw = true;
         }
@@ -205,9 +204,8 @@ void Application::update_pointer_hover(Vec2 pointer)
         return;
     }
     if (!popup_text.empty() && popup_dismiss_due == Clock::time_point::max())
-        popup_dismiss_due = Clock::now() + std::chrono::milliseconds(300);
-    hover_due =
-        chat_at(pointer) ? Clock::time_point::max() : Clock::now() + std::chrono::milliseconds(400);
+        popup_dismiss_due = Clock::now() + 300ms;
+    hover_due = chat_at(pointer) ? Clock::time_point::max() : Clock::now() + 400ms;
 }
 
 void Application::handle_release(const XEvent& event)

@@ -18,7 +18,8 @@ void Application::search_line(DocumentView& view, const std::string& text, int r
 }
 void Application::draw_search_match(SearchMatch& match, Vec2 origin, double row_width)
 {
-    const auto label = match.path + (match.filename ? "" : ":" + std::to_string(match.line + 1));
+    const auto label =
+        match.filename ? match.path : std::format("{}:{}", match.path, match.line + 1);
     search_line(match.label, label, static_cast<int>(row_width), false);
     search_line(match.snippet, match.preview, static_cast<int>(row_width), !match.filename,
                 match.cmake);
@@ -86,7 +87,7 @@ void Application::draw_search()
         search.hits.push_back({bounds, i});
     }
     const auto count =
-        search.more ? "First 200 matches" : std::to_string(search.matches.size()) + " matches";
+        search.more ? "First 200 matches" : std::format("{} matches", search.matches.size());
     const auto hint = search.query.text.empty() ? "Type to search · Esc closes"
                       : search.matches.empty()  ? "No matches · Esc closes"
                                                : count + " · ↑/↓ choose · Enter jumps · Esc closes";

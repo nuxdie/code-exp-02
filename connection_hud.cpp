@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <format>
 
 bool inside(const CanvasRect& view, Vec2 point)
 {
@@ -94,7 +95,7 @@ std::vector<MarkerPart> marker_parts(const std::vector<ConnectionLink>& links,
             // The rest share one part, which leads to the first of them.
             const auto first = total == 4 ? index : parts.back().link;
             parts.resize(4);
-            parts.push_back({"+" + std::to_string(total - 3), first});
+            parts.push_back({std::format("+{}", total - 3), first});
             continue;
         }
         if (parts.size() > 1)
@@ -133,7 +134,7 @@ Vec2 border_point(const CanvasRect& box, Vec2 toward)
     return {middle.x + dx * reach, middle.y + dy * reach};
 }
 
-std::pair<std::size_t, std::size_t> word_at(const std::string& line, std::size_t byte)
+std::pair<std::size_t, std::size_t> word_at(std::string_view line, std::size_t byte)
 {
     const auto part = [&](std::size_t index) {
         const auto character = static_cast<unsigned char>(line[index]);

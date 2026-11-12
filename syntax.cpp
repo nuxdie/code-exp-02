@@ -2,9 +2,10 @@
 #include "text.h"
 #include <algorithm>
 #include <cctype>
+#include <format>
 #include <unordered_set>
 
-Syntax semantic_syntax(const std::string& type)
+Syntax semantic_syntax(std::string_view type)
 {
     if (type == "function" || type == "method")
         return Syntax::Function;
@@ -35,7 +36,7 @@ Syntax semantic_syntax(const std::string& type)
 namespace {
 class LineLexer {
   public:
-    LineLexer(const std::string& text, HighlightState& context, bool cmake)
+    LineLexer(std::string_view text, HighlightState& context, bool cmake)
         : line(text), state(context), cmake(cmake), first(text.find_first_not_of(" \t"))
     {
     }
@@ -72,7 +73,7 @@ class LineLexer {
     }
 
   private:
-    const std::string& line;
+    std::string_view line;
     HighlightState& state;
     bool cmake;
     std::size_t first;
@@ -108,7 +109,8 @@ class LineLexer {
     Syntax raw_string()
     {
         const auto opening = line.find('(', position + 2);
-        state.raw_string_end = ")" + line.substr(position + 2, opening - position - 2) + "\"";
+        state.raw_string_end =
+            std::format("){}\"", line.substr(position + 2, opening - position - 2));
         return raw_body(opening + 1);
     }
     Syntax quoted()
@@ -163,85 +165,85 @@ class LineLexer {
     }
     Syntax word()
     {
-        static const std::unordered_set<std::string> keywords = {"alignas",
-                                                                 "alignof",
-                                                                 "and",
-                                                                 "and_eq",
-                                                                 "asm",
-                                                                 "auto",
-                                                                 "bitand",
-                                                                 "bitor",
-                                                                 "break",
-                                                                 "case",
-                                                                 "catch",
-                                                                 "class",
-                                                                 "compl",
-                                                                 "concept",
-                                                                 "const",
-                                                                 "consteval",
-                                                                 "constexpr",
-                                                                 "constinit",
-                                                                 "const_cast",
-                                                                 "continue",
-                                                                 "co_await",
-                                                                 "co_return",
-                                                                 "co_yield",
-                                                                 "decltype",
-                                                                 "default",
-                                                                 "delete",
-                                                                 "do",
-                                                                 "dynamic_cast",
-                                                                 "else",
-                                                                 "enum",
-                                                                 "explicit",
-                                                                 "export",
-                                                                 "extern",
-                                                                 "false",
-                                                                 "for",
-                                                                 "friend",
-                                                                 "goto",
-                                                                 "if",
-                                                                 "inline",
-                                                                 "mutable",
-                                                                 "namespace",
-                                                                 "new",
-                                                                 "noexcept",
-                                                                 "not",
-                                                                 "not_eq",
-                                                                 "nullptr",
-                                                                 "operator",
-                                                                 "or",
-                                                                 "or_eq",
-                                                                 "private",
-                                                                 "protected",
-                                                                 "public",
-                                                                 "register",
-                                                                 "reinterpret_cast",
-                                                                 "requires",
-                                                                 "return",
-                                                                 "sizeof",
-                                                                 "static",
-                                                                 "static_assert",
-                                                                 "static_cast",
-                                                                 "struct",
-                                                                 "switch",
-                                                                 "template",
-                                                                 "this",
-                                                                 "thread_local",
-                                                                 "throw",
-                                                                 "true",
-                                                                 "try",
-                                                                 "typedef",
-                                                                 "typeid",
-                                                                 "typename",
-                                                                 "union",
-                                                                 "using",
-                                                                 "virtual",
-                                                                 "volatile",
-                                                                 "while",
-                                                                 "xor",
-                                                                 "xor_eq"};
-        static const std::unordered_set<std::string> types = {
+        static const std::unordered_set<std::string_view> keywords = {"alignas",
+                                                                      "alignof",
+                                                                      "and",
+                                                                      "and_eq",
+                                                                      "asm",
+                                                                      "auto",
+                                                                      "bitand",
+                                                                      "bitor",
+                                                                      "break",
+                                                                      "case",
+                                                                      "catch",
+                                                                      "class",
+                                                                      "compl",
+                                                                      "concept",
+                                                                      "const",
+                                                                      "consteval",
+                                                                      "constexpr",
+                                                                      "constinit",
+                                                                      "const_cast",
+                                                                      "continue",
+                                                                      "co_await",
+                                                                      "co_return",
+                                                                      "co_yield",
+                                                                      "decltype",
+                                                                      "default",
+                                                                      "delete",
+                                                                      "do",
+                                                                      "dynamic_cast",
+                                                                      "else",
+                                                                      "enum",
+                                                                      "explicit",
+                                                                      "export",
+                                                                      "extern",
+                                                                      "false",
+                                                                      "for",
+                                                                      "friend",
+                                                                      "goto",
+                                                                      "if",
+                                                                      "inline",
+                                                                      "mutable",
+                                                                      "namespace",
+                                                                      "new",
+                                                                      "noexcept",
+                                                                      "not",
+                                                                      "not_eq",
+                                                                      "nullptr",
+                                                                      "operator",
+                                                                      "or",
+                                                                      "or_eq",
+                                                                      "private",
+                                                                      "protected",
+                                                                      "public",
+                                                                      "register",
+                                                                      "reinterpret_cast",
+                                                                      "requires",
+                                                                      "return",
+                                                                      "sizeof",
+                                                                      "static",
+                                                                      "static_assert",
+                                                                      "static_cast",
+                                                                      "struct",
+                                                                      "switch",
+                                                                      "template",
+                                                                      "this",
+                                                                      "thread_local",
+                                                                      "throw",
+                                                                      "true",
+                                                                      "try",
+                                                                      "typedef",
+                                                                      "typeid",
+                                                                      "typename",
+                                                                      "union",
+                                                                      "using",
+                                                                      "virtual",
+                                                                      "volatile",
+                                                                      "while",
+                                                                      "xor",
+                                                                      "xor_eq"};
+        static const std::unordered_set<std::string_view> types = {
             "bool",           "char",
             "char8_t",        "char16_t",
             "char32_t",       "double",
@@ -278,7 +280,7 @@ class LineLexer {
     }
 };
 } // namespace
-std::vector<Token> highlight(const std::string& line, HighlightState& state, bool cmake)
+std::vector<Token> highlight(std::string_view line, HighlightState& state, bool cmake)
 {
     LineLexer lexer(line, state, cmake);
     std::vector<Token> tokens;
@@ -292,19 +294,19 @@ std::vector<Token> highlight(const std::string& line, HighlightState& state, boo
     return tokens;
 }
 
-TextKind text_kind(const std::string& path)
+TextKind text_kind(std::string_view path)
 {
     const auto slash = path.find_last_of('/');
     const auto name = path.substr(slash == std::string::npos ? 0 : slash + 1);
     const auto dot = name.find_last_of('.');
-    const auto extension = dot == std::string::npos ? "" : name.substr(dot);
-    static const std::unordered_set<std::string> prose{".md", ".markdown", ".txt", ".rst"};
-    static const std::unordered_set<std::string> hash{
+    const auto extension = dot == std::string::npos ? std::string_view{} : name.substr(dot);
+    static const std::unordered_set<std::string_view> prose{".md", ".markdown", ".txt", ".rst"};
+    static const std::unordered_set<std::string_view> hash{
         ".py", ".sh", ".bash", ".zsh",  ".rb",   ".pl",  ".yml",  ".yaml",
         ".r",  ".jl", ".toml", ".conf", ".cfg",  ".ini", ".nix",  ".tcl",
         ".mk", ".ex", ".exs",  ".ps1",  ".fish", ".awk", ".cmake"};
-    static const std::unordered_set<std::string> hash_names{"Makefile", "Dockerfile", ".gitignore",
-                                                            "CMakeLists.txt"};
+    static const std::unordered_set<std::string_view> hash_names{"Makefile", "Dockerfile",
+                                                                 ".gitignore", "CMakeLists.txt"};
     if (prose.contains(extension))
         return TextKind::Prose;
     return hash.contains(extension) || hash_names.contains(name) ? TextKind::HashCode
@@ -312,7 +314,7 @@ TextKind text_kind(const std::string& path)
 }
 
 namespace {
-bool reads_as_prose(const std::string& line, std::size_t body)
+bool reads_as_prose(std::string_view line, std::size_t body)
 {
     const auto last = line.find_last_not_of(" \t");
     if (body > last || std::string_view(";{}\\").contains(line[last]))
@@ -324,7 +326,7 @@ bool reads_as_prose(const std::string& line, std::size_t body)
                        [](unsigned char c) { return std::isalpha(c); });
 }
 
-std::optional<ProseLine> comment_prose(const std::string& line, const std::vector<Token>& tokens)
+std::optional<ProseLine> comment_prose(std::string_view line, const std::vector<Token>& tokens)
 {
     const auto first = line.find_first_not_of(" \t");
     if (first == std::string::npos)
@@ -358,7 +360,7 @@ std::optional<ProseLine> comment_prose(const std::string& line, const std::vecto
     return ProseLine{first, body, false};
 }
 
-std::optional<ProseLine> document_prose(const std::string& line)
+std::optional<ProseLine> document_prose(std::string_view line)
 {
     const auto first = line.find_first_not_of(" \t");
     if (first == std::string::npos || line[first] == '|')
@@ -370,7 +372,7 @@ std::optional<ProseLine> document_prose(const std::string& line)
 }
 } // namespace
 
-StyledLine style_line(const std::string& line, TextKind kind, HighlightState& state, bool cmake)
+StyledLine style_line(std::string_view line, TextKind kind, HighlightState& state, bool cmake)
 {
     if (kind == TextKind::Prose) {
         if (line.starts_with("```")) {

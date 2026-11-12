@@ -60,16 +60,16 @@ void test_events_and_motion()
         return CanvasRect{{touch.path == "code.cpp" ? 1000.0 : 2000.0, 200}, {600, 24}};
     };
     model.advance(now, resolve);
-    const auto half = now + std::chrono::milliseconds(300);
+    const auto half = now + 300ms;
     model.advance(half, resolve);
     expect(model.agents.size() == 2 && model.agents.at("one").position.x > 0 &&
                model.agents.at("one").position.x < 954,
            "Independent actors must move smoothly from their own conversation cards");
-    model.advance(now + std::chrono::milliseconds(1200), resolve);
+    model.advance(now + 1200ms, resolve);
     expect(model.pulses.size() == 2 && model.agents.at("one").arrived,
            "Arriving actors must touch the changed lines and emit a pulse");
-    model.advance(now + std::chrono::seconds(2), resolve);
-    model.advance(now + std::chrono::seconds(6), resolve);
+    model.advance(now + 2s, resolve);
+    model.advance(now + 6s, resolve);
     expect(!model.active(), "All animation must expire so the canvas can sleep when idle");
 }
 void test_races_and_bursts()
@@ -81,14 +81,14 @@ void test_races_and_bursts()
     model.advance(now, missing);
     expect(model.agents.at("one").waiting.size() == 1,
            "New-file events must wait briefly for the project watcher");
-    model.advance(now + std::chrono::seconds(3), missing);
+    model.advance(now + 3s, missing);
     expect(!model.active(), "Missing or removed targets must not keep animation running");
     for (int i = 0; i < 100; ++i)
         model.receive(edit("one", std::to_string(i), "new.cpp", ""), "/project", "one", "First", {},
                       now);
     expect(model.agents.at("one").waiting.size() == 32,
            "Large patch bursts must have bounded animation queues");
-    model.advance(now + std::chrono::seconds(9), missing);
+    model.advance(now + 9s, missing);
     expect(!model.active(), "Old bursts must not replay long after editing has stopped");
     auto renamed = edit("one", "rename", "old.cpp", "");
     renamed["params"]["item"]["changes"][0]["kind"]["move_path"] = "/project/new.cpp";
@@ -188,9 +188,9 @@ struct ApplicationTestAccess {
         app.apply_project_change({"main.cpp", {}});
         expect(app.activity_bounds({"main.cpp", {}, {}}).has_value(),
                "Deleted files must retain a temporary touch location");
-        app.agent_activity.advance(now + std::chrono::seconds(3),
+        app.agent_activity.advance(now + 3s,
                                    [&](const auto& touch) { return app.activity_bounds(touch); });
-        app.agent_activity.advance(now + std::chrono::seconds(7),
+        app.agent_activity.advance(now + 7s,
                                    [&](const auto& touch) { return app.activity_bounds(touch); });
         app.advance_agent_activity();
         expect(app.activity_labels.empty() &&

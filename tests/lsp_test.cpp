@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <unistd.h>
 
+using namespace std::chrono_literals;
+
 void expect(bool condition, const char* message)
 {
     if (!condition)
@@ -130,7 +132,7 @@ void test_live_server(const std::filesystem::path& root)
                           {{main_uri, main}, {header_uri, header}, {bad_uri, bad}});
     FeatureProbe probe{main_uri, header_uri, bad_uri};
     bool requested = false;
-    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(20);
+    const auto deadline = std::chrono::steady_clock::now() + 20s;
     while (std::chrono::steady_clock::now() < deadline && !probe.complete()) {
         pollfd fd{server.event_fd(), POLLIN, 0};
         poll(&fd, 1, 100);

@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <unistd.h>
 
+using namespace std::chrono_literals;
+
 void expect(bool condition, const char* message)
 {
     if (!condition)
@@ -15,7 +17,7 @@ void expect(bool condition, const char* message)
 }
 std::vector<ProjectChange> wait_for(ProjectWatcher& watcher)
 {
-    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    const auto deadline = std::chrono::steady_clock::now() + 5s;
     while (std::chrono::steady_clock::now() < deadline) {
         pollfd fd{watcher.event_fd(), POLLIN, 0};
         if (poll(&fd, 1, 100) > 0) {

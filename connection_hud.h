@@ -3,6 +3,7 @@
 #include "gpu.h"
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 // A word in a file.
@@ -75,4 +76,4 @@ std::vector<MarkerPart> marker_parts(const std::vector<ConnectionLink>& links,
 const MarkerPart* marker_part_at(const ConnectionMarker& marker, Vec2 point);
 
 // The identifier around a byte of a line, as [begin, end); empty when there is none.
-std::pair<std::size_t, std::size_t> word_at(const std::string& line, std::size_t byte);
+std::pair<std::size_t, std::size_t> word_at(std::string_view line, std::size_t byte);

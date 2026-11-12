@@ -72,7 +72,7 @@ void Application::language_structure(const lsp::Message& message)
         std::vector<FoldBlock> blocks;
         for (const auto& range : message.result) {
             const int first = range.value("startLine", -1), last = range.value("endLine", -1);
-            if (first < 0 || last <= first || last >= static_cast<int>(found->lines.size()))
+            if (first < 0 || last <= first || last >= std::ssize(found->lines))
                 continue;
             bool collapsed = false;
             for (const auto& previous : found->folds)
