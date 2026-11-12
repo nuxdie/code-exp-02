@@ -62,7 +62,7 @@ bool Application::initialize_window()
     screen = DefaultScreen(display);
 
     try {
-        renderer = std::make_unique<GpuRenderer>(display, screen, benchmark);
+        renderer = std::make_unique<GpuRenderer>(display, screen);
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
         return false;
@@ -127,46 +127,8 @@ void Application::configure_source_font()
     }
 }
 
-int Application::benchmark_run()
-{
-    bool visible = false;
-    for (int i = 0; i < 200; ++i) {
-        XWindowAttributes attributes{};
-        XGetWindowAttributes(display, window, &attributes);
-        if (attributes.map_state == IsViewable) {
-            visible = true;
-            break;
-        }
-        std::this_thread::sleep_for(5ms);
-    }
-    if (!visible) {
-        std::cerr << "Benchmark window did not become visible.\n";
-        return 1;
-    }
-    initial_view = false;
-    std::vector<double> milliseconds;
-    for (int i = 0; i < 96; ++i) {
-        camera.zoom = 0.15 * std::pow(12.0, (1.0 - std::cos(i * 0.13)) / 2.0);
-        camera.home(viewport());
-        const auto start = Clock::now();
-        draw();
-        renderer->finish();
-        XSync(display, False);
-        milliseconds.push_back(
-            std::chrono::duration<double, std::milli>(Clock::now() - start).count());
-    }
-    std::ranges::sort(milliseconds);
-    std::cout << "Zoom draw benchmark: median " << milliseconds[48] << " ms, p95 "
-              << milliseconds[91] << " ms\n";
-
-    return 0;
-}
-
 int Application::run()
 {
-    benchmark = std::getenv("SOURCE_CANVAS_BENCHMARK") != nullptr;
-    if (benchmark)
-        return initialize() ? benchmark_run() : 1;
     if (!initialize_window())
         return 1;
     workspace_load = WorkspaceLoad{};

@@ -42,7 +42,7 @@ struct GpuPath {
 // Shapes are cached in VRAM. Camera movement never calls the text rasterizer.
 class GpuRenderer {
   public:
-    GpuRenderer(Display* display, int screen, bool benchmark = false);
+    GpuRenderer(Display* display, int screen);
     ~GpuRenderer();
     Window window() const;
     std::string device() const;

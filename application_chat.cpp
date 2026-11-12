@@ -5,7 +5,7 @@
 void Application::initialize_chat()
 {
     chat = std::make_unique<ChatCanvas>(workspace_root);
-    chat->disabled = benchmark || std::getenv("SOURCE_CANVAS_DISABLE_AGENT");
+    chat->disabled = std::getenv("SOURCE_CANVAS_DISABLE_AGENT");
     load_session();
     if (!chat->placed) {
         const auto main = std::ranges::find(panels, "main.cpp", &SourcePanel::path);

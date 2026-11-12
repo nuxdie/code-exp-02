@@ -34,7 +34,7 @@ void Application::load_agent_windows(const lsp::Json& state, const char* environ
 // The saved canvas for this project, or null when there is none to use.
 lsp::Json Application::read_session() const
 {
-    if (benchmark || std::getenv("SOURCE_CANVAS_DISABLE_SESSION"))
+    if (std::getenv("SOURCE_CANVAS_DISABLE_SESSION"))
         return nullptr;
     std::ifstream input(session_path(workspace_root));
     if (!input)
@@ -66,7 +66,7 @@ void Application::restore_window(const lsp::Json& state)
 
 void Application::load_session()
 {
-    if (!chat || benchmark || std::getenv("SOURCE_CANVAS_DISABLE_SESSION"))
+    if (!chat || std::getenv("SOURCE_CANVAS_DISABLE_SESSION"))
         return;
     const char* environment_thread = std::getenv("CODEX_THREAD_ID");
     if (environment_thread)
@@ -137,8 +137,7 @@ void Application::restore_file_layouts(const lsp::Json& files, bool placed)
 void Application::save_session()
 {
     save_due = Clock::time_point::max();
-    if (!chat || chat->disabled || benchmark || window_destroyed ||
-        std::getenv("SOURCE_CANVAS_DISABLE_SESSION"))
+    if (!chat || chat->disabled || window_destroyed || std::getenv("SOURCE_CANVAS_DISABLE_SESSION"))
         return;
     lsp::Json files = lsp::Json::object();
     for (const auto& panel : panels) {

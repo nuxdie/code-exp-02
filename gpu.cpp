@@ -137,7 +137,7 @@ struct GpuRenderer::Impl {
     };
     std::map<std::pair<cairo_scaled_font_t*, unsigned long>, Glyph> glyphs;
 
-    void initialize(Display* connection, int screen, bool benchmark)
+    void initialize(Display* connection, int screen)
     {
         display = connection;
         std::array<int, 9> attributes{
@@ -159,7 +159,7 @@ struct GpuRenderer::Impl {
         if (epoxy_gl_version() < 33)
             throw std::runtime_error("OpenGL 3.3 or newer is required");
         if (epoxy_has_glx_extension(display, screen, "GLX_EXT_swap_control"))
-            glXSwapIntervalEXT(display, window, benchmark ? 0 : 1);
+            glXSwapIntervalEXT(display, window, 1);
 
         const char* vertex_source = R"GLSL(#version 330 core
 layout(location=0) in vec2 position;
@@ -443,10 +443,9 @@ void main() {
     }
 };
 
-GpuRenderer::GpuRenderer(Display* display, int screen, bool benchmark)
-    : impl(std::make_unique<Impl>())
+GpuRenderer::GpuRenderer(Display* display, int screen) : impl(std::make_unique<Impl>())
 {
-    impl->initialize(display, screen, benchmark);
+    impl->initialize(display, screen);
 }
 GpuRenderer::~GpuRenderer() = default;
 Window GpuRenderer::window() const

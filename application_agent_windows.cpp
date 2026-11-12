@@ -11,7 +11,7 @@ bool Application::kept_chat(const ChatCanvas& card)
 
 void Application::start_agent(ChatCanvas& card)
 {
-    if (!card.disabled && !card.client && !benchmark && !std::getenv("SOURCE_CANVAS_DISABLE_AGENT"))
+    if (!card.disabled && !card.client && !std::getenv("SOURCE_CANVAS_DISABLE_AGENT"))
         card.client = std::make_unique<AgentClient>(
             python_executable, (executable.parent_path() / "agent_bridge.py").string());
 }
@@ -55,7 +55,7 @@ bool Application::activate_chat(Vec2 pointer)
 // Only an open conversation has an agent process behind it.
 void Application::start_agent_windows()
 {
-    const bool disabled = benchmark || std::getenv("SOURCE_CANVAS_DISABLE_AGENT");
+    const bool disabled = std::getenv("SOURCE_CANVAS_DISABLE_AGENT");
     chat->disabled = disabled;
     if (chat->visible)
         start_agent(*chat);
@@ -127,7 +127,7 @@ void Application::spawn_agent_window(Vec2 world, lsp::Json context)
     next->context = std::move(context);
     next->conversation.fresh = true;
     next->conversation.title = "New conversation";
-    next->disabled = benchmark || std::getenv("SOURCE_CANVAS_DISABLE_AGENT");
+    next->disabled = std::getenv("SOURCE_CANVAS_DISABLE_AGENT");
     start_agent(*next);
     if (drag_button)
         XUngrabPointer(display, CurrentTime);

@@ -30,7 +30,7 @@ std::string read_intent_view(const std::string& command)
 
 void Application::load_intent_margin()
 {
-    if (benchmark || std::getenv("SOURCE_CANVAS_DISABLE_INTENT"))
+    if (std::getenv("SOURCE_CANVAS_DISABLE_INTENT"))
         return;
     if (intent_margin.loading.valid()) {
         intent_margin.stale = true;

@@ -61,7 +61,6 @@ class Application {
 
   private:
     using Clock = std::chrono::steady_clock;
-    bool benchmark = false;
     Display* display = nullptr;
     std::filesystem::path executable;
     std::string launch_directory;
@@ -397,7 +396,6 @@ class Application {
     void load_session();
     void save_session();
     void schedule_save();
-    int benchmark_run();
     LayoutHandle make_line(std::string_view line, const std::vector<Token>& tokens,
                            const ProseLine* prose = nullptr);
     SourcePanel make_panel(const std::string& path, const std::string& text,

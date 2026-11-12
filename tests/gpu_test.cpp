@@ -112,7 +112,7 @@ int main()
                    "Bundled fonts must load");
         }
         {
-            GpuRenderer renderer(display, DefaultScreen(display), true);
+            GpuRenderer renderer(display, DefaultScreen(display));
             XResizeWindow(display, renderer.window(), 320, 240);
             XMapWindow(display, renderer.window());
             bool visible = false;

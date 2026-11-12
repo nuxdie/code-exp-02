@@ -3498,6 +3498,26 @@
     "text_input.h": "940492a 5337c64",
     "wakeup.h": "d261915 ad576cd 11bf2d9 f8ec1c5 e51bbfe f56c0cb 73e169b fe5acc8 11195f6 6bb664b 3236932 90a4e6b 5055bd2 105732b 68b231a eb08ecb 6fd8848 7266fdc 48c2a1e 3c5e8d0 87939f4 2567300 98f6931 401deac 04b2cfd 5c20cea 6c32197 1e5a773 c73dd50 f77e629 64b0c13 43f9962 7cc95c0 8d88601 9c39d14 8ce26c3 48e9024 6cf53af 59b3e56 42d84d5 2f459bb 8e83c45 8c91aec 440f095 e5fb152 1916800 32de5cd 4209616 09c7c85 ba54187 6bba9d4 01b483b 8ed8527 0e5ae2f ee34f96 5870ca2 032bd7a ae1a4f8 d9b54af f2a9497 57bf516 7bd6415"
    }
+  },
+  {
+   "id": "01a1d181-1107-7f71-ae7a-f608ec5036f2",
+   "thread": "01a1d181-0e60-7891-8079-2252911d4253",
+   "at": "2026-11-12T20:44:19.104Z",
+   "source": "transcript",
+   "said": "what is this benchmark thing?",
+   "why": "It’s an optional performance test for drawing the canvas while zooming.\n\nWhen `SOURCE_CANVAS_BENCHMARK` is set, it loads the workspace, draws 96 frames at varying zoom levels, waits for the GPU to finish each frame, then prints:\n\n- **Median:** typical frame draw time.\n- **p95:** draw time that 95% of frames fall below.\n\nThen it exits. Normal launches skip it. It measures rendering speed, not startup time or how responsive interactive zoom feels.",
+   "intent": null,
+   "changes": {}
+  },
+  {
+   "id": "01a1d181-ea96-7403-a261-f63b76218204",
+   "thread": "01a1d181-0e60-7891-8079-2252911d4253",
+   "at": "2026-11-12T20:45:14.776Z",
+   "source": "transcript",
+   "said": "get rid of it",
+   "why": "",
+   "intent": "machine-checked-clarity",
+   "changes": {}
   }
  ]
 }

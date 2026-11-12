@@ -279,13 +279,11 @@ void Application::draw_workspace_preview(const Viewport& view)
 
 void Application::finish_workspace_load()
 {
-    if (!benchmark) {
-        try {
-            language_server = std::make_unique<lsp::LanguageServer>(
-                clangd_executable, workspace_root, workspace_build, std::move(documents));
-        } catch (const std::exception& error) {
-            language_failure = error.what();
-        }
+    try {
+        language_server = std::make_unique<lsp::LanguageServer>(
+            clangd_executable, workspace_root, workspace_build, std::move(documents));
+    } catch (const std::exception& error) {
+        language_failure = error.what();
     }
     initialize_chat();
     load_intent_margin();
