@@ -90,7 +90,7 @@ void Application::handle_button(const XEvent& event)
                                         popup_bounds.size.x, popup_bounds.size.y}
                                    .contains(pointer);
     if (connection_marker_button(event, pointer) || intent_margin_button(event, pointer) ||
-        begin_text_selection(event, pointer) || popup_button(event, pointer, in_popup) ||
+        begin_text_selection(event, pointer) || popup_button(event, in_popup) ||
         chat_button(event, pointer))
         return;
     schedule_save();
@@ -304,7 +304,7 @@ void Application::handle_key(const XEvent& event)
     redraw = true;
 }
 
-bool Application::popup_button(const XEvent& event, Vec2 pointer, bool in_popup)
+bool Application::popup_button(const XEvent& event, bool in_popup)
 {
     if (in_popup && (event.xbutton.button == Button4 || event.xbutton.button == Button5)) {
         popup_scroll += event.xbutton.button == Button4 ? -60 : 60;

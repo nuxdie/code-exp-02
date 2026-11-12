@@ -255,10 +255,12 @@ void Application::draw_agent_markers()
                           agent.label;
         auto& label = agent_marker_labels[id];
         update_document(label, text, 520, false);
-        boxes.push_back({{agent_markers.size()},
-                         marker_box(view, view_exit(view, {width / 2.0, height / 2.0}, target),
-                                    {label.size.x + 22, label.size.y + 8}),
-                         id});
+        boxes.push_back(
+            {.links = {agent_markers.size()},
+             .bounds = marker_box(view, view_exit(view, {width / 2.0, height / 2.0}, target),
+                                  {label.size.x + 22, label.size.y + 8}),
+             .text = id,
+             .parts = {}});
         agent_markers.push_back({{}, panel->uri, std::max(0, agent.touch->lines.first)});
         shown.push_back(id);
     }

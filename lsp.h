@@ -48,11 +48,11 @@ struct ServerOptions {
 };
 
 struct Message {
-    std::string method;
-    std::string uri;
+    std::string method{};
+    std::string uri{};
     int id = 0;
-    Json result;
-    std::string error;
+    Json result{};
+    std::string error{};
     int version = 0;
     std::string language = "cpp";
 };

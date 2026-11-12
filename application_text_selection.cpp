@@ -104,7 +104,7 @@ void Application::selection_click(const XEvent& event)
         if (!open_document_link(pointer))
             show_connections_at(pointer);
     } else if (text_selection.surface == TextSurface::Popup) {
-        popup_button(event, pointer, true);
+        popup_button(event, true);
     } else if (text_selection.surface == TextSurface::Chat) {
         for (std::size_t i = 0; i < chat->conversation.entries.size(); ++i)
             if (chat->conversation.entries[i].id == text_selection.key) {

@@ -84,13 +84,11 @@ struct ApplicationTestAccess {
     static void check_images(const std::filesystem::path& root)
     {
         std::filesystem::create_directories(root / "assets");
-        auto* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1200, 600);
-        auto* cr = cairo_create(surface);
-        cairo_set_source_rgba(cr, 1, 0, 0, 0.5);
-        cairo_paint(cr);
-        cairo_surface_write_to_png(surface, (root / "assets/photo.PNG").c_str());
-        cairo_destroy(cr);
-        cairo_surface_destroy(surface);
+        const SurfaceHandle surface{cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1200, 600)};
+        const CairoHandle cr{cairo_create(surface.get())};
+        cairo_set_source_rgba(cr.get(), 1, 0, 0, 0.5);
+        cairo_paint(cr.get());
+        cairo_surface_write_to_png(surface.get(), (root / "assets/photo.PNG").c_str());
         std::ofstream(root / "assets/vector.svg")
             << "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"80\" height=\"40\">"
                "<rect width=\"80\" height=\"40\" fill=\"blue\"/></svg>";

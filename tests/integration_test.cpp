@@ -217,15 +217,15 @@ struct ApplicationTestAccess {
         glReadBuffer(GL_BACK);
         glReadPixels(0, 0, app.width, app.height, GL_BGRA, GL_UNSIGNED_BYTE, pixels.data());
         glReadBuffer(GL_BACK);
-        auto* image = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, app.width, app.height);
-        auto* bytes = cairo_image_surface_get_data(image);
-        const auto stride = cairo_image_surface_get_stride(image);
+        const SurfaceHandle image{
+            cairo_image_surface_create(CAIRO_FORMAT_ARGB32, app.width, app.height)};
+        auto* bytes = cairo_image_surface_get_data(image.get());
+        const auto stride = cairo_image_surface_get_stride(image.get());
         for (int y = 0; y < app.height; ++y)
             std::memcpy(bytes + y * stride, pixels.data() + (app.height - y - 1) * app.width * 4,
                         static_cast<std::size_t>(app.width) * 4);
-        cairo_surface_mark_dirty(image);
-        cairo_surface_write_to_png(image, output);
-        cairo_surface_destroy(image);
+        cairo_surface_mark_dirty(image.get());
+        cairo_surface_write_to_png(image.get(), output);
         app.camera = camera;
     }
     static void test_compact_documentation(Application& app)

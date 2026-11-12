@@ -483,6 +483,6 @@ class Application {
     void language_styles(const lsp::Message& message);
     void language_hover(const lsp::Message& message);
     void language_definition(const lsp::Message& message);
-    bool popup_button(const XEvent& event, Vec2 pointer, bool in_popup);
+    bool popup_button(const XEvent& event, bool in_popup);
     void begin_drag(const XEvent& event, Vec2 pointer, const Viewport& view, bool pan_only = false);
 };

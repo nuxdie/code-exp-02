@@ -177,6 +177,7 @@ The interface is built directly on X11 and OpenGL. Pango/Cairo shape text, an Op
 | Language servers and documentation | [`lsp.cpp`](lsp.cpp), [`application_language.cpp`](application_language.cpp), [`popup_markup.cpp`](popup_markup.cpp) |
 | Agent conversations | [`conversation.cpp`](conversation.cpp), [`agent_client.cpp`](agent_client.cpp), [`tools/agent_bridge.py`](tools/agent_bridge.py) |
 | Intent | [`tools/intents.py`](tools/intents.py), [`intent_margin.cpp`](intent_margin.cpp), [`application_intent_margin.cpp`](application_intent_margin.cpp) |
+| Owned resources, thread wakeups, child processes, text helpers | [`handles.h`](handles.h), [`wakeup.h`](wakeup.h), [`process.cpp`](process.cpp), [`text.h`](text.h) |
 | Build, tests, and quality policy | [`CMakeLists.txt`](CMakeLists.txt), [`tests/`](tests/), [`tools/quality.py`](tools/quality.py) |
 
 ## Development

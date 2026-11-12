@@ -1,4 +1,5 @@
 #include "gpu.h"
+#include "handles.h"
 
 #include <epoxy/gl.h>
 #include <fontconfig/fontconfig.h>
@@ -41,11 +42,11 @@ void test_theme(GpuRenderer& renderer)
     renderer.begin(320, 240);
     renderer.rectangle({{20, 20}, {40, 40}}, {1, 1, 1, 1});
     renderer.rectangle({{70, 20}, {40, 40}}, {0.14f, 0.16f, 0.19f, 1});
-    auto* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 16, 16);
-    auto* context = cairo_create(surface);
-    cairo_set_source_rgb(context, 0, 0, 0);
-    cairo_paint(context);
-    auto icon = renderer.image(surface);
+    const SurfaceHandle surface{cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 16, 16)};
+    const CairoHandle context{cairo_create(surface.get())};
+    cairo_set_source_rgb(context.get(), 0, 0, 0);
+    cairo_paint(context.get());
+    auto icon = renderer.image(surface.get());
     auto formula = icon;
     formula.monochrome = true;
     GpuMesh images;
@@ -66,26 +67,24 @@ void test_theme(GpuRenderer& renderer)
     renderer.finish();
     expect(pixel(5, 5)[0] == 255, "Returning to light theme restores the background immediately");
     renderer.release(images);
-    cairo_destroy(context);
-    cairo_surface_destroy(surface);
 }
 
 void test_image_texture(GpuRenderer& renderer)
 {
-    auto* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1200, 2);
-    auto* cr = cairo_create(surface);
-    cairo_set_source_rgba(cr, 1, 0, 0, 0.5);
-    cairo_paint(cr);
+    const SurfaceHandle surface{cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1200, 2)};
+    const CairoHandle cr{cairo_create(surface.get())};
+    cairo_set_source_rgba(cr.get(), 1, 0, 0, 0.5);
+    cairo_paint(cr.get());
     GpuMesh picture, icon;
-    renderer.upload_image(picture, surface, {{20, 20}, {100, 40}});
-    cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
-    cairo_set_source_rgb(cr, 0, 0, 1);
-    cairo_paint(cr);
-    auto* icon_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 8, 8);
-    auto* icon_cr = cairo_create(icon_surface);
-    cairo_set_source_rgb(icon_cr, 0, 0, 1);
-    cairo_paint(icon_cr);
-    renderer.upload(icon, {}, {{renderer.image(icon_surface), {{150, 20}, {100, 40}}}});
+    renderer.upload_image(picture, surface.get(), {{20, 20}, {100, 40}});
+    cairo_set_operator(cr.get(), CAIRO_OPERATOR_SOURCE);
+    cairo_set_source_rgb(cr.get(), 0, 0, 1);
+    cairo_paint(cr.get());
+    const SurfaceHandle icon_surface{cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 8, 8)};
+    const CairoHandle icon_cr{cairo_create(icon_surface.get())};
+    cairo_set_source_rgb(icon_cr.get(), 0, 0, 1);
+    cairo_paint(icon_cr.get());
+    renderer.upload(icon, {}, {{renderer.image(icon_surface.get()), {{150, 20}, {100, 40}}}});
     renderer.begin(320, 240);
     renderer.draw(picture, {}, 1);
     renderer.draw(icon, {}, 1);
@@ -98,10 +97,6 @@ void test_image_texture(GpuRenderer& renderer)
     renderer.release(picture);
     expect(!picture.texture && !picture.buffer, "Releasing image meshes must release textures");
     renderer.release(icon);
-    cairo_destroy(icon_cr);
-    cairo_surface_destroy(icon_surface);
-    cairo_destroy(cr);
-    cairo_surface_destroy(surface);
 }
 
 int main()
@@ -131,22 +126,20 @@ int main()
                 std::this_thread::sleep_for(5ms);
             }
             expect(visible, "GPU test window must be mapped before reading its framebuffer");
-            auto* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1);
-            auto* cr = cairo_create(surface);
-            auto* layout = pango_cairo_create_layout(cr);
-            auto* font = pango_font_description_from_string("JetBrains Mono");
-            pango_font_description_set_absolute_size(font, 20 * PANGO_SCALE);
-            pango_layout_set_font_description(layout, font);
-            pango_font_description_free(font);
-            pango_layout_set_text(layout, "a != b -> c && d", -1);
-            auto* attributes = pango_attr_list_new();
-            pango_attr_list_insert(attributes,
+            const SurfaceHandle surface{cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1)};
+            const CairoHandle cr{cairo_create(surface.get())};
+            const LayoutHandle layout{pango_cairo_create_layout(cr.get())};
+            const FontHandle font{pango_font_description_from_string("JetBrains Mono")};
+            pango_font_description_set_absolute_size(font.get(), 20 * PANGO_SCALE);
+            pango_layout_set_font_description(layout.get(), font.get());
+            pango_layout_set_text(layout.get(), "a != b -> c && d", -1);
+            AttributesHandle attributes{pango_attr_list_new()};
+            pango_attr_list_insert(attributes.get(),
                                    pango_attr_font_features_new("liga=1,calt=1,clig=1"));
-            pango_attr_list_insert(attributes, pango_attr_foreground_new(0xffff, 0, 0));
-            pango_layout_set_attributes(layout, attributes);
-            pango_attr_list_unref(attributes);
+            pango_attr_list_insert(attributes.get(), pango_attr_foreground_new(0xffff, 0, 0));
+            pango_layout_set_attributes(layout.get(), attributes.get());
             GpuMesh mesh;
-            renderer.upload(mesh, {{layout, {0, 0}}});
+            renderer.upload(mesh, {{layout.get(), {0, 0}}});
             const auto cached_glyphs = renderer.glyph_count();
             expect(cached_glyphs > 0, "Shaped glyphs must be uploaded to the GPU atlas");
             renderer.begin(320, 240);
@@ -172,12 +165,11 @@ int main()
             expect(renderer.glyph_count() == cached_glyphs,
                    "Zoom and pan must reuse cached glyphs without any rerasterization");
             expect(glGetError() == GL_NO_ERROR, "GPU navigation must not produce OpenGL errors");
-            attributes = pango_attr_list_new();
-            pango_attr_list_insert(attributes,
+            attributes.reset(pango_attr_list_new());
+            pango_attr_list_insert(attributes.get(),
                                    pango_attr_font_features_new("liga=0,calt=0,clig=0"));
-            pango_layout_set_attributes(layout, attributes);
-            pango_attr_list_unref(attributes);
-            renderer.upload(mesh, {{layout, {0, 0}}});
+            pango_layout_set_attributes(layout.get(), attributes.get());
+            renderer.upload(mesh, {{layout.get(), {0, 0}}});
             expect(renderer.glyph_count() > cached_glyphs,
                    "The renderer must use Pango's ligature glyphs rather than rendering separate "
                    "characters");
@@ -186,9 +178,6 @@ int main()
             test_theme(renderer);
             std::cout << "GPU atlas, color, ligature and cache reuse checks passed on "
                       << renderer.device() << '\n';
-            g_object_unref(layout);
-            cairo_destroy(cr);
-            cairo_surface_destroy(surface);
         }
         XCloseDisplay(display);
         return 0;

@@ -187,9 +187,9 @@ std::atomic<int> next_request_id{2};
 struct LanguageServer::Impl {
     struct Request {
         int id = 0;
-        std::string method;
-        std::string uri;
-        Json params;
+        std::string method{};
+        std::string uri{};
+        Json params{};
         int version = 0;
     };
     Mailbox<Message> results;
@@ -326,12 +326,10 @@ struct LanguageServer::Impl {
                     request_semantics(document.uri);
         } else if (method == "textDocument/publishDiagnostics") {
             const auto uri = params.value("uri", "");
-            publish({method,
-                     uri,
-                     0,
-                     params.value("diagnostics", Json::array()),
-                     {},
-                     params.value("version", 0)});
+            publish({.method = method,
+                     .uri = uri,
+                     .result = params.value("diagnostics", Json::array()),
+                     .version = params.value("version", 0)});
             request_semantics(uri);
         }
     }
@@ -349,18 +347,21 @@ struct LanguageServer::Impl {
             supports_semantics = capabilities.contains("semanticTokensProvider");
             ready = true;
             send_message({{"method", "initialized"}, {"params", Json::object()}});
-            publish({"initialized", "", id, capabilities, {}});
+            publish({.method = "initialized", .id = id, .result = capabilities});
             for (const auto& document : documents)
                 open_document(document);
         } else if (auto found = pending.find(id); found != pending.end()) {
             const auto& request = found->second;
             if (request.method == "textDocument/semanticTokens/full")
                 semantic_pending.erase(request.uri);
-            publish({request.method, request.uri, id, value.value("result", Json()),
-                     value.contains("error")
-                         ? value["error"].value("message", "Language request failed")
-                         : "",
-                     request.version});
+            publish({.method = request.method,
+                     .uri = request.uri,
+                     .id = id,
+                     .result = value.value("result", Json()),
+                     .error = value.contains("error")
+                                  ? value["error"].value("message", "Language request failed")
+                                  : "",
+                     .version = request.version});
             pending.erase(found);
         }
     }
@@ -502,7 +503,7 @@ struct LanguageServer::Impl {
         try {
             run();
         } catch (const std::exception& error) {
-            publish({"error", "", 0, {}, error.what()});
+            publish({.method = "error", .error = error.what()});
         }
         server.stop(100ms);
     }};
@@ -528,23 +529,28 @@ std::vector<Message> LanguageServer::take_messages()
 int LanguageServer::request(std::string method, std::string uri, Json params)
 {
     const int id = next_request_id++;
-    impl->commands.post({id, std::move(method), std::move(uri), std::move(params)});
+    impl->commands.post({.id = id,
+                         .method = std::move(method),
+                         .uri = std::move(uri),
+                         .params = std::move(params)});
     return id;
 }
 
 void LanguageServer::open(Document document)
 {
-    impl->commands.post({0, "open", std::move(document.uri), std::move(document.text)});
+    impl->commands.post(
+        {.method = "open", .uri = std::move(document.uri), .params = std::move(document.text)});
 }
 } // namespace lsp
 
 namespace lsp {
 void LanguageServer::change(Document document)
 {
-    impl->commands.post({0, "change", std::move(document.uri), std::move(document.text)});
+    impl->commands.post(
+        {.method = "change", .uri = std::move(document.uri), .params = std::move(document.text)});
 }
 void LanguageServer::close(const std::string& uri)
 {
-    impl->commands.post({0, "close", uri, nullptr});
+    impl->commands.post({.method = "close", .uri = uri});
 }
 } // namespace lsp
