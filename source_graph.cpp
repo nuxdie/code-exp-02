@@ -147,6 +147,30 @@ int window_columns(const std::vector<Vec2>& sizes, double gap)
     }
     return best;
 }
+// One folder's files in columns. Unusually wide files go last, so they share columns
+// instead of widening everyone's.
+std::vector<CanvasRect> pack_folder(const std::vector<GraphFile>& files,
+                                    std::vector<std::size_t>& members)
+{
+    std::vector<Vec2> widths;
+    for (const auto index : members)
+        widths.push_back(files[index].size);
+    std::nth_element(widths.begin(), widths.begin() + widths.size() / 2, widths.end(),
+                     [](Vec2 a, Vec2 b) { return a.x < b.x; });
+    const double wide = 1.8 * widths[widths.size() / 2].x;
+    std::stable_partition(members.begin(), members.end(),
+                          [&](auto index) { return files[index].size.x <= wide; });
+    std::vector<Vec2> usual, broad;
+    for (const auto index : members)
+        (files[index].size.x <= wide ? usual : broad).push_back(files[index].size);
+    auto packed = arrange_files(usual, window_columns(usual, 96));
+    const double right = usual.empty() ? 0 : canvas_size(packed).x + 96;
+    for (auto file : arrange_files(broad, window_columns(broad, 96))) {
+        file.origin.x += right;
+        packed.push_back(file);
+    }
+    return packed;
+}
 } // namespace
 
 GraphLayout folder_layout(const std::vector<GraphFile>& files, const std::vector<Dependency>& edges)
@@ -193,25 +217,7 @@ GraphLayout folder_layout(const std::vector<GraphFile>& files, const std::vector
         auto& members = groups[group];
         std::stable_sort(members.begin(), members.end(),
                          [&](auto a, auto b) { return file_order[a] < file_order[b]; });
-        std::vector<Vec2> sizes;
-        for (const auto index : members)
-            sizes.push_back(files[index].size);
-        // Unusually wide files go last, so they share columns instead of widening everyone's.
-        auto widths = sizes;
-        std::nth_element(widths.begin(), widths.begin() + widths.size() / 2, widths.end(),
-                         [](Vec2 a, Vec2 b) { return a.x < b.x; });
-        const double wide = 1.8 * widths[widths.size() / 2].x;
-        std::stable_partition(members.begin(), members.end(),
-                              [&](auto index) { return files[index].size.x <= wide; });
-        std::vector<Vec2> usual, broad;
-        for (const auto index : members)
-            (files[index].size.x <= wide ? usual : broad).push_back(files[index].size);
-        auto packed = arrange_files(usual, window_columns(usual, 96));
-        const double right = usual.empty() ? 0 : canvas_size(packed).x + 96;
-        for (auto file : arrange_files(broad, window_columns(broad, 96))) {
-            file.origin.x += right;
-            packed.push_back(file);
-        }
+        const auto packed = pack_folder(files, members);
         group_sizes.push_back(canvas_size(packed));
         for (std::size_t i = 0; i < members.size(); ++i)
             result.files[members[i]] = packed[i];
