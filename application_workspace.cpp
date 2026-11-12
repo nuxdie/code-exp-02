@@ -47,8 +47,20 @@ void Application::begin_workspace_load()
                 workspace_build = candidate.string();
         std::filesystem::create_directories(workspace_build);
     }
+    // Positions saved under an older arrangement are not worth restoring.
+    auto session = read_session();
+    if (session.is_object() && session.value("layout", "") == "folders")
+        workspace_load->session = std::move(session);
     workspace_load->reading = load_in_background([root = workspace_root] {
         auto files = list_project_files(root);
+        for (auto& file : files) {
+            const auto text =
+                project_image(file.path) ? std::nullopt : read_project_file(root, file.path);
+            if (!text)
+                continue;
+            file.rows = folded_rows(*text, file.path);
+            file.columns = text_extent(*text).second;
+        }
         std::sort(files.begin(), files.end(), [](const auto& a, const auto& b) {
             const int first = load_priority(a.path), second = load_priority(b.path);
             return first == second ? a.path < b.path : first < second;
@@ -66,8 +78,6 @@ void Application::advance_workspace_load()
         prepare_workspace_preview(load.reading.get());
         return;
     }
-    if (load.next != load.preview_next && Clock::now() >= load.preview_due)
-        redraw = true;
     const auto deadline = Clock::now() + std::chrono::milliseconds(8);
     while (load.next < load.files.size()) {
         if (!add_workspace_panel() || load.next == 1 || Clock::now() >= deadline)
@@ -80,12 +90,11 @@ void Application::advance_workspace_load()
         for (const auto& panel : panels)
             files.push_back(
                 {panel.path, complete ? std::string{} : panel.source, panel.bounds.size});
-        load.layout = load_in_background(
-            [files = std::move(files), snapshot = std::move(load.snapshot), edges = load.edges,
-             complete, root = workspace_root, build = workspace_build]() mutable {
+        load.layout =
+            load_in_background([files = std::move(files), snapshot = std::move(load.snapshot),
+                                edges = load.edges, complete, root = workspace_root]() mutable {
                 WorkspaceLayout result;
                 result.dependencies = complete ? std::move(edges) : file_dependencies(files);
-                result.graph = folder_layout(files, result.dependencies);
                 result.watcher = std::make_unique<ProjectWatcher>(root, std::move(snapshot));
                 return result;
             });
@@ -94,28 +103,97 @@ void Application::advance_workspace_load()
     if (ready(load.layout)) {
         auto result = load.layout.get();
         dependencies = std::move(result.dependencies);
-        graph = std::move(result.graph);
         project_watcher = std::move(result.watcher);
-        apply_graph_layout();
+        finish_plan();
         finish_workspace_load();
     }
 }
 
+// How big a file's card will be, from its line and column counts alone.
+Vec2 Application::estimated_size(const ProjectFile& file, double cell) const
+{
+    const double title = static_cast<double>(file.path.size()) * cell + 64;
+    // An image is shown at most 640 wide; its height is known only once it is decoded.
+    if (project_image(file.path))
+        return {std::max(title, 640.0), header_height + 360.0};
+    return {std::max(title, file.columns * cell) + 36,
+            header_height + static_cast<double>(file.rows) * line_height};
+}
+
+// A file whose real size differs from the plan moves only what was planned beneath it.
+void Application::settle_plan(std::size_t index, Vec2 size)
+{
+    auto& load = *workspace_load;
+    auto& own = load.plan[index];
+    const double delta = size.y - own.size.y, bottom = own.origin.y + own.size.y;
+    const double left = own.origin.x, right = left + std::max(own.size.x, size.x);
+    own.size = size;
+    if (delta == 0)
+        return;
+    for (auto& other : load.plan)
+        if (&other != &own && other.origin.y >= bottom && other.origin.x < right &&
+            other.origin.x + other.size.x > left)
+            other.origin.y += delta;
+    for (std::size_t i = 0; i < panels.size(); ++i)
+        panels[i].bounds.origin = load.plan[load.panel_indices[i]].origin;
+}
+
+// The plan becomes the canvas. Only if real sizes made files collide is it arranged again.
+void Application::finish_plan()
+{
+    graph.files.clear();
+    for (const auto& panel : panels)
+        graph.files.push_back(panel.bounds);
+    graph.size = canvas_size(graph.files);
+    apply_graph_layout();
+    for (std::size_t i = 0; i < panels.size(); ++i)
+        for (std::size_t j = i + 1; j < panels.size(); ++j)
+            if (panels[i].bounds.intersects(panels[j].bounds)) {
+                relayout();
+                return;
+            }
+}
+
+// Every file gets its place before any is read: where it was last time, or for a project
+// seen for the first time, where its line and column counts say it will fit.
 void Application::prepare_workspace_preview(std::vector<ProjectFile> files)
 {
     auto& load = *workspace_load;
+    const auto saved = load.session.is_object() ? load.session.value("files", lsp::Json::object())
+                                                : lsp::Json::object();
+    // Files the saved canvas does not know come last, so they can join their folder.
+    std::stable_partition(files.begin(), files.end(), [&](const auto& file) {
+        return !load.session.is_object() || saved.contains(file.path);
+    });
+    auto* sample = pango_layout_copy(base_layout);
+    pango_layout_set_text(sample, "0000000000", -1);
+    int ten = 0;
+    pango_layout_get_pixel_size(sample, &ten, nullptr);
+    g_object_unref(sample);
     panels.reserve(files.size());
     load.files.reserve(files.size());
-    load.titles.resize(files.size());
     for (auto& file : files) {
         load.index.emplace(file.path, static_cast<int>(load.files.size()));
-        const auto lines = std::clamp(file.bytes / 42, std::uintmax_t{3}, std::uintmax_t{160});
-        const Vec2 size = project_image(file.path)
-                              ? Vec2{400, 280}
-                              : Vec2{620, header_height + static_cast<double>(lines) * line_height};
+        const auto place = saved.value(file.path, lsp::Json::object());
+        const auto size = place.contains("w") ? Vec2{place.at("w"), place.at("h")}
+                                              : estimated_size(file, ten / 10.0);
+        load.plan.push_back(place.contains("x") ? CanvasRect{{place.at("x"), place.at("y")}, size}
+                                                : CanvasRect{});
         load.files.push_back({std::move(file.path), {}, size});
     }
-    load.preview = folder_layout(load.files, {});
+    if (load.session.is_object()) {
+        restore_window(load.session);
+        const auto view = load.session.value("camera", lsp::Json::object());
+        if (view.contains("zoom")) {
+            camera.center = {view.at("x"), view.at("y")};
+            camera.zoom = std::clamp(view.value("zoom", 1.0), Camera::min_zoom, Camera::max_zoom);
+        }
+    } else {
+        load.plan = folder_layout(load.files, {}).files;
+        camera.fit(canvas_size(load.plan), viewport());
+        camera.zoom = std::min(camera.zoom, 1.0);
+    }
+    zoom_animation.cancel(camera);
     start_workspace_file();
     redraw = true;
 }
@@ -145,10 +223,13 @@ bool Application::add_workspace_panel()
     auto& file = load.files[index];
     if (!detail.source) {
         file.size = {};
+        settle_plan(index, {});
         return true;
     }
 
     auto panel = make_panel(file.path, *detail.source, detail.image ? &*detail.image : nullptr);
+    if (load.session.is_object())
+        restore_folds(panel, load.session["files"].value(file.path, lsp::Json::object()));
     update_mesh(panel);
     if (panel.cpp && documents.size() < 3) {
         documents.push_back({panel.uri, panel.source});
@@ -161,74 +242,40 @@ bool Application::add_workspace_panel()
     load.snapshot.emplace(file.path, std::move(*detail.source));
     file_sizes.push_back(panel.bounds.size);
     load.panel_indices.push_back(index);
+    const bool planned = load.plan[index].size.x > 0;
+    panel.bounds.origin = load.plan[index].origin;
     panels.push_back(std::move(panel));
-    redraw |= panels.size() == 1;
+    if (planned) {
+        settle_plan(index, panels.back().bounds.size);
+    } else {
+        place_in_folder(panels.back());
+        load.plan[index] = panels.back().bounds;
+    }
+    if (Clock::now() >= load.draw_due) {
+        load.draw_due = Clock::now() + std::chrono::milliseconds(50);
+        redraw = true;
+    }
     return true;
 }
 
+// While files arrive the canvas is already the canvas: a file not read yet is a faint
+// card where it will be.
 void Application::draw_workspace_preview(const Viewport& view)
 {
     auto& load = *workspace_load;
-    const auto saved_camera = camera;
-    if (load.next != load.preview_next && Clock::now() >= load.preview_due) {
-        load.preview = folder_layout(load.files, load.edges);
-        std::vector<GpuPath> paths;
-        for (const auto& edge : load.edges) {
-            const auto& from = load.preview.files[edge.source];
-            const auto& to = load.preview.files[edge.target];
-            if (load.files[edge.target].size.x > 0)
-                paths.push_back(
-                    {{{from.origin.x + from.size.x, from.origin.y + header_height / 2.0},
-                      {to.origin.x, to.origin.y + header_height / 2.0}},
-                     {0.55f, 0.63f, 0.73f, 0.45f},
-                     1,
-                     false});
-        }
-        renderer->paths(load.connections, paths);
-        load.preview_next = load.next;
-        load.preview_due = Clock::now() + std::chrono::milliseconds(80);
-    }
-    auto preview_view = view;
-    preview_view.height = std::max(1.0, view.height - 44);
-    camera.fit(load.preview.size, preview_view);
-    camera.center.y += 22 / camera.zoom;
-    for (std::size_t i = 0; i < panels.size(); ++i)
-        panels[i].bounds.origin = load.preview.files[load.panel_indices[i]].origin;
-
     renderer->begin(width, height);
-    if (show_connections)
-        renderer->draw(load.connections, camera.world_to_screen({}, view), camera.zoom);
-    const CanvasRect screen{{0, 0}, {view.width, preview_view.height}};
-    const bool show_body = camera.zoom >= 0.18;
-    int title_budget = 16;
-    for (std::size_t i = show_body ? load.next : 0; i < load.preview.files.size(); ++i) {
-        const auto& card = load.preview.files[i];
+    draw_regions(view);
+    const CanvasRect screen{{0, 0}, {view.width, view.height}};
+    for (std::size_t i = load.next; i < load.plan.size(); ++i) {
+        const auto& card = load.plan[i];
         const CanvasRect bounds{camera.world_to_screen(card.origin, view),
                                 {card.size.x * camera.zoom, card.size.y * camera.zoom}};
-        if (bounds.size.x <= 0 || !bounds.intersects(screen))
-            continue;
-        renderer->rectangle(bounds, {0.91f, 0.93f, 0.96f, 0.62f});
-        if (i < load.next || !show_body)
-            continue;
-        auto& title = load.titles[i];
-        if (!title.buffer && title_budget > 0) {
-            auto* layout = make_line(load.files[i].path, {});
-            renderer->upload(title, {{layout, {0, 0}}});
-            g_object_unref(layout);
-            --title_budget;
-        }
-        renderer->clip(bounds, height);
-        renderer->draw(title, {bounds.origin.x + 4, bounds.origin.y + 2},
-                       std::max(0.5, camera.zoom));
-        renderer->clear_clip();
+        if (bounds.size.x > 0 && bounds.intersects(screen))
+            renderer->rectangle(bounds, {0.91f, 0.93f, 0.96f, 0.62f});
     }
-    if (show_body)
-        draw_files(view);
+    draw_files(view);
     draw_headers(view);
-    renderer->rectangle({{0, view.height - 44}, {view.width, 44}}, {1, 1, 1, 1});
-    renderer->draw(load.label, {16, view.height - 34}, 1);
     renderer->present();
-    camera = saved_camera;
 }
 
 void Application::finish_workspace_load()
@@ -242,14 +289,9 @@ void Application::finish_workspace_load()
         }
     }
     initialize_cmake();
-    camera.reset(viewport());
     initialize_chat();
     load_intent_margin();
     initialize_reload();
-    for (auto& title : workspace_load->titles)
-        renderer->release(title);
-    renderer->release(workspace_load->label);
-    renderer->release(workspace_load->connections);
     workspace_load.reset();
     redraw = true;
 }

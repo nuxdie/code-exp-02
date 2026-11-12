@@ -3333,6 +3333,31 @@
     "application_window_manager.cpp": "303f6ee f241acc",
     "tests/agent_windows_test.cpp": "b1e2970 27f3fb7 60644ed cb5c35b ac16345 bd212d7 ab6aed5 4c9692b 77df0d2 c8247fc 27a1571 5327c69 41dd47d 8ec957e a97d904 ef21f80 088818a 12fac20 34f8928 16740bd 810989e 7f6e379 878dec2 682b1ad 28dace2"
    }
+  },
+  {
+   "id": "claude-2026-11-12-startup-plan",
+   "at": "2026-11-12T01:29:13.104Z",
+   "source": "transcript",
+   "said": "now that our layout is column and grid based, do we even still need graphvis? and what about the app startup? what stops us from displaying this layout or some approximation right from the start? ... build",
+   "why": "Startup drew a guessed layout that rearranged as files loaded and then jumped to the saved positions. Every file now gets its place before any is read: the saved position and size, or on a first open a size counted from its lines and columns with the same folding rule the cards use. Loading only adjusts in place.",
+   "intent": "useful-legible-contextual",
+   "changes": {
+    "README.md": "4635d0c",
+    "application.h": "8f803c9 63fc924 20833c0 cd59fe2 05a1a60 cc2f6ed 54352a3 43cf52c 04305e9 726535f 132df4a",
+    "application_model.cpp": "a533024",
+    "application_overview.cpp": "a276264 627de75 e73396f a3cd7f6 220cc37",
+    "application_session.cpp": "8aa0c59 1826b74 c406953 7c86581 f059bc9 4214889 1c007cc bee5ffb 01e2dec b5ea535 dcdd16c f7ca3a1 8ed8527 6ed2462 057e296 dce46be 4e81316 0ab5b92 9b0ac7b 14e7674 a91e197 2d4086c 9343736 d080685 9ebec2b d1de39a 538dd55 7e56bf5 b875ab6 75f684c c5797be 17d6786 bd10cc0 8f7037d 776ce82 51d87e5 482cdbf 0378a91 961784c 61dcef0 2e2dfbf 04ca5fe cce7865 a649536",
+    "application_text_selection.cpp": "77e03b9 da18ec7 f73ac19",
+    "application_workspace.cpp": "f07bfdc c408a8f 43b3a00 f6099ac b35e2e6 72ea00c efa78f4 5bee740 8adf98d 19de814 b6f72d8 3003d94 bd392b0 a7b9bc6 a5b6899 36d7542 a10bdf4 47a8630 162996a 8199ea5 a270d3f d48613a abbc6c9 09234f6 bcecc9b 2789357 58e19a0 467ae8a de7ddce a653df6 4571b7d 8ed8527 be56b4e 477932c 3db1581 aecdfb3 88462ba 727b333 d158f3b b89d805 ccb4fe4 b52ecce c00dd49 5d5a3f7 41d71d0 1225bfb 1b63aa7 4766a9e ce01610 e1b5b83 1e9fc82 23f9de2 c07952c f3bc352 876c6e2 02ae70f 0289ceb 491d903 d4e680a 3025d10 4b92094 74b7f5b fa00be9 d410f93 eb95ce6 923026f 5272207 a11283f a80bc78 ce04bea 7f25716 ecfe7e9 fe3a999 7bd4b11 8106673 da349a7 98dceb8 4fc688f 4df413e 22d2020 2243f6f 917e56d 32c7962 5ce4700 0eb5655 072abe0 0ff09d6 f2def38 7d5f55f 299fe64 aa20bed b3fd028 b7e8468 043cd40 a24a046 5c42ab2 3ed7d0a",
+    "camera.h": "fe96237",
+    "project_watch.cpp": "47bf4da bdb682c a8054f7 362000d 0154f9b 229e04d c20207e f6d76e6 48cf688 185b1f1 d946e7e 211e738 7358ce6",
+    "project_watch.h": "9fe07ac dc87201 ad61477",
+    "source_panel.cpp": "28a7f7b aa77c50 715f3c3 b360329 dc59255 15e19ce 8adf98d 478547d 5807dd2 69426f8 7f9ef24 4662910 060494a a7c9904 7711656 e6e09b8 fefd69a 6bbad21 343fcd9 7c590b3 49d7225 1f60c05 dbbe5c2 e3ec5c7 d2196ed 0262835 e614922 9e92b35 fc635a5 c50c4d7 429e338 d0413ac 87b743d 249c099 6873632 e634be2",
+    "source_panel.h": "32ff91c bf0ad31 5e8e1a5 9850653 a0a82c1",
+    "tests/agent_activity_test.cpp": "3640b4a",
+    "tests/project_watch_test.cpp": "081e678 5209c8e 5cff847 f04b8fb",
+    "tests/workspace_test.cpp": "4082232 82915c1 0536a5b e52fd60 fb30d3e f19210c a1d2686 6c9076c c04b333 7a4f881 fb5f68f e133ac6"
+   }
   }
  ]
 }

@@ -21,10 +21,9 @@ bool Application::begin_text_selection(const XEvent& event, Vec2 pointer)
         text_selection = {};
         return false;
     }
-    if (XGrabPointer(display, window, False,
-                     ButtonPressMask | ButtonReleaseMask | PointerMotionMask, GrabModeAsync,
-                     GrabModeAsync, None, text_cursor, CurrentTime) != GrabSuccess)
-        return false;
+    // The grab only keeps a drag alive outside the window; a click works without it.
+    XGrabPointer(display, window, False, ButtonPressMask | ButtonReleaseMask | PointerMotionMask,
+                 GrabModeAsync, GrabModeAsync, None, text_cursor, CurrentTime);
     if (target.surface != TextSurface::Popup && !popup_text.empty())
         hide_popup();
     const bool extend =

@@ -218,9 +218,6 @@ int Application::run()
     if (!initialize_window())
         return 1;
     workspace_load = WorkspaceLoad{};
-    auto* label = make_line("Opening workspace…", {});
-    renderer->upload(workspace_load->label, {{label, {0, 0}}});
-    g_object_unref(label);
     XMapWindow(display, window);
     XFlush(display);
     draw();

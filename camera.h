@@ -42,7 +42,7 @@ struct Viewport {
  * <code>screen_to_world</code> and <code>world_to_screen</code> are inverses.
  */
 struct Camera {
-    static constexpr double min_zoom = 0.02;
+    static constexpr double min_zoom = 0.005;
     static constexpr double max_zoom = 8.0;
     Vec2 center;
     double zoom = 1;

@@ -29,6 +29,12 @@ void Application::draw_regions(const Viewport& view)
     files.reserve(panels.size());
     for (const auto& panel : panels)
         files.emplace_back(panel.path, panel.bounds);
+    // While a project is still being read, the planned places stand in for the files.
+    if (workspace_load) {
+        files.clear();
+        for (std::size_t i = 0; i < workspace_load->plan.size(); ++i)
+            files.emplace_back(workspace_load->files[i].path, workspace_load->plan[i]);
+    }
     regions = folder_regions(files);
     if (regions.size() < 2)
         return;

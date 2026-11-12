@@ -81,6 +81,25 @@ bool project_source(const std::string& path)
            name == ".clang-tidy" || name == ".cmake-format.json" ||
            extensions.count(file.extension().string()) != 0;
 }
+std::pair<int, int> text_extent(const std::string& text)
+{
+    int lines = 0, columns = 0, width = 0;
+    for (const char character : text) {
+        if (character == '\n') {
+            ++lines;
+            columns = std::max(columns, width);
+            width = 0;
+        } else if (character == '\t') {
+            width += 8 - width % 8;
+        } else if ((static_cast<unsigned char>(character) & 0xC0) != 0x80) {
+            ++width;
+        }
+    }
+    if (!text.empty() && text.back() != '\n')
+        ++lines;
+    return {lines, std::max(columns, width)};
+}
+
 std::vector<ProjectFile> list_project_files(const std::string& root)
 {
     std::vector<ProjectFile> files;

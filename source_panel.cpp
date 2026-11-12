@@ -1,7 +1,11 @@
 #include "source_panel.h"
+
+#include "syntax.h"
+
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
+#include <sstream>
 
 const char* file_icon(const std::string& filename)
 {
@@ -33,4 +37,53 @@ std::string fold_identity(const SourcePanel& panel, int line)
                               [](unsigned char c) { return std::isspace(c) || c == '{'; }),
                text.end());
     return text;
+}
+
+namespace {
+void collapse_long_blocks(std::vector<FoldBlock>& folds)
+{
+    for (auto& block : folds) {
+        if (block.last - block.first < 60)
+            continue;
+        const bool nested = std::any_of(folds.begin(), folds.end(), [&](const auto& other) {
+            return other.first < block.first && other.last >= block.last;
+        });
+        block.collapsed = !nested;
+    }
+}
+} // namespace
+
+std::vector<FoldBlock> brace_folds(const std::string& text, const std::string& path)
+{
+    const auto name = std::filesystem::path(path).filename();
+    const bool cmake = name == "CMakeLists.txt" || name.extension() == ".cmake";
+    const auto kind = text_kind(path);
+    std::vector<FoldBlock> folds;
+    std::vector<int> open;
+    HighlightState state;
+    std::istringstream source(text);
+    std::string line;
+    for (int number = 0; std::getline(source, line); ++number)
+        for (const auto& token : style_line(line, kind, state, cmake).tokens) {
+            if (token.syntax != Syntax::Plain)
+                continue;
+            for (auto offset = token.begin; offset < token.begin + token.length; ++offset) {
+                if (line[offset] == '{')
+                    open.push_back(number);
+                if (line[offset] != '}' || open.empty())
+                    continue;
+                if (number > open.back() + 1)
+                    folds.push_back({open.back(), number, false});
+                open.pop_back();
+            }
+        }
+    collapse_long_blocks(folds);
+    return folds;
+}
+
+int folded_rows(const std::string& text, const std::string& path)
+{
+    const int lines = static_cast<int>(std::count(text.begin(), text.end(), '\n')) +
+                      (!text.empty() && text.back() != '\n' ? 1 : 0);
+    return static_cast<int>(fold_view(lines, brace_folds(text, path)).source_lines.size());
 }

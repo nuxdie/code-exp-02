@@ -42,14 +42,12 @@ SourcePanel Application::make_panel(const std::string& path, const std::string& 
     }
     HighlightState highlight_state;
     const auto kind = text_kind(path);
-    std::vector<int> brace_stack;
     std::istringstream source(text);
     std::string line;
     while (std::getline(source, line)) {
         const auto styled = style_line(line, kind, highlight_state, panel.cmake);
         const auto& tokens = styled.tokens;
         auto* layout = make_line(line, tokens, styled.prose ? &*styled.prose : nullptr);
-        discover_braces(panel, line, tokens, brace_stack);
         int line_width = 0;
         pango_layout_get_pixel_size(layout, &line_width, nullptr);
         text_width = std::max(text_width, line_width);
@@ -59,15 +57,7 @@ SourcePanel Application::make_panel(const std::string& path, const std::string& 
     }
     panel.bounds.size = {static_cast<double>(text_width + 4),
                          header_height + static_cast<double>(panel.lines.size()) * line_height};
-    for (auto& block : panel.folds) {
-        if (block.last - block.first < 60)
-            continue;
-        const bool nested =
-            std::any_of(panel.folds.begin(), panel.folds.end(), [&](const auto& other) {
-                return other.first < block.first && other.last >= block.last;
-            });
-        block.collapsed = !nested;
-    }
+    panel.folds = brace_folds(text, path);
     return panel;
 }
 
@@ -390,26 +380,6 @@ void Application::load_icon(const std::string& icon_name)
             gpu_icons[icon_name] = renderer->image(image);
             cairo_destroy(image_cr);
             cairo_surface_destroy(image);
-        }
-    }
-}
-
-void Application::discover_braces(SourcePanel& panel, const std::string& line,
-                                  const std::vector<Token>& tokens, std::vector<int>& brace_stack)
-{
-    for (const auto& token : tokens) {
-        if (token.syntax != Syntax::Plain)
-            continue;
-        for (std::size_t offset = token.begin; offset < token.begin + token.length; ++offset) {
-            if (line[offset] == '{')
-                brace_stack.push_back(static_cast<int>(panel.lines.size()));
-            if (line[offset] == '}' && !brace_stack.empty()) {
-                const int first = brace_stack.back();
-                brace_stack.pop_back();
-                const int last = static_cast<int>(panel.lines.size());
-                if (last > first + 1)
-                    panel.folds.push_back({first, last, false});
-            }
         }
     }
 }

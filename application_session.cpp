@@ -31,6 +31,39 @@ void Application::load_agent_windows(const lsp::Json& state, const char* environ
     }
 }
 
+// The saved canvas for this project, or null when there is none to use.
+lsp::Json Application::read_session() const
+{
+    if (benchmark || std::getenv("SOURCE_CANVAS_DISABLE_SESSION"))
+        return nullptr;
+    std::ifstream input(session_path(workspace_root));
+    if (!input)
+        return nullptr;
+    auto state = lsp::Json::parse(input, nullptr, false);
+    if (!state.is_object() || state.value("root", "") != workspace_root)
+        return nullptr;
+    return state;
+}
+
+void Application::restore_window(const lsp::Json& state)
+{
+    const auto window = state.value("window", lsp::Json::object());
+    if (!window.contains("width"))
+        return;
+    width = std::max(320, window.value("width", width));
+    height = std::max(240, window.value("height", height));
+    XSizeHints hints{};
+    hints.flags = PPosition | PSize | PWinGravity;
+    hints.win_gravity = StaticGravity;
+    hints.width = width;
+    hints.height = height;
+    hints.x = window.value("x", 0);
+    hints.y = window.value("y", 0);
+    XSetWMNormalHints(display, this->window, &hints);
+    XMoveResizeWindow(display, this->window, window.value("x", 0), window.value("y", 0), width,
+                      height);
+}
+
 void Application::load_session()
 {
     if (!chat || benchmark || std::getenv("SOURCE_CANVAS_DISABLE_SESSION"))
@@ -38,11 +71,8 @@ void Application::load_session()
     const char* environment_thread = std::getenv("CODEX_THREAD_ID");
     if (environment_thread)
         chat->conversation.thread_id = environment_thread;
-    std::ifstream input(session_path(workspace_root));
-    if (!input)
-        return;
-    const auto state = lsp::Json::parse(input, nullptr, false);
-    if (!state.is_object() || state.value("root", "") != workspace_root)
+    const auto state = read_session();
+    if (!state.is_object())
         return;
     try {
         appearance = state.value("appearance", "system");
@@ -79,26 +109,25 @@ void Application::load_session()
             zoom_animation.cancel(camera);
             initial_view = false;
         }
-        const auto window = state.value("window", lsp::Json::object());
         load_navigation(state.value("cameraHistory", lsp::Json::object()));
-        if (window.contains("width")) {
-            width = std::max(320, window.value("width", width));
-            height = std::max(240, window.value("height", height));
-            XSizeHints hints{};
-            hints.flags = PPosition | PSize | PWinGravity;
-            hints.win_gravity = StaticGravity;
-            hints.width = width;
-            hints.height = height;
-            hints.x = window.value("x", 0);
-            hints.y = window.value("y", 0);
-            XSetWMNormalHints(display, this->window, &hints);
-            XMoveResizeWindow(display, this->window, window.value("x", 0), window.value("y", 0),
-                              width, height);
-        }
+        restore_window(state);
     } catch (const lsp::Json::exception&) {
         // A partially written or older view-state file must never prevent opening the project.
     }
 }
+bool Application::restore_folds(SourcePanel& panel, const lsp::Json& saved)
+{
+    const auto folds = saved.value("folds", lsp::Json::object());
+    bool changed = false;
+    for (auto& fold : panel.folds) {
+        const auto collapsed = folds.value(fold_identity(panel, fold.first),
+                                           folds.value(std::to_string(fold.first), fold.collapsed));
+        changed |= collapsed != fold.collapsed;
+        fold.collapsed = collapsed;
+    }
+    return changed;
+}
+
 void Application::restore_file_layouts(const lsp::Json& files, bool placed)
 {
     // Files that appeared since the session was saved have no place yet.
@@ -111,22 +140,11 @@ void Application::restore_file_layouts(const lsp::Json& files, bool placed)
         }
         if (placed)
             panel.bounds.origin = {saved.at("x"), saved.at("y")};
-        const auto folds = saved.value("folds", lsp::Json::object());
-        bool changed = false;
-        for (auto& fold : panel.folds) {
-            const auto collapsed =
-                folds.value(fold_identity(panel, fold.first),
-                            folds.value(std::to_string(fold.first), fold.collapsed));
-            changed |= collapsed != fold.collapsed;
-            fold.collapsed = collapsed;
-        }
-        if (changed)
+        if (restore_folds(panel, saved))
             update_mesh(panel);
     }
-    if (!placed) {
-        relayout();
+    if (!placed)
         return;
-    }
     for (auto& panel : panels)
         if (unplaced.erase(panel.path))
             place_in_folder(panel, unplaced);
@@ -143,8 +161,11 @@ void Application::save_session()
         lsp::Json folds = lsp::Json::object();
         for (const auto& fold : panel.folds)
             folds[fold_identity(panel, fold.first)] = fold.collapsed;
-        files[panel.path] = {
-            {"x", panel.bounds.origin.x}, {"y", panel.bounds.origin.y}, {"folds", folds}};
+        files[panel.path] = {{"x", panel.bounds.origin.x},
+                             {"y", panel.bounds.origin.y},
+                             {"w", panel.bounds.size.x},
+                             {"h", panel.bounds.size.y},
+                             {"folds", folds}};
     }
     int x = 0, y = 0;
     Window child;

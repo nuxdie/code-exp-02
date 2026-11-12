@@ -27,16 +27,22 @@ struct ApplicationTestAccess {
         app.begin_workspace_load();
         app.workspace_load->reading.wait();
         app.advance_workspace_load();
-        expect(app.panels.empty() && app.workspace_load->preview.files.size() == 2,
-               "Filesystem metadata must lay out cards before reading their contents");
-        const auto& estimates = app.workspace_load->preview.files;
-        expect(estimates[1].size.y > estimates[0].size.y,
-               "Larger files must receive taller placeholder cards");
+        expect(app.panels.empty() && app.workspace_load->plan.size() == 2,
+               "Every file must have its place before any card is built");
+        const auto estimates = app.workspace_load->plan;
+        expect(estimates[1].size.y > estimates[0].size.y &&
+                   estimates[1].size.x > 4 * estimates[0].size.x,
+               "A file's planned card must follow from its line and column counts");
         app.draw();
         app.workspace_load->detail.wait();
         app.advance_workspace_load();
         expect(app.workspace_load && app.panels.size() == 1 && !app.chat,
                "The first file card must be ready before the complete workspace");
+        const auto& first = app.panels.front().bounds;
+        expect(first.origin.x == estimates[0].origin.x && first.origin.y == estimates[0].origin.y &&
+                   std::abs(first.size.y - estimates[0].size.y) < 1 &&
+                   std::abs(first.size.x - estimates[0].size.x) < 40,
+               "A card must appear where it was planned, at about the planned size");
         const auto& edges = app.workspace_load->edges;
         expect(edges.size() == 1 && edges.front().source == 0 && edges.front().target == 1,
                "A loaded file must expose its dependency on a placeholder");
@@ -127,7 +133,7 @@ struct ApplicationTestAccess {
         app.begin_workspace_load();
         app.workspace_load->reading.wait();
         app.advance_workspace_load();
-        expect(app.panels.empty() && !app.workspace_load->preview.files.empty(),
+        expect(app.panels.empty() && !app.workspace_load->plan.empty(),
                "Filesystem metadata must lay out cards before reading their contents");
         app.workspace_load->detail.wait();
         app.advance_workspace_load();

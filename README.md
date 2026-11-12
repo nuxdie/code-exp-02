@@ -179,7 +179,7 @@ Session state normally lives in `.cache/canvas-session.json` and preserves the c
 
 ## Under the hood
 
-The interface is built directly on X11 and OpenGL. Pango/Cairo shape text, an OpenGL renderer draws the canvas, and files are laid out by folder, each folder a region of the canvas, and stay where they are until you arrange them again. Language servers and the agent bridge communicate asynchronously with the application.
+The interface is built directly on X11 and OpenGL. Pango/Cairo shape text, an OpenGL renderer draws the canvas, and files are laid out by folder, each folder a region of the canvas, and stay where they are until you arrange them again. Every file has its place from the first frame: where it was last time, or on a first open where its line and column counts say it will fit; contents fill in behind without rearranging. Language servers and the agent bridge communicate asynchronously with the application.
 
 | Area | Start reading here |
 | --- | --- |

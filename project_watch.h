@@ -18,7 +18,11 @@ bool project_source(const std::string& path);
 struct ProjectFile {
     std::string path;
     std::uintmax_t bytes;
+    int rows = 0, columns = 0; // of its card, counted from its text without shaping it
 };
+
+// How many lines a text has and how wide its longest is, in character cells.
+std::pair<int, int> text_extent(const std::string& text);
 
 std::vector<ProjectFile> list_project_files(const std::string& root);
 std::optional<std::string> read_project_file(const std::string& root, const std::string& path);

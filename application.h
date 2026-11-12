@@ -81,7 +81,6 @@ class Application {
     };
     struct WorkspaceLayout {
         std::vector<Dependency> dependencies;
-        GraphLayout graph;
         std::unique_ptr<ProjectWatcher> watcher;
     };
     struct WorkspaceFile {
@@ -95,13 +94,13 @@ class Application {
         std::vector<GraphFile> files;
         FileIndex index;
         std::vector<Dependency> edges;
-        GraphLayout preview;
-        std::vector<GpuMesh> titles;
+        // Where every file will be, decided before any is read and only adjusted in place.
+        std::vector<CanvasRect> plan;
+        lsp::Json session; // the saved canvas, when its positions can be trusted
         std::vector<std::size_t> panel_indices;
-        std::size_t next = 0, preview_next = 0;
-        Clock::time_point preview_due{};
+        std::size_t next = 0;
+        Clock::time_point draw_due{};
         std::future<WorkspaceLayout> layout;
-        GpuMesh label, connections;
     };
     std::optional<WorkspaceLoad> workspace_load;
     int screen = 0;
@@ -313,6 +312,12 @@ class Application {
     void draw_workspace_preview(const Viewport& view);
     void finish_workspace_load();
     void restore_file_layouts(const lsp::Json& files, bool placed);
+    lsp::Json read_session() const;
+    bool restore_folds(SourcePanel& panel, const lsp::Json& saved);
+    void restore_window(const lsp::Json& state);
+    Vec2 estimated_size(const ProjectFile& file, double cell) const;
+    void settle_plan(std::size_t index, Vec2 size);
+    void finish_plan();
     void load_agent_windows(const lsp::Json& state, const char* environment_thread);
     void open_directory_picker();
     void poll_directory_picker();
@@ -549,8 +554,6 @@ class Application {
     void add_popup_syntax(PangoAttrList* attributes, const std::string& text, std::size_t offset,
                           HighlightState& state);
     void load_icon(const std::string& icon_name);
-    void discover_braces(SourcePanel& panel, const std::string& line,
-                         const std::vector<Token>& tokens, std::vector<int>& brace_stack);
     void apply_diagnostics(const SourcePanel& panel, std::size_t line, PangoAttrList* attributes);
     void language_error(const lsp::Message& message);
     void language_initialized(const lsp::Message& message);

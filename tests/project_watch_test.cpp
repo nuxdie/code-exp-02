@@ -42,6 +42,10 @@ int main()
         expect(images.at("assets/photo.PNG") == binary_image && project_image("photo.PNG"),
                "Image discovery must preserve binary bytes and accept uppercase extensions");
         std::filesystem::remove_all(root / "assets");
+        expect(text_extent("ab\n\tc\nлиния") == std::pair<int, int>{3, 9} &&
+                   text_extent("") == std::pair<int, int>{0, 0} &&
+                   text_extent("one\n") == std::pair<int, int>{1, 3},
+               "Text must be measured in lines and character cells without shaping it");
         const auto initial = read_project(root.string());
         expect(initial.size() == 1 && project_source("notes.tex") &&
                    project_source("docs/notes.md"),
