@@ -140,23 +140,11 @@ bool Application::search_button(const XEvent& event, Vec2 pointer)
 }
 void Application::paste_search(const XEvent& event)
 {
-    Atom type;
-    int format;
-    unsigned long count = 0, remaining = 0;
-    unsigned char* bytes = nullptr;
-    if (XGetWindowProperty(display, window, event.xselection.property, 0, 262144, True,
-                           AnyPropertyType, &type, &format, &count, &remaining,
-                           &bytes) != Success ||
-        !bytes)
+    auto text = pasted_text(event);
+    if (!text || !search.active || text->size() > 1024)
         return;
-    if (search.active && format == 8 && count <= 1024 &&
-        g_utf8_validate(reinterpret_cast<const char*>(bytes), static_cast<gssize>(count),
-                        nullptr)) {
-        std::string text(reinterpret_cast<const char*>(bytes), count);
-        std::replace(text.begin(), text.end(), '\n', ' ');
-        std::replace(text.begin(), text.end(), '\r', ' ');
-        search.query.insert(text);
-        update_search();
-    }
-    XFree(bytes);
+    std::ranges::replace(*text, '\n', ' ');
+    std::ranges::replace(*text, '\r', ' ');
+    search.query.insert(*text);
+    update_search();
 }

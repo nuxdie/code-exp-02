@@ -2,29 +2,8 @@
 
 void Application::draw_input_selection(Vec2 origin)
 {
-    const auto [begin, end] = chat->input.selection();
-    if (begin == end)
-        return;
-    auto* iterator = pango_layout_get_iter(chat->composer.layout.get());
-    do {
-        auto* line = pango_layout_iter_get_line_readonly(iterator);
-        PangoRectangle logical{};
-        pango_layout_iter_get_line_extents(iterator, nullptr, &logical);
-        int* ranges = nullptr;
-        int count = 0;
-        pango_layout_line_get_x_ranges(line, static_cast<int>(begin), static_cast<int>(end),
-                                       &ranges, &count);
-        for (int i = 0; i < count; ++i)
-            renderer->rectangle(
-                {{origin.x + ranges[i * 2] / static_cast<double>(PANGO_SCALE) * camera.zoom,
-                  origin.y + logical.y / static_cast<double>(PANGO_SCALE) * camera.zoom},
-                 {(ranges[i * 2 + 1] - ranges[i * 2]) / static_cast<double>(PANGO_SCALE) *
-                      camera.zoom,
-                  logical.height / static_cast<double>(PANGO_SCALE) * camera.zoom}},
-                {0.78f, 0.86f, 0.98f, 0.8f});
-        g_free(ranges);
-    } while (pango_layout_iter_next_line(iterator));
-    pango_layout_iter_free(iterator);
+    draw_selection_layout(chat->composer.layout.get(), origin, camera.zoom, chat->input.selection(),
+                          {0.78f, 0.86f, 0.98f, 0.8f});
 }
 void Application::move_chat_caret(int direction, bool extend)
 {

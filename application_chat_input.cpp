@@ -253,19 +253,8 @@ bool Application::chat_shortcut(KeySym key, unsigned state, const XEvent& event)
 void Application::chat_selection(const XEvent& event)
 {
     if (event.type == SelectionNotify && chat && event.xselection.property != None) {
-        Atom type;
-        int format;
-        unsigned long count = 0, remaining = 0;
-        unsigned char* bytes = nullptr;
-        if (XGetWindowProperty(display, window, event.xselection.property, 0, 262144, True,
-                               AnyPropertyType, &type, &format, &count, &remaining,
-                               &bytes) == Success &&
-            bytes) {
-            if (format == 8 && g_utf8_validate(reinterpret_cast<char*>(bytes),
-                                               static_cast<gssize>(count), nullptr))
-                chat->input.insert(std::string(reinterpret_cast<char*>(bytes), count));
-            XFree(bytes);
-        }
+        if (const auto text = pasted_text(event))
+            chat->input.insert(*text);
         redraw = true;
         schedule_save();
     } else if (event.type == SelectionRequest) {

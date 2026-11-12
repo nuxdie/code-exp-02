@@ -1,5 +1,7 @@
 #include "gpu.h"
 
+#include "handles.h"
+
 #include <epoxy/gl.h>
 #include <epoxy/glx.h>
 #include <pango/pangocairo.h>
@@ -140,7 +142,7 @@ struct GpuRenderer::Impl {
         display = connection;
         int attributes[] = {
             GLX_RGBA, GLX_DOUBLEBUFFER, GLX_RED_SIZE, 8, GLX_GREEN_SIZE, 8, GLX_BLUE_SIZE, 8, None};
-        auto* visual = glXChooseVisual(display, screen, attributes);
+        const Handle<XVisualInfo, XFree> visual{glXChooseVisual(display, screen, attributes)};
         if (!visual)
             throw std::runtime_error("No OpenGL window visual available");
         colormap = XCreateColormap(display, RootWindow(display, screen), visual->visual, AllocNone);
@@ -150,8 +152,7 @@ struct GpuRenderer::Impl {
         window =
             XCreateWindow(display, RootWindow(display, screen), 0, 0, 800, 600, 0, visual->depth,
                           InputOutput, visual->visual, CWColormap | CWBackPixel, &settings);
-        context = glXCreateContext(display, visual, nullptr, True);
-        XFree(visual);
+        context = glXCreateContext(display, visual.get(), nullptr, True);
         if (!context || !glXMakeCurrent(display, window, context))
             throw std::runtime_error("Could not create an OpenGL context");
         if (epoxy_gl_version() < 33)
@@ -283,25 +284,25 @@ void main() {
         }
         if (atlas_y + height > atlas_size)
             throw std::runtime_error("GPU glyph atlas is full");
-        auto* surface = cairo_image_surface_create(CAIRO_FORMAT_A8, width, height);
-        auto* cr = cairo_create(surface);
+        const SurfaceHandle surface{cairo_image_surface_create(CAIRO_FORMAT_A8, width, height)};
+        const CairoHandle drawing{cairo_create(surface.get())};
+        auto* cr = drawing.get();
         cairo_scale(cr, raster_scale, raster_scale);
         cairo_set_font_face(cr, cairo_scaled_font_get_font_face(font));
         cairo_matrix_t matrix;
         cairo_scaled_font_get_font_matrix(font, &matrix);
         cairo_set_font_matrix(cr, &matrix);
-        auto* options = cairo_font_options_create();
-        cairo_font_options_set_hint_style(options, CAIRO_HINT_STYLE_NONE);
-        cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_OFF);
-        cairo_set_font_options(cr, options);
-        cairo_font_options_destroy(options);
+        const FontOptionsHandle options{cairo_font_options_create()};
+        cairo_font_options_set_hint_style(options.get(), CAIRO_HINT_STYLE_NONE);
+        cairo_font_options_set_hint_metrics(options.get(), CAIRO_HINT_METRICS_OFF);
+        cairo_set_font_options(cr, options.get());
         cairo_set_source_rgba(cr, 1, 1, 1, 1);
         glyph.x = -left;
         glyph.y = -top;
         cairo_show_glyphs(cr, &glyph, 1);
-        cairo_surface_flush(surface);
-        const auto* pixels = cairo_image_surface_get_data(surface);
-        const int stride = cairo_image_surface_get_stride(surface);
+        cairo_surface_flush(surface.get());
+        const auto* pixels = cairo_image_surface_get_data(surface.get());
+        const int stride = cairo_image_surface_get_stride(surface.get());
         const auto inside = distances(pixels, stride, width, height, true);
         const auto outside = distances(pixels, stride, width, height, false);
         std::vector<unsigned char> sdf(width * height);
@@ -311,8 +312,6 @@ void main() {
             sdf[i] = static_cast<unsigned char>(
                 std::clamp(0.5f + distance / (2 * distance_range), 0.0f, 1.0f) * 255);
         }
-        cairo_destroy(cr);
-        cairo_surface_destroy(surface);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, atlas);
         glTexSubImage2D(GL_TEXTURE_2D, 0, atlas_x, atlas_y, width, height, GL_RED, GL_UNSIGNED_BYTE,
@@ -400,11 +399,10 @@ void main() {
     }
     void text(std::vector<Vertex>& vertices, const PlacedText& placed)
     {
-        auto* iterator = pango_layout_get_iter(placed.layout);
+        const LayoutIterHandle iterator{pango_layout_get_iter(placed.layout)};
         do {
-            text_run(vertices, placed, iterator);
-        } while (pango_layout_iter_next_run(iterator));
-        pango_layout_iter_free(iterator);
+            text_run(vertices, placed, iterator.get());
+        } while (pango_layout_iter_next_run(iterator.get()));
     }
 
     void bind(GLuint buffer)

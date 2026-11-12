@@ -10,7 +10,7 @@ void Application::search_line(DocumentView& view, const std::string& text, int r
     view.width = row_width;
     view.generation = document_generation;
     HighlightState state;
-    view.layout.reset(make_line(text, code ? highlight(text, state, cmake) : std::vector<Token>{}));
+    view.layout = make_line(text, code ? highlight(text, state, cmake) : std::vector<Token>{});
     pango_layout_set_width(view.layout.get(), std::max(1, row_width) * PANGO_SCALE);
     pango_layout_set_ellipsize(view.layout.get(), PANGO_ELLIPSIZE_END);
     pango_layout_set_height(view.layout.get(), -1);

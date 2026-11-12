@@ -21,6 +21,8 @@ using LayoutHandle = GObjectHandle<PangoLayout>;
 using AttributesHandle = Handle<PangoAttrList, pango_attr_list_unref>;
 using FontHandle = Handle<PangoFontDescription, pango_font_description_free>;
 using SurfaceHandle = Handle<cairo_surface_t, cairo_surface_destroy>;
+using LayoutIterHandle = Handle<PangoLayoutIter, pango_layout_iter_free>;
+using TabsHandle = Handle<PangoTabArray, pango_tab_array_free>;
 using CairoHandle = Handle<cairo_t, cairo_destroy>;
 using FontOptionsHandle = Handle<cairo_font_options_t, cairo_font_options_destroy>;
 

@@ -165,11 +165,10 @@ void Application::prepare_workspace_preview(std::vector<ProjectFile> files)
     std::stable_partition(files.begin(), files.end(), [&](const auto& file) {
         return !load.session.is_object() || saved.contains(file.path);
     });
-    auto* sample = pango_layout_copy(base_layout);
-    pango_layout_set_text(sample, "0000000000", -1);
+    const LayoutHandle sample{pango_layout_copy(base_layout.get())};
+    pango_layout_set_text(sample.get(), "0000000000", -1);
     int ten = 0;
-    pango_layout_get_pixel_size(sample, &ten, nullptr);
-    g_object_unref(sample);
+    pango_layout_get_pixel_size(sample.get(), &ten, nullptr);
     panels.reserve(files.size());
     load.files.reserve(files.size());
     for (auto& file : files) {

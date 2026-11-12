@@ -1,5 +1,6 @@
 #pragma once
 #include "gpu.h"
+#include "handles.h"
 #include "lsp.h"
 #include "structure.h"
 #include <string>
@@ -18,15 +19,15 @@ struct SourcePanel {
     GpuMesh header_mesh;
     std::vector<FoldBlock> folds;
     FoldView folded;
-    std::vector<PangoLayout*> fold_labels;
+    std::vector<LayoutHandle> fold_labels;
     std::vector<SymbolNode> symbols;
     bool symbols_expanded = false;
     std::vector<OutlineEntry> outline; // for when the file is too small to read
     int outline_key = -1;
-    PangoLayout* title = nullptr;
-    std::vector<PangoLayout*> lines;
+    LayoutHandle title;
+    std::vector<LayoutHandle> lines;
     std::vector<std::string> text;
-    std::vector<PangoAttrList*> lexical;
+    std::vector<AttributesHandle> lexical;
     std::vector<lsp::SemanticToken> semantics;
     lsp::Json diagnostics = lsp::Json::array();
     lsp::Json links = lsp::Json::array();

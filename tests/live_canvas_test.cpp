@@ -43,7 +43,7 @@ struct ApplicationTestAccess {
     {
         PangoRectangle glyph{};
         const auto byte = source.text[line].find(word);
-        pango_layout_index_to_pos(source.lines[line], static_cast<int>(byte), &glyph);
+        pango_layout_index_to_pos(source.lines[line].get(), static_cast<int>(byte), &glyph);
         const auto pointer = app.camera.world_to_screen(
             {source.bounds.origin.x + 24 + static_cast<double>(glyph.x) / PANGO_SCALE + 2,
              source.bounds.origin.y + app.header_height + (line + 0.5) * app.line_height},

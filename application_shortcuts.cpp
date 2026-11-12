@@ -108,23 +108,20 @@ void Application::style_shortcuts(int layout_width)
     if (layout_width < 600) {
         auto stacked = popup_text;
         std::replace(stacked.begin(), stacked.end(), '\t', '\n');
-        pango_layout_set_text(popup_layout, stacked.c_str(), static_cast<int>(stacked.size()));
+        pango_layout_set_text(popup_layout.get(), stacked.c_str(),
+                              static_cast<int>(stacked.size()));
     }
     // The guide is a reference sheet: UI text for actions, monospace for physical keys.
-    auto* font = pango_font_description_from_string("sans-serif");
-    pango_font_description_set_absolute_size(font, 14 * PANGO_SCALE);
-    pango_layout_set_font_description(popup_layout, font);
-    pango_font_description_free(font);
-    auto* tabs = pango_tab_array_new(1, TRUE);
-    pango_tab_array_set_tab(tabs, 0, PANGO_TAB_LEFT, std::min(280, layout_width / 2));
-    pango_layout_set_tabs(popup_layout, tabs);
-    pango_tab_array_free(tabs);
-    pango_layout_set_spacing(popup_layout, 8 * PANGO_SCALE);
-    auto* attributes = pango_attr_list_new();
+    pango_layout_set_font_description(popup_layout.get(), font_description("sans-serif", 14).get());
+    const TabsHandle tabs{pango_tab_array_new(1, TRUE)};
+    pango_tab_array_set_tab(tabs.get(), 0, PANGO_TAB_LEFT, std::min(280, layout_width / 2));
+    pango_layout_set_tabs(popup_layout.get(), tabs.get());
+    pango_layout_set_spacing(popup_layout.get(), 8 * PANGO_SCALE);
+    const AttributesHandle attributes{pango_attr_list_new()};
     auto add = [&](PangoAttribute* attribute, std::size_t begin, std::size_t length) {
         attribute->start_index = static_cast<guint>(begin);
         attribute->end_index = static_cast<guint>(begin + length);
-        pango_attr_list_insert(attributes, attribute);
+        pango_attr_list_insert(attributes.get(), attribute);
     };
     add(pango_attr_foreground_new(0x2900, 0x3500, 0x4500), 0, popup_text.size());
     for (const auto& span : popup_styles) {
@@ -140,16 +137,15 @@ void Application::style_shortcuts(int layout_width)
         add(pango_attr_size_new_absolute(12 * PANGO_SCALE), begin, length);
         add(pango_attr_weight_new(PANGO_WEIGHT_MEDIUM), begin, length);
     }
-    pango_layout_set_attributes(popup_layout, attributes);
-    pango_attr_list_unref(attributes);
+    pango_layout_set_attributes(popup_layout.get(), attributes.get());
 }
 
 void Application::draw_shortcut_keys(Vec2 origin)
 {
     for (const auto& [begin, length] : popup_inline_code) {
         PangoRectangle first{}, last{};
-        pango_layout_index_to_pos(popup_layout, static_cast<int>(begin), &first);
-        pango_layout_index_to_pos(popup_layout, static_cast<int>(begin + length), &last);
+        pango_layout_index_to_pos(popup_layout.get(), static_cast<int>(begin), &first);
+        pango_layout_index_to_pos(popup_layout.get(), static_cast<int>(begin + length), &last);
         // A key label may wrap in a small window. Never draw across unrelated rows.
         if (first.y != last.y || last.x <= first.x)
             continue;

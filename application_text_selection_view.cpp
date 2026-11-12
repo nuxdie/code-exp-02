@@ -7,29 +7,29 @@ void Application::draw_selection_layout(PangoLayout* layout, Vec2 origin, double
     const auto [begin, end] = range;
     if (!layout || begin == end)
         return;
-    auto* iterator = pango_layout_get_iter(layout);
+    const LayoutIterHandle iterator{pango_layout_get_iter(layout)};
     do {
-        auto* line = pango_layout_iter_get_line_readonly(iterator);
+        auto* line = pango_layout_iter_get_line_readonly(iterator.get());
         PangoRectangle logical{};
-        pango_layout_iter_get_line_extents(iterator, nullptr, &logical);
+        pango_layout_iter_get_line_extents(iterator.get(), nullptr, &logical);
         const auto y = origin.y + static_cast<double>(logical.y) / PANGO_SCALE * scale;
         const auto row_height = static_cast<double>(logical.height) / PANGO_SCALE * scale;
         if (y + row_height < 0 || y > height)
             continue;
-        int* ranges = nullptr;
+        int* found = nullptr;
         int count = 0;
-        pango_layout_line_get_x_ranges(line, static_cast<int>(begin), static_cast<int>(end),
-                                       &ranges, &count);
-        for (int i = 0; i < count; ++i)
+        pango_layout_line_get_x_ranges(line, static_cast<int>(begin), static_cast<int>(end), &found,
+                                       &count);
+        const Handle<int, g_free> owned{found};
+        const std::span ranges(found, static_cast<std::size_t>(count) * 2);
+        for (std::size_t i = 0; i < ranges.size() / 2; ++i)
             renderer->rectangle(
                 {{origin.x + static_cast<double>(ranges[2 * i]) / PANGO_SCALE * scale,
                   origin.y + static_cast<double>(logical.y) / PANGO_SCALE * scale},
                  {static_cast<double>(ranges[2 * i + 1] - ranges[2 * i]) / PANGO_SCALE * scale,
                   static_cast<double>(logical.height) / PANGO_SCALE * scale}},
                 color);
-        g_free(ranges);
-    } while (pango_layout_iter_next_line(iterator));
-    pango_layout_iter_free(iterator);
+    } while (pango_layout_iter_next_line(iterator.get()));
 }
 void Application::draw_source_selection(const SourcePanel& panel, Vec2 origin)
 {
@@ -58,7 +58,7 @@ void Application::draw_source_range(const SourcePanel& panel, Vec2 origin,
                                          {3 * camera.zoom, line_height * camera.zoom}},
                                         {0.75f, 0.48f, 0.10f, 0.9f});
                 draw_selection_layout(
-                    panel.lines[i],
+                    panel.lines[i].get(),
                     {origin.x + 24 * camera.zoom,
                      origin.y + (header_height + row * line_height) * camera.zoom},
                     camera.zoom,

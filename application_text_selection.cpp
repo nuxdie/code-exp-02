@@ -1,4 +1,22 @@
 #include "application.h"
+
+// What another program put in the selection it was asked for, when that is text.
+std::optional<std::string> Application::pasted_text(const XEvent& event)
+{
+    Atom type = None;
+    int format = 0;
+    unsigned long count = 0, remaining = 0;
+    unsigned char* property = nullptr;
+    if (XGetWindowProperty(display, window, event.xselection.property, 0, 262144, True,
+                           AnyPropertyType, &type, &format, &count, &remaining,
+                           &property) != Success)
+        return std::nullopt;
+    const Handle<unsigned char, XFree> bytes{property};
+    const auto* text = reinterpret_cast<const char*>(bytes.get());
+    if (!bytes || format != 8 || !g_utf8_validate(text, static_cast<gssize>(count), nullptr))
+        return std::nullopt;
+    return std::string(text, count);
+}
 #include <X11/Xatom.h>
 
 TextInput& Application::selected_input()

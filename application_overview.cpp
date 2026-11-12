@@ -119,7 +119,7 @@ void Application::draw_headers(const Viewport& view)
         const auto& panel = panels[i];
         const auto point = camera.world_to_screen(panel.bounds.origin, view);
         int title_width = 0;
-        pango_layout_get_pixel_size(panel.title, &title_width, nullptr);
+        pango_layout_get_pixel_size(panel.title.get(), &title_width, nullptr);
         if (point.y < -27 * scale || point.y > height || point.x > width ||
             point.x + (title_width + 4) * scale < 0)
             continue;

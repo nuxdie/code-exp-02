@@ -38,7 +38,7 @@ struct ApplicationTestAccess {
         app.update_mesh(panel);
         app.relayout();
         PangoRectangle glyph{};
-        pango_layout_index_to_pos(panel.lines[line], static_cast<int>(byte), &glyph);
+        pango_layout_index_to_pos(panel.lines[line].get(), static_cast<int>(byte), &glyph);
         const Vec2 world{panel.bounds.origin.x + 24 + (glyph.x + glyph.width / 2.0) / PANGO_SCALE,
                          panel.bounds.origin.y + app.header_height +
                              panel.folded.display_lines[line] * app.line_height + 11};
@@ -66,7 +66,7 @@ struct ApplicationTestAccess {
         app.draw();
         expect(app.popup_text.find("```") == std::string::npos && app.popup_code_lines[0],
                "Popup code fences must become highlighted code");
-        auto* attributes = pango_layout_get_attributes(app.popup_layout);
+        auto* attributes = pango_layout_get_attributes(app.popup_layout.get());
         auto* iterator = pango_attr_list_get_iterator(attributes);
         const auto* weight =
             reinterpret_cast<PangoAttrInt*>(pango_attr_iterator_get(iterator, PANGO_ATTR_WEIGHT));
@@ -239,7 +239,7 @@ struct ApplicationTestAccess {
         DocumentView reading;
         app.update_document(reading, source, app.cached_popup_width);
         int popup_height = 0;
-        pango_layout_get_pixel_size(app.popup_layout, nullptr, &popup_height);
+        pango_layout_get_pixel_size(app.popup_layout.get(), nullptr, &popup_height);
         expect(popup_height < reading.size.y * 0.8,
                "Popup paragraphs and HTML-generated blank lines must use a compact reading rhythm");
         expect(app.popup_text.find("</h3>") == std::string::npos,
@@ -250,7 +250,7 @@ struct ApplicationTestAccess {
                "Compact typography must preserve code whitespace and markup byte ranges");
         const auto literal = app.popup_text.find("return first;");
         PangoRectangle bounds{};
-        pango_layout_index_to_pos(app.popup_layout, static_cast<int>(literal), &bounds);
+        pango_layout_index_to_pos(app.popup_layout.get(), static_cast<int>(literal), &bounds);
         expect(bounds.height >= 14 * PANGO_SCALE, "Compact code must retain a legible line height");
         expect(app.popup_bounds.size.y < popup_height + 24,
                "Popup bounds must exclude trailing blank markup rows");
@@ -267,11 +267,11 @@ struct ApplicationTestAccess {
         expect(app.popup_prose && app.popup_styles.size() == 2,
                "Documentation must combine prose and code typography");
         expect(std::string(pango_font_description_get_family(
-                   pango_layout_get_font_description(app.popup_layout))) == "Noto Serif",
+                   pango_layout_get_font_description(app.popup_layout.get()))) == "Noto Serif",
                "Documentation prose must use the bundled serif reading face");
         const auto code = app.popup_text.find("const int");
         auto* iterator =
-            pango_attr_list_get_iterator(pango_layout_get_attributes(app.popup_layout));
+            pango_attr_list_get_iterator(pango_layout_get_attributes(app.popup_layout.get()));
         bool monospace = false;
         do {
             int begin = 0, end = 0;

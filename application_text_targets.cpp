@@ -58,7 +58,7 @@ TextTarget Application::source_text_target(Vec2 pointer)
         const auto line = panel.folded.source_lines[row];
         int index = 0, trailing = 0;
         if (!pango_layout_xy_to_index(
-                panel.lines[line],
+                panel.lines[line].get(),
                 static_cast<int>((world.x - panel.bounds.origin.x - 24) * PANGO_SCALE),
                 font_height * PANGO_SCALE / 2, &index, &trailing))
             continue;
@@ -82,7 +82,7 @@ TextTarget Application::text_at(Vec2 pointer)
         return {TextSurface::Popup,
                 "",
                 &popup_text,
-                popup_layout,
+                popup_layout.get(),
                 {popup_bounds.origin.x + 12, popup_bounds.origin.y + 12 - popup_scroll}};
     auto target = chat_text_target(pointer);
     if (target.surface != TextSurface::Inactive)
@@ -132,7 +132,7 @@ TextTarget Application::active_text_target()
             return {TextSurface::Popup,
                     "",
                     &popup_text,
-                    popup_layout,
+                    popup_layout.get(),
                     {popup_bounds.origin.x + 12, popup_bounds.origin.y + 12 - popup_scroll}};
         return {};
     case TextSurface::Composer:
@@ -159,7 +159,7 @@ std::size_t Application::source_byte_at(const SourcePanel& panel, Vec2 pointer)
                    0, static_cast<int>(panel.folded.source_lines.size()) - 1);
     const auto line = panel.folded.source_lines[row];
     int index = 0, trailing = 0;
-    pango_layout_xy_to_index(panel.lines[line],
+    pango_layout_xy_to_index(panel.lines[line].get(),
                              static_cast<int>((world.x - panel.bounds.origin.x - 24) * PANGO_SCALE),
                              font_height * PANGO_SCALE / 2, &index, &trailing);
     const auto& text = panel.text[line];

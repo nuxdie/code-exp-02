@@ -28,7 +28,7 @@ SourcePanel Application::make_panel(const std::string& path, const std::string& 
                 extension == ".c" || extension == ".h" || extension == ".hpp";
     panel.title = make_line(path, {{0, path.size(), Syntax::Directive}});
     int text_width = 0;
-    pango_layout_get_pixel_size(panel.title, &text_width, nullptr);
+    pango_layout_get_pixel_size(panel.title.get(), &text_width, nullptr);
     panel.cmake =
         std::filesystem::path(path).filename() == "CMakeLists.txt" || extension == ".cmake";
     if (panel.image) {
@@ -42,13 +42,13 @@ SourcePanel Application::make_panel(const std::string& path, const std::string& 
     while (std::getline(source, line)) {
         const auto styled = style_line(line, kind, highlight_state, panel.cmake);
         const auto& tokens = styled.tokens;
-        auto* layout = make_line(line, tokens, styled.prose ? &*styled.prose : nullptr);
+        auto layout = make_line(line, tokens, styled.prose ? &*styled.prose : nullptr);
         int line_width = 0;
-        pango_layout_get_pixel_size(layout, &line_width, nullptr);
+        pango_layout_get_pixel_size(layout.get(), &line_width, nullptr);
         text_width = std::max(text_width, line_width);
-        panel.lines.push_back(layout);
+        panel.lexical.emplace_back(pango_attr_list_ref(pango_layout_get_attributes(layout.get())));
+        panel.lines.push_back(std::move(layout));
         panel.text.push_back(line);
-        panel.lexical.push_back(pango_attr_list_ref(pango_layout_get_attributes(layout)));
     }
     panel.bounds.size = {static_cast<double>(text_width + 4),
                          header_height + static_cast<double>(panel.lines.size()) * line_height};
@@ -60,25 +60,23 @@ void Application::update_mesh(SourcePanel& panel)
 {
     connections_dirty = true;
     panel.folded = fold_view(static_cast<int>(panel.lines.size()), panel.folds);
-    for (auto* label : panel.fold_labels)
-        g_object_unref(label);
     panel.fold_labels.clear();
     std::vector<PlacedText> text;
     text.reserve(panel.lines.size() + 1);
     for (std::size_t i = 0; i < panel.folded.source_lines.size(); ++i) {
         const int source = panel.folded.source_lines[i];
         const double y = header_height + static_cast<double>(i) * line_height;
-        text.push_back({panel.lines[source], {24, y}});
+        text.push_back({panel.lines[source].get(), {24, y}});
         const auto block = std::find_if(panel.folds.begin(), panel.folds.end(),
                                         [&](const auto& block) { return block.first == source; });
         if (block != panel.folds.end()) {
             if (block->collapsed) {
                 const auto summary = "  … " + std::to_string(block->last - block->first) + " lines";
-                auto* preview = make_line(summary, {{0, summary.size(), Syntax::Comment}});
+                auto preview = make_line(summary, {{0, summary.size(), Syntax::Comment}});
                 int width = 0;
-                pango_layout_get_pixel_size(panel.lines[source], &width, nullptr);
-                panel.fold_labels.push_back(preview);
-                text.push_back({preview, {44.0 + width, y}});
+                pango_layout_get_pixel_size(panel.lines[source].get(), &width, nullptr);
+                text.push_back({preview.get(), {44.0 + width, y}});
+                panel.fold_labels.push_back(std::move(preview));
             }
         }
     }
@@ -88,7 +86,7 @@ void Application::update_mesh(SourcePanel& panel)
     if (!panel.image)
         renderer->upload(panel.mesh, text);
     if (!panel.header_mesh.buffer)
-        renderer->upload(panel.header_mesh, {{panel.title, {2, 0}}});
+        renderer->upload(panel.header_mesh, {{panel.title.get(), {2, 0}}});
 }
 
 // Files gather by folder, so a folder is a region of the canvas with a name.
@@ -157,11 +155,11 @@ void Application::apply_graph_layout()
 void Application::apply_styles(SourcePanel& panel)
 {
     for (std::size_t line = 0; line < panel.lines.size(); ++line) {
-        auto* attributes = pango_attr_list_copy(panel.lexical[line]);
+        const AttributesHandle attributes{pango_attr_list_copy(panel.lexical[line].get())};
         auto add = [&](PangoAttribute* attribute, std::size_t begin, std::size_t end) {
             attribute->start_index = static_cast<guint>(begin);
             attribute->end_index = static_cast<guint>(end);
-            pango_attr_list_change(attributes, attribute);
+            pango_attr_list_change(attributes.get(), attribute);
         };
         for (const auto& token : panel.semantics) {
             if (token.line != static_cast<int>(line))
@@ -173,9 +171,8 @@ void Application::apply_styles(SourcePanel& panel)
             if (token.modifiers & deprecated_modifier)
                 add(pango_attr_strikethrough_new(TRUE), token.begin, token.begin + token.length);
         }
-        apply_diagnostics(panel, line, attributes);
-        pango_layout_set_attributes(panel.lines[line], attributes);
-        pango_attr_list_unref(attributes);
+        apply_diagnostics(panel, line, attributes.get());
+        pango_layout_set_attributes(panel.lines[line].get(), attributes.get());
     }
     update_mesh(panel);
 }
@@ -195,7 +192,8 @@ SourceHit Application::hit_test(Vec2 screen)
         if (row >= static_cast<int>(panel.folded.source_lines.size()))
             continue;
         const int line = panel.folded.source_lines[row];
-        if (const auto byte = source_line_hit(panel.lines[line], panel.text[line], x, font_height))
+        if (const auto byte =
+                source_line_hit(panel.lines[line].get(), panel.text[line], x, font_height))
             return {static_cast<int>(i), line, *byte};
     }
     return {};
@@ -295,7 +293,7 @@ bool Application::jump_to(const lsp::Json& location)
     }
     const auto byte = lsp::utf16_to_byte(found->text[line], range["start"].value("character", 0));
     PangoRectangle position{};
-    pango_layout_index_to_pos(found->lines[line], static_cast<int>(byte), &position);
+    pango_layout_index_to_pos(found->lines[line].get(), static_cast<int>(byte), &position);
     camera.zoom = std::max(1.0, camera.zoom);
     camera.center = {found->bounds.origin.x + 24 + static_cast<double>(position.x) / PANGO_SCALE,
                      found->bounds.origin.y + header_height +

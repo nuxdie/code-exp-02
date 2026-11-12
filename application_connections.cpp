@@ -34,9 +34,10 @@ CanvasRect Application::word_bounds(const SourcePanel& panel, int line, std::siz
     if (visible != line)
         begin = end = size;
     PangoRectangle first{}, last{};
-    pango_layout_index_to_pos(panel.lines[visible], static_cast<int>(std::min(begin, size)),
+    pango_layout_index_to_pos(panel.lines[visible].get(), static_cast<int>(std::min(begin, size)),
                               &first);
-    pango_layout_index_to_pos(panel.lines[visible], static_cast<int>(std::min(end, size)), &last);
+    pango_layout_index_to_pos(panel.lines[visible].get(), static_cast<int>(std::min(end, size)),
+                              &last);
     const double left = static_cast<double>(first.x) / PANGO_SCALE;
     const double right = static_cast<double>(last.x) / PANGO_SCALE;
     return {{panel.bounds.origin.x + 24 + left - 2,

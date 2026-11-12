@@ -39,6 +39,7 @@
 #include <pango/pangocairo.h>
 #include <poll.h>
 #include <set>
+#include <span>
 #include <sstream>
 #include <thread>
 #include <unordered_set>
@@ -65,8 +66,7 @@ class Application {
     std::string workspace_build;
     std::unique_ptr<ProjectWatcher> project_watcher;
     struct ImagePreview {
-        std::unique_ptr<cairo_surface_t, decltype(&cairo_surface_destroy)> pixels{
-            nullptr, cairo_surface_destroy};
+        SurfaceHandle pixels;
         std::string error;
     };
     struct WorkspaceLayout {
@@ -115,9 +115,9 @@ class Application {
     Cursor link_cursor = 0;
     Cursor active_cursor = 0;
     Cursor drag_cursor = 0;
-    cairo_surface_t* surface = nullptr;
-    cairo_t* cr = nullptr;
-    PangoLayout* base_layout = nullptr;
+    SurfaceHandle surface;
+    CairoHandle cr;
+    LayoutHandle base_layout;
     int font_height = 0;
     int line_height = 0;
     int header_height = 0;
@@ -232,7 +232,7 @@ class Application {
     bool navigation_continuous = false;
     std::optional<SourceHit> focused_line;
     unsigned document_generation = 0;
-    PangoLayout* popup_layout = nullptr;
+    LayoutHandle popup_layout;
     GpuMesh popup_mesh;
     std::string cached_popup;
     int cached_popup_width = 0;
@@ -311,6 +311,7 @@ class Application {
     bool search_edit_key(const XEvent& event, KeySym key);
     bool search_button(const XEvent& event, Vec2 pointer);
     void paste_search(const XEvent& event);
+    std::optional<std::string> pasted_text(const XEvent& event);
     bool canvas_shortcut_key(const XEvent& event);
     void show_shortcuts();
     bool shortcuts_key(KeySym key);
@@ -392,7 +393,7 @@ class Application {
     void save_session();
     void schedule_save();
     int benchmark_run();
-    PangoLayout* make_line(const std::string& line, const std::vector<Token>& tokens,
+    LayoutHandle make_line(const std::string& line, const std::vector<Token>& tokens,
                            const ProseLine* prose = nullptr);
     SourcePanel make_panel(const std::string& path, const std::string& text,
                            ImagePreview* preview = nullptr);
@@ -405,7 +406,6 @@ class Application {
     void place_in_folder(SourcePanel& panel, const std::set<std::string>& unplaced = {});
     void apply_graph_layout();
     void poll_project();
-    void release_panel(SourcePanel& panel);
     void replace_source(int index, const std::string& source);
     void apply_project_change(const ProjectChange& change);
     void refresh_project_geometry(bool settle = true);

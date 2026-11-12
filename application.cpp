@@ -84,27 +84,27 @@ bool Application::initialize_window()
     active_cursor = normal_cursor;
 
     // Pango shapes at one stable size. OpenGL handles all camera transforms.
-    surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1);
-    cr = cairo_create(surface);
-    auto* options = cairo_font_options_create();
-    cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_GRAY);
-    cairo_font_options_set_hint_style(options, CAIRO_HINT_STYLE_SLIGHT);
-    cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_OFF);
-    cairo_set_font_options(cr, options);
+    surface.reset(cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1));
+    cr.reset(cairo_create(surface.get()));
+    const FontOptionsHandle options{cairo_font_options_create()};
+    cairo_font_options_set_antialias(options.get(), CAIRO_ANTIALIAS_GRAY);
+    cairo_font_options_set_hint_style(options.get(), CAIRO_HINT_STYLE_SLIGHT);
+    cairo_font_options_set_hint_metrics(options.get(), CAIRO_HINT_METRICS_OFF);
+    cairo_set_font_options(cr.get(), options.get());
 
-    base_layout = pango_cairo_create_layout(cr);
-    pango_cairo_context_set_font_options(pango_layout_get_context(base_layout), options);
-    cairo_font_options_destroy(options);
-    pango_layout_set_single_paragraph_mode(base_layout, TRUE);
-    pango_layout_set_text(base_layout, "Ag", -1);
+    base_layout.reset(pango_cairo_create_layout(cr.get()));
+    pango_cairo_context_set_font_options(pango_layout_get_context(base_layout.get()),
+                                         options.get());
+    pango_layout_set_single_paragraph_mode(base_layout.get(), TRUE);
+    pango_layout_set_text(base_layout.get(), "Ag", -1);
     configure_source_font();
 
     system_theme = std::make_unique<SystemTheme>();
 
-    popup_layout = pango_layout_copy(base_layout);
-    pango_layout_set_single_paragraph_mode(popup_layout, FALSE);
-    pango_layout_set_wrap(popup_layout, PANGO_WRAP_WORD_CHAR);
-    pango_layout_set_ellipsize(popup_layout, PANGO_ELLIPSIZE_NONE);
+    popup_layout.reset(pango_layout_copy(base_layout.get()));
+    pango_layout_set_single_paragraph_mode(popup_layout.get(), FALSE);
+    pango_layout_set_wrap(popup_layout.get(), PANGO_WRAP_WORD_CHAR);
+    pango_layout_set_ellipsize(popup_layout.get(), PANGO_ELLIPSIZE_NONE);
 
     close_message = XInternAtom(display, "WM_DELETE_WINDOW", False);
     protocols = XInternAtom(display, "WM_PROTOCOLS", False);
@@ -115,18 +115,15 @@ bool Application::initialize_window()
 
 void Application::configure_source_font()
 {
-    auto* font = pango_font_description_from_string(monospace_family);
-    pango_font_description_set_absolute_size(font, 16 * PANGO_SCALE);
-    pango_layout_set_font_description(base_layout, font);
-    pango_font_description_free(font);
-    pango_layout_get_pixel_size(base_layout, nullptr, &font_height);
+    pango_layout_set_font_description(base_layout.get(),
+                                      font_description(monospace_family, 16).get());
+    pango_layout_get_pixel_size(base_layout.get(), nullptr, &font_height);
     line_height = font_height + 4;
     header_height = line_height * 2;
     for (std::size_t i = 0; i < fold_toggle_meshes.size(); ++i) {
         const std::string marker = i == 0 ? "▾" : "▸";
-        auto* layout = make_line(marker, {{0, marker.size(), Syntax::Comment}});
-        renderer->upload(fold_toggle_meshes[i], {{layout, {0, 0}}});
-        g_object_unref(layout);
+        const auto layout = make_line(marker, {{0, marker.size(), Syntax::Comment}});
+        renderer->upload(fold_toggle_meshes[i], {{layout.get(), {0, 0}}});
     }
 }
 
@@ -249,18 +246,7 @@ Application::~Application()
     if (drag_cursor)
         XFreeCursor(display, drag_cursor);
     language_server.reset();
-    if (popup_layout)
-        g_object_unref(popup_layout);
-    if (base_layout)
-        g_object_unref(base_layout);
     project_watcher.reset();
-    for (auto& panel : panels)
-        release_panel(panel);
-
-    if (cr)
-        cairo_destroy(cr);
-    if (surface)
-        cairo_surface_destroy(surface);
     if (window_destroyed && renderer)
         renderer->window_destroyed();
     renderer.reset();

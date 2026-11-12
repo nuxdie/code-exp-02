@@ -16,18 +16,6 @@ void settle_panel(std::vector<SourcePanel>& panels, std::size_t index)
 }
 } // namespace
 
-void Application::release_panel(SourcePanel& panel)
-{
-    if (panel.title)
-        g_object_unref(panel.title);
-    for (auto* layout : panel.lines)
-        g_object_unref(layout);
-    for (auto* attributes : panel.lexical)
-        pango_attr_list_unref(attributes);
-    for (auto* label : panel.fold_labels)
-        g_object_unref(label);
-}
-
 void Application::replace_source(int index, const std::string& source)
 {
     auto& old = panels[index];
@@ -53,7 +41,6 @@ void Application::replace_source(int index, const std::string& source)
         ++updated.version;
         server->change({updated.uri, source});
     }
-    release_panel(old);
     old = std::move(updated);
     update_mesh(old);
 }
@@ -69,7 +56,6 @@ void Application::apply_project_change(const ProjectChange& change)
         auto* server = server_for(*found);
         if (server && opened_documents.erase(found->uri))
             server->close(found->uri);
-        release_panel(*found);
         renderer->release(found->mesh);
         renderer->release(found->header_mesh);
         panels.erase(found);

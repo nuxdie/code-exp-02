@@ -1,15 +1,13 @@
 #pragma once
 
 #include "gpu.h"
+#include "handles.h"
 #include "popup_markup.h"
 
 #include <memory>
 
-struct PangoLayoutDeleter {
-    void operator()(PangoLayout* layout) const { g_object_unref(layout); }
-};
 struct DocumentView {
-    std::unique_ptr<PangoLayout, PangoLayoutDeleter> layout;
+    LayoutHandle layout;
     PopupDocument document;
     GpuMesh mesh;
     std::string source;

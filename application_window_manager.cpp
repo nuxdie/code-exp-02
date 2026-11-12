@@ -23,7 +23,7 @@ void Application::draw_window_title(DocumentView& title, const std::string& text
         title.width = text_width;
         title.generation = document_generation;
         title.document = popup_document(text, false);
-        title.layout.reset(make_line(text, {{0, text.size(), Syntax::Directive}}));
+        title.layout = make_line(text, {{0, text.size(), Syntax::Directive}});
         pango_layout_set_width(title.layout.get(), text_width * PANGO_SCALE);
         pango_layout_set_height(title.layout.get(), -1);
         pango_layout_set_ellipsize(title.layout.get(), PANGO_ELLIPSIZE_END);

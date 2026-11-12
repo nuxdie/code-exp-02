@@ -69,8 +69,9 @@ struct ApplicationTestAccess {
         const auto origin = app.camera.world_to_screen(
             {panel.bounds.origin.x + 24, panel.bounds.origin.y + app.header_height},
             app.viewport());
-        const auto first = glyph(panel.lines[0], 4, origin, 1);
-        const auto last = glyph(panel.lines[1], 10, {origin.x, origin.y + app.line_height}, 1);
+        const auto first = glyph(panel.lines[0].get(), 4, origin, 1);
+        const auto last =
+            glyph(panel.lines[1].get(), 10, {origin.x, origin.y + app.line_height}, 1);
         drag(app, first, last);
         expect(app.selected_text() == "first = 1;\nint second",
                "Source selections must copy exact multiline source text");
@@ -88,8 +89,8 @@ struct ApplicationTestAccess {
                        true);
         app.draw();
         const Vec2 origin{app.popup_bounds.origin.x + 12, app.popup_bounds.origin.y + 12};
-        const auto first = glyph(app.popup_layout, 0, origin, 1);
-        const auto last = glyph(app.popup_layout, app.popup_text.find(" with"), origin, 1);
+        const auto first = glyph(app.popup_layout.get(), 0, origin, 1);
+        const auto last = glyph(app.popup_layout.get(), app.popup_text.find(" with"), origin, 1);
         drag(app, first, last);
         expect(app.selected_text() == "Readable prose and code",
                "Popup selection must copy visible text across style changes");
@@ -169,12 +170,13 @@ struct ApplicationTestAccess {
             {panel.bounds.origin.x + 24,
              panel.bounds.origin.y + app.header_height + 2 * app.line_height},
             app.viewport());
-        const auto first = glyph(panel.lines[2], 3, origin, app.camera.zoom);
-        const auto last = glyph(panel.lines[2], panel.text[2].size(), origin, app.camera.zoom);
+        const auto first = glyph(panel.lines[2].get(), 3, origin, app.camera.zoom);
+        const auto last =
+            glyph(panel.lines[2].get(), panel.text[2].size(), origin, app.camera.zoom);
         drag(app, first, last);
         expect(app.selected_text() == url && !std::filesystem::exists(log),
                "Dragging over a source URL must select it without opening the browser");
-        click_link(app, glyph(panel.lines[2], 10, origin, app.camera.zoom), url, log);
+        click_link(app, glyph(panel.lines[2].get(), 10, origin, app.camera.zoom), url, log);
 
         app.text_selection = {};
         app.chat->conversation.entries.clear();

@@ -15,7 +15,7 @@ struct ApplicationTestAccess {
     {
         auto& panel = app.panels.front();
         PangoRectangle glyph{};
-        pango_layout_index_to_pos(panel.lines[1], 5, &glyph);
+        pango_layout_index_to_pos(panel.lines[1].get(), 5, &glyph);
         app.initial_view = false;
         app.camera.zoom = 1;
         app.camera.center = {panel.bounds.origin.x + 24 +

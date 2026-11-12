@@ -131,7 +131,7 @@ void Application::draw_agent_activity()
         const auto title = agent.label == "Agent" ? "Agent" : "Agent · " + agent.label;
         if (label.source != title) {
             label.source = title;
-            label.layout.reset(make_line(title, {}));
+            label.layout = make_line(title, {});
             pango_layout_set_width(label.layout.get(), 210 * PANGO_SCALE);
             pango_layout_set_ellipsize(label.layout.get(), PANGO_ELLIPSIZE_END);
             renderer->upload(label.mesh, {{label.layout.get(), {0, 0}}});
