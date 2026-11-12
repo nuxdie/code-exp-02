@@ -41,12 +41,14 @@ SourcePanel Application::make_panel(const std::string& path, const std::string& 
         return panel;
     }
     HighlightState highlight_state;
+    const auto kind = text_kind(path);
     std::vector<int> brace_stack;
     std::istringstream source(text);
     std::string line;
     while (std::getline(source, line)) {
-        const auto tokens = highlight(line, highlight_state, panel.cmake);
-        auto* layout = make_line(line, tokens);
+        const auto styled = style_line(line, kind, highlight_state, panel.cmake);
+        const auto& tokens = styled.tokens;
+        auto* layout = make_line(line, tokens, styled.prose ? &*styled.prose : nullptr);
         discover_braces(panel, line, tokens, brace_stack);
         int line_width = 0;
         pango_layout_get_pixel_size(layout, &line_width, nullptr);

@@ -290,3 +290,101 @@ std::vector<Token> highlight(const std::string& line, HighlightState& state, boo
     }
     return tokens;
 }
+
+TextKind text_kind(const std::string& path)
+{
+    const auto slash = path.find_last_of('/');
+    const auto name = path.substr(slash == std::string::npos ? 0 : slash + 1);
+    const auto dot = name.find_last_of('.');
+    const auto extension = dot == std::string::npos ? "" : name.substr(dot);
+    static const std::unordered_set<std::string> prose{".md", ".markdown", ".txt", ".rst"};
+    static const std::unordered_set<std::string> hash{
+        ".py", ".sh", ".bash", ".zsh",  ".rb",   ".pl",  ".yml",  ".yaml",
+        ".r",  ".jl", ".toml", ".conf", ".cfg",  ".ini", ".nix",  ".tcl",
+        ".mk", ".ex", ".exs",  ".ps1",  ".fish", ".awk", ".cmake"};
+    static const std::unordered_set<std::string> hash_names{"Makefile", "Dockerfile", ".gitignore",
+                                                            "CMakeLists.txt"};
+    if (prose.count(extension))
+        return TextKind::Prose;
+    return hash.count(extension) || hash_names.count(name) ? TextKind::HashCode : TextKind::Code;
+}
+
+namespace {
+bool reads_as_prose(const std::string& line, std::size_t body)
+{
+    const auto last = line.find_last_not_of(" \t");
+    if (body > last || std::string(";{}\\").find(line[last]) != std::string::npos)
+        return false;
+    // Columns lined up with spaces are a table or a drawing; they need their fixed width.
+    if (line.find("  ", body) < last)
+        return false;
+    return std::any_of(line.begin() + static_cast<std::ptrdiff_t>(body), line.end(),
+                       [](unsigned char c) { return std::isalpha(c); });
+}
+
+std::optional<ProseLine> comment_prose(const std::string& line, const std::vector<Token>& tokens)
+{
+    const auto first = line.find_first_not_of(" \t");
+    if (first == std::string::npos)
+        return std::nullopt;
+    const auto whole = std::find_if(tokens.begin(), tokens.end(), [&](const Token& token) {
+        return token.syntax == Syntax::Comment && token.begin <= first &&
+               token.begin + token.length == line.size();
+    });
+    if (whole == tokens.end())
+        return std::nullopt;
+    std::size_t body = first;
+    for (const char* marker : {"///", "//!", "//", "/**", "/*", "#", "*"}) {
+        const std::string text(marker);
+        if (line.compare(first, text.size(), text) != 0)
+            continue;
+        // "*/" closes a comment, and "*word" is not a comment's margin.
+        const auto after = first + text.size();
+        if (text == "*" && after < line.size() && line[after] != ' ')
+            break;
+        body = after;
+        break;
+    }
+    if (body < line.size() && line[body] == ' ')
+        ++body;
+    // A margin with no words is a paragraph break: nothing to show.
+    const auto rest = line.find_first_not_of(" \t", body);
+    if ((body > first && rest == std::string::npos) || line.compare(first, 3, "*/") == 0)
+        return ProseLine{first, line.size(), false};
+    if (!reads_as_prose(line, body))
+        return std::nullopt;
+    return ProseLine{first, body, false};
+}
+
+std::optional<ProseLine> document_prose(const std::string& line)
+{
+    const auto first = line.find_first_not_of(" \t");
+    if (first == std::string::npos || line[first] == '|')
+        return std::nullopt;
+    const auto level = line.find_first_not_of('#');
+    if (level != std::string::npos && level > 0 && level <= 6 && line[level] == ' ')
+        return ProseLine{0, level + 1, true};
+    return ProseLine{first, first, false};
+}
+} // namespace
+
+StyledLine style_line(const std::string& line, TextKind kind, HighlightState& state, bool cmake)
+{
+    if (kind == TextKind::Prose) {
+        if (line.compare(0, 3, "```") == 0) {
+            state.fenced = !state.fenced;
+            return {};
+        }
+        if (!state.fenced)
+            return {{}, document_prose(line)};
+    }
+    StyledLine result{highlight(line, state, cmake), std::nullopt};
+    const auto first = line.find_first_not_of(" \t");
+    const bool hash = kind == TextKind::HashCode && first != std::string::npos &&
+                      line[first] == '#' && line.compare(first, 2, "#!") != 0;
+    if (hash)
+        result.tokens = {{first, line.size() - first, Syntax::Comment}};
+    if (kind != TextKind::Prose)
+        result.prose = comment_prose(line, result.tokens);
+    return result;
+}

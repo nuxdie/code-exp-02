@@ -5,7 +5,7 @@
 
 namespace {
 constexpr double readable_zoom = 0.35;
-constexpr double region_margin = 150;
+constexpr double region_margin = 70;
 constexpr double region_scale = 1.5;
 constexpr double outline_scale = 0.85;
 } // namespace

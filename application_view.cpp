@@ -1,6 +1,40 @@
 #include "application.h"
 
-PangoLayout* Application::make_line(const std::string& line, const std::vector<Token>& tokens)
+namespace {
+// Prose is set as prose: a serif face, upright, with the comment marker left out. Text in
+// backticks stays in the code face.
+void set_as_prose(PangoAttrList* attributes, const std::string& line, const ProseLine& prose,
+                  const char* code_family)
+{
+    auto add = [&](PangoAttribute* attribute, std::size_t begin, std::size_t end) {
+        attribute->start_index = static_cast<guint>(begin);
+        attribute->end_index = static_cast<guint>(end);
+        pango_attr_list_change(attributes, attribute);
+    };
+    if (prose.body > prose.begin) {
+        const PangoRectangle none{0, 0, 0, 0};
+        add(pango_attr_shape_new(&none, &none), prose.begin, prose.body);
+    }
+    if (prose.body == line.size())
+        return;
+    add(pango_attr_family_new("Noto Serif"), prose.body, line.size());
+    add(pango_attr_size_new_absolute(17 * PANGO_SCALE), prose.body, line.size());
+    add(pango_attr_style_new(PANGO_STYLE_NORMAL), prose.body, line.size());
+    if (prose.heading)
+        add(pango_attr_weight_new(PANGO_WEIGHT_BOLD), prose.body, line.size());
+    for (auto open = line.find('`', prose.body); open != std::string::npos;) {
+        const auto close = line.find('`', open + 1);
+        if (close == std::string::npos)
+            break;
+        add(pango_attr_family_new(code_family), open, close + 1);
+        add(pango_attr_size_new_absolute(15 * PANGO_SCALE), open, close + 1);
+        open = line.find('`', close + 1);
+    }
+}
+} // namespace
+
+PangoLayout* Application::make_line(const std::string& line, const std::vector<Token>& tokens,
+                                    const ProseLine* prose)
 {
     PangoLayout* layout = pango_layout_copy(base_layout);
     pango_layout_set_text(layout, line.c_str(), static_cast<int>(line.size()));
@@ -22,6 +56,8 @@ PangoLayout* Application::make_line(const std::string& line, const std::vector<T
         }
     }
     style_document_spans(attributes, web_links(line));
+    if (prose)
+        set_as_prose(attributes, line, *prose, monospace_family());
     pango_layout_set_attributes(layout, attributes);
     pango_attr_list_unref(attributes);
     return layout;

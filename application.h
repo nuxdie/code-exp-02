@@ -452,7 +452,8 @@ class Application {
     void save_session();
     void schedule_save();
     int benchmark_run();
-    PangoLayout* make_line(const std::string& line, const std::vector<Token>& tokens);
+    PangoLayout* make_line(const std::string& line, const std::vector<Token>& tokens,
+                           const ProseLine* prose = nullptr);
     SourcePanel make_panel(const std::string& path, const std::string& text,
                            ImagePreview* preview = nullptr);
     void update_mesh(SourcePanel& panel);

@@ -129,9 +129,15 @@ std::vector<double> relax_order(std::vector<double> rank, const std::vector<Depe
 } // namespace
 
 namespace {
-constexpr double folder_gap = 1400;
-constexpr double folder_margin = 300;  // room around the canvas for a region's ground
-constexpr double folder_heading = 900; // and above it for the first row of folder names
+// Folders stand apart by enough for a name to fit between them when the whole project is in
+// view, which takes more canvas the bigger the project is.
+double folder_gap(const std::vector<Vec2>& folders)
+{
+    double area = 0;
+    for (const auto size : folders)
+        area += size.x * size.y;
+    return std::clamp(0.06 * std::sqrt(area), 320.0, 1400.0);
+}
 
 // The number of columns that shapes the block most like a window, so a fitted view uses the
 // screen instead of a strip of it.
@@ -224,16 +230,16 @@ GraphLayout folder_layout(const std::vector<GraphFile>& files, const std::vector
         for (std::size_t i = 0; i < members.size(); ++i)
             result.files[members[i]] = packed[i];
     }
-    // Folders stand apart, with room above each for its name.
-    const auto packed_groups =
-        arrange_files(group_sizes, window_columns(group_sizes, folder_gap), folder_gap);
+    const double gap = folder_gap(group_sizes);
+    const auto packed_groups = arrange_files(group_sizes, window_columns(group_sizes, gap), gap);
+    // Room around the canvas for a region's ground, and above it for the first row of names.
     for (std::size_t i = 0; i < order.size(); ++i)
         for (const auto index : groups[order[i]]) {
-            result.files[index].origin.x += packed_groups[i].origin.x + folder_margin;
-            result.files[index].origin.y += packed_groups[i].origin.y + folder_heading;
+            result.files[index].origin.x += packed_groups[i].origin.x + gap / 4;
+            result.files[index].origin.y += packed_groups[i].origin.y + gap * 0.65;
         }
     result.size = canvas_size(result.files);
-    result.size.x += folder_margin;
-    result.size.y += folder_margin;
+    result.size.x += gap / 4;
+    result.size.y += gap / 4;
     return result;
 }
