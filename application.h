@@ -128,18 +128,19 @@ class Application {
                                              0x24292f, 0x875a00, 0x005cc5, 0x6f42c1};
     std::vector<SourcePanel> panels;
     std::vector<Vec2> file_sizes;
-    std::vector<lsp::Document> documents;
     std::unordered_set<std::string> opened_documents;
     std::vector<Dependency> dependencies;
     GraphLayout graph;
     Vec2 content_size;
-    std::unique_ptr<lsp::LanguageServer> language_server;
-    std::vector<std::string> token_legend;
-    unsigned deprecated_modifier = 0;
-    unsigned definition_modifier = 0;
-    unsigned declaration_modifiers = 0;
-    bool language_ready = false;
-    std::string language_failure;
+    struct LanguageState {
+        std::unique_ptr<lsp::LanguageServer> server;
+        std::vector<lsp::Document> initial_documents;
+        std::vector<std::string> token_legend;
+        unsigned deprecated_modifier = 0;
+        bool ready = false;
+        std::string failure;
+    };
+    LanguageState cpp_language, go_language;
     int width = 800;
     int height = 600;
     Camera camera;
@@ -275,7 +276,10 @@ class Application {
     void load_agent_windows(const lsp::Json& state, const char* environment_thread);
     void open_directory_picker();
     void poll_directory_picker();
+    LanguageState* language_for(const SourcePanel& panel);
     lsp::LanguageServer* server_for(const SourcePanel& panel);
+    void start_language_server(LanguageState& language, const char* executable,
+                               std::string language_id);
     bool open_document_link(Vec2 pointer);
     std::string text_link_at(Vec2 pointer);
     bool open_link(const std::string& destination);
@@ -418,6 +422,7 @@ class Application {
     SourceHit hit_test(Vec2 screen);
     int panel_at(Vec2 screen);
     int query_at_pointer(const std::string& method);
+    SourcePanel* panel_for_uri(const std::string& uri);
     bool jump_to(const lsp::Json& location);
     void toggle_fold(int index, int source);
     void draw();

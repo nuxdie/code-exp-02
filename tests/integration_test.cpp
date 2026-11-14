@@ -15,9 +15,9 @@ struct ApplicationTestAccess {
     {
         const auto deadline = Application::Clock::now() + 20s;
         while (!predicate() && Application::Clock::now() < deadline) {
-            pollfd fd{app.language_server->event_fd(), POLLIN, 0};
+            pollfd fd{app.cpp_language.server->event_fd(), POLLIN, 0};
             poll(&fd, 1, 50);
-            for (const auto& message : app.language_server->take_messages())
+            for (const auto& message : app.cpp_language.server->take_messages())
                 app.handle_message(message);
         }
         expect(predicate(), "Timed out waiting for a language feature");

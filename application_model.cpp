@@ -26,6 +26,7 @@ SourcePanel Application::make_panel(const std::string& path, const std::string& 
     const auto extension = std::filesystem::path(path).extension().string();
     panel.cpp = extension == ".cpp" || extension == ".cc" || extension == ".cxx" ||
                 extension == ".c" || extension == ".h" || extension == ".hpp";
+    panel.go = extension == ".go";
     panel.title = make_line(path, {{0, path.size(), Syntax::Directive}});
     int text_width = 0;
     pango_layout_get_pixel_size(panel.title.get(), &text_width, nullptr);
@@ -145,6 +146,8 @@ void Application::apply_graph_layout()
 
 void Application::apply_styles(SourcePanel& panel)
 {
+    const auto* language = language_for(panel);
+    const unsigned deprecated = language ? language->deprecated_modifier : 0;
     for (std::size_t line = 0; line < panel.lines.size(); ++line) {
         const AttributesHandle attributes{pango_attr_list_copy(panel.lexical[line].get())};
         auto add = [&](PangoAttribute* attribute, std::size_t begin, std::size_t end) {
@@ -159,7 +162,7 @@ void Application::apply_styles(SourcePanel& panel)
             add(pango_attr_foreground_new(((color >> 16) & 255) * 257, ((color >> 8) & 255) * 257,
                                           (color & 255) * 257),
                 token.begin, token.begin + token.length);
-            if (token.modifiers & deprecated_modifier)
+            if (token.modifiers & deprecated)
                 add(pango_attr_strikethrough_new(TRUE), token.begin, token.begin + token.length);
         }
         apply_diagnostics(panel, line, attributes.get());
@@ -209,14 +212,17 @@ int Application::query_at_pointer(const std::string& method)
     if (std::getenv("SOURCE_CANVAS_TRACE_LSP"))
         std::cerr << method << " at " << mouse_position.x << ',' << mouse_position.y << " -> panel "
                   << hit.panel << " line " << hit.line << " byte " << hit.byte << '\n';
-    if (hit.panel < 0 || !panels[hit.panel].cpp)
+    if (hit.panel < 0)
         return 0;
     const auto& panel = panels[hit.panel];
-    auto* server = server_for(panel);
-    const auto& failure = language_failure;
-    if (!language_ready || !server) {
-        show_popup(failure.empty() ? "Language features are starting…"
-                                   : "Language features unavailable: " + failure,
+    auto* language = language_for(panel);
+    if (!language)
+        return 0;
+    auto* server = language->server.get();
+    if (!language->ready || !server) {
+        show_popup(language->failure.empty()
+                       ? "Language features are starting…"
+                       : "Language features unavailable: " + language->failure,
                    mouse_position);
         return 0;
     }
@@ -244,6 +250,33 @@ int Application::query_at_pointer(const std::string& method)
     return server->request(method, panel.uri, std::move(params));
 }
 
+SourcePanel* Application::panel_for_uri(const std::string& uri)
+{
+    auto found = std::ranges::find(panels, uri, &SourcePanel::uri);
+    if (found != panels.end())
+        return &*found;
+    const auto path = lsp::uri_path(uri);
+    if (path.empty())
+        return nullptr;
+    std::ifstream input(path);
+    if (!input)
+        return nullptr;
+    const std::string text{std::istreambuf_iterator<char>(input), {}};
+    auto panel = make_panel(path, text);
+    panel.uri = uri;
+    if (panel.go && !go_language.server)
+        start_language_server(go_language, gopls_executable, "go");
+    update_mesh(panel);
+    panel.bounds.origin = {content_size.x + 96, 0};
+    content_size.x = panel.bounds.origin.x + panel.bounds.size.x;
+    content_size.y = std::max(content_size.y, panel.bounds.size.y);
+    auto* server = server_for(panel);
+    if (server && opened_documents.insert(panel.uri).second)
+        server->open({panel.uri, text});
+    panels.push_back(std::move(panel));
+    return &panels.back();
+}
+
 bool Application::jump_to(const lsp::Json& location)
 {
     const auto uri = location.value("uri", location.value("targetUri", ""));
@@ -252,26 +285,9 @@ bool Application::jump_to(const lsp::Json& location)
                      : location.value("range", lsp::Json::object());
     if (uri.empty() || !range.contains("start"))
         return false;
-    auto found = std::ranges::find(panels, uri, &SourcePanel::uri);
-    if (found == panels.end()) {
-        const auto path = lsp::uri_path(uri);
-        if (path.empty())
-            return false;
-        std::ifstream input(path);
-        if (!input)
-            return false;
-        const std::string text{std::istreambuf_iterator<char>(input), {}};
-        auto panel = make_panel(path, text);
-        update_mesh(panel);
-        panel.bounds.origin = {content_size.x + 96, 0};
-        content_size.x = panel.bounds.origin.x + panel.bounds.size.x;
-        content_size.y = std::max(content_size.y, panel.bounds.size.y);
-        auto* server = server_for(panel);
-        if (server && opened_documents.insert(panel.uri).second)
-            server->open({panel.uri, text});
-        panels.push_back(std::move(panel));
-        found = std::prev(panels.end());
-    }
+    auto* found = panel_for_uri(uri);
+    if (!found)
+        return false;
     const int line = range["start"].value("line", 0);
     if (line < 0 || line >= std::ssize(found->lines))
         return false;
@@ -290,7 +306,7 @@ bool Application::jump_to(const lsp::Json& location)
                          found->folded.display_lines[line] * line_height + line_height / 2.0};
     zoom_animation.cancel(camera);
     finish_view();
-    focused_line = SourceHit{static_cast<int>(found - panels.begin()), line, byte};
+    focused_line = SourceHit{static_cast<int>(found - panels.data()), line, byte};
     hide_popup();
     redraw = true;
     return true;

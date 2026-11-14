@@ -152,9 +152,14 @@ bool Application::receive_connections(const lsp::Message& message)
         const auto range = location.contains("targetSelectionRange")
                                ? location["targetSelectionRange"]
                                : location.value("range", lsp::Json::object());
-        const auto panel = std::ranges::find(panels, uri, &SourcePanel::uri);
         const int line = range.value("start", lsp::Json::object()).value("line", -1);
-        if (panel == panels.end() || line < 0 || line >= std::ssize(panel->text))
+        if (line < 0)
+            continue;
+        const auto found = std::ranges::find(panels, uri, &SourcePanel::uri);
+        const auto* panel = found != panels.end() ? &*found
+                            : defines             ? panel_for_uri(uri)
+                                                  : nullptr;
+        if (!panel || line >= std::ssize(panel->text))
             continue;
         const auto& text = panel->text[line];
         const auto word =
@@ -177,7 +182,7 @@ void Application::rebuild_connections()
 
 void Application::refresh_symbol_sources(const std::vector<ProjectChange>& changes)
 {
-    if (!language_server)
+    if (!cpp_language.server)
         return;
     std::set<std::string> changed;
     const std::set<std::string> extensions{".c", ".cc", ".cpp", ".cxx", ".h", ".hpp"};
@@ -192,6 +197,6 @@ void Application::refresh_symbol_sources(const std::vector<ProjectChange>& chang
         if (!panel.cpp || !opened_documents.contains(panel.uri) || changed.contains(panel.path))
             continue;
         ++panel.version;
-        language_server->change({panel.uri, panel.source});
+        cpp_language.server->change({panel.uri, panel.source});
     }
 }

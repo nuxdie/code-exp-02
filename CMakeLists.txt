@@ -51,6 +51,14 @@ find_program(
 if(NOT CLANGD_EXECUTABLE)
     set(CLANGD_EXECUTABLE clangd)
 endif()
+find_program(
+    GOPLS_EXECUTABLE
+    NAMES gopls
+    HINTS "$ENV{GOBIN}" "$ENV{GOPATH}/bin" "$ENV{HOME}/go/bin"
+)
+if(NOT GOPLS_EXECUTABLE)
+    set(GOPLS_EXECUTABLE gopls)
+endif()
 configure_file(viewer_config.h.in viewer_config.h @ONLY)
 configure_file(tools/agent_bridge.py agent_bridge.py COPYONLY)
 configure_file(tools/intents.py intents.py COPYONLY)

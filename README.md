@@ -55,7 +55,7 @@ Press `/` to search file names and source text. Results update as you type; use 
 | Capability | What you can do |
 | --- | --- |
 | **Spatial source browsing** | Every text file the project tracks is a card, whatever its language; a project's own ignore rules decide what is left out. Move file cards, fold blocks and fit the canvas. Files gather by folder, and each folder is a named region. Zoomed out past reading size, a file shows the names of what it defines (or a document its headings) over the code, and titles that would overlap are left out; the file under the pointer always shows its title. Words meant to be read are set as prose where they stand: a comment on its own line loses its marker and is set in a serif face, as are Markdown and text files; commented-out code, aligned columns and fenced code keep the code face. Click a symbol to draw arrows to where it is defined (blue) and from every place that uses it (orange), project-wide. An end in view is a highlighted word; ends out of view become one marker per file on the window edge in their direction. Click a marker to fly there; `Esc` puts the arrows away. Without a language server the arrows connect other occurrences of the word. An agent editing out of view is announced on the edge the same way. |
-| **Language navigation** | Hover for documentation, and see diagnostics and symbol-aware arrows, through `clangd`. |
+| **Language navigation** | Hover for documentation, and see diagnostics and symbol-aware arrows, through `clangd` for C/C++ and `gopls` for Go. |
 | **Conversations beside the code** | Open an agent conversation at the pointer. The app attaches source location, selected text, and visible-file context. Keep multiple conversation cards on the canvas. |
 | **Human intent beside the code** | A coloured bar in each file's gutter marks which of your decisions produced those lines. Hover for the decision; press `I` or click the bar to read your exact words and the agent's reasoning at the time, and to light up everything that decision touched. |
 | **Live source updates** | Cards follow the files on disk as they change. |
@@ -104,6 +104,8 @@ The viewer opens its own source tree by default, regardless of your current dire
 Press **Ctrl+O** to choose a project directory in a native folder picker (provided by Zenity). Selecting a different directory saves the current session and reopens the viewer on that project; canceling keeps the current workspace.
 
 Bundled fonts are copied into `build/`; keep them beside the executable. Each project keeps its own session and decisions.
+
+For Go language features, install [`gopls`](https://go.dev/gopls/) with `go install golang.org/x/tools/gopls@latest`. The build finds it on `PATH` or in the usual Go binary directory; if you install it later, add that directory to `PATH` before launching the viewer. Go files remain browsable without it.
 
 > CMake configuration automatically formats the project's C++ and CMake files. Formatting tools and Python `websockets` are configure-time requirements.
 

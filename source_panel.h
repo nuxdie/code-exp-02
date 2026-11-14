@@ -14,7 +14,7 @@ struct SourcePanel {
     bool image = false;
     Vec2 image_size;
     std::string image_error;
-    bool cpp = false, cmake = false;
+    bool cpp = false, go = false, cmake = false;
     int version = 1;
     GpuMesh mesh;
     GpuMesh header_mesh;

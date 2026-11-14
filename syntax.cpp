@@ -36,8 +36,8 @@ Syntax semantic_syntax(std::string_view type)
 namespace {
 class LineLexer {
   public:
-    LineLexer(std::string_view text, HighlightState& context, bool cmake)
-        : line(text), state(context), cmake(cmake), first(text.find_first_not_of(" \t"))
+    LineLexer(std::string_view text, HighlightState& context, bool cmake, bool go)
+        : line(text), state(context), cmake(cmake), go(go), first(text.find_first_not_of(" \t"))
     {
     }
     bool done() const { return position >= line.size(); }
@@ -55,11 +55,14 @@ class LineLexer {
         } else if (match("/*")) {
             position += 2;
             kind = block_comment();
-        } else if (raw_opening())
+        } else if (go && line[position] == '`') {
+            state.raw_string_end = "`";
+            kind = raw_body(position + 1);
+        } else if (!go && raw_opening())
             kind = raw_string();
         else if (line[position] == '"' || line[position] == '\'')
             kind = quoted();
-        else if (position == first && line[position] == '#')
+        else if (!go && position == first && line[position] == '#')
             kind = directive();
         else if (include_header && line[position] == '<')
             kind = header();
@@ -76,6 +79,7 @@ class LineLexer {
     std::string_view line;
     HighlightState& state;
     bool cmake;
+    bool go;
     std::size_t first;
     std::size_t position = 0;
     bool include_header = false;
@@ -270,6 +274,24 @@ class LineLexer {
             ++position;
         const auto word = line.substr(begin, position - begin);
         const auto next = line.find_first_not_of(" \t", position);
+        if (go) {
+            static const std::unordered_set<std::string_view> go_keywords = {
+                "break",  "case",        "chan", "const",   "continue", "default", "defer",
+                "else",   "fallthrough", "for",  "func",    "go",       "goto",    "if",
+                "import", "interface",   "map",  "package", "range",    "return",  "select",
+                "struct", "switch",      "type", "var"};
+            static const std::unordered_set<std::string_view> go_types = {
+                "any",     "bool", "byte",  "complex64", "complex128", "error",  "float32",
+                "float64", "int",  "int8",  "int16",     "int32",      "int64",  "rune",
+                "string",  "uint", "uint8", "uint16",    "uint32",     "uint64", "uintptr"};
+            if (go_keywords.contains(word))
+                return Syntax::Keyword;
+            if (go_types.contains(word))
+                return Syntax::Type;
+            if (next != std::string::npos && line[next] == '(')
+                return Syntax::Function;
+            return Syntax::Plain;
+        }
         if (keywords.contains(word))
             return Syntax::Keyword;
         if (types.contains(word))
@@ -280,9 +302,9 @@ class LineLexer {
     }
 };
 } // namespace
-std::vector<Token> highlight(std::string_view line, HighlightState& state, bool cmake)
+std::vector<Token> highlight(std::string_view line, HighlightState& state, bool cmake, bool go)
 {
-    LineLexer lexer(line, state, cmake);
+    LineLexer lexer(line, state, cmake, go);
     std::vector<Token> tokens;
     while (!lexer.done()) {
         const auto token = lexer.next();
@@ -307,6 +329,8 @@ TextKind text_kind(std::string_view path)
         ".mk", ".ex", ".exs",  ".ps1",  ".fish", ".awk", ".cmake"};
     static const std::unordered_set<std::string_view> hash_names{"Makefile", "Dockerfile",
                                                                  ".gitignore", "CMakeLists.txt"};
+    if (extension == ".go")
+        return TextKind::GoCode;
     if (prose.contains(extension))
         return TextKind::Prose;
     return hash.contains(extension) || hash_names.contains(name) ? TextKind::HashCode
@@ -379,7 +403,7 @@ StyledLine style_line(std::string_view line, TextKind kind, HighlightState& stat
         if (!state.fenced)
             return {{}, document_prose(line)};
     }
-    StyledLine result{highlight(line, state, cmake), std::nullopt};
+    StyledLine result{highlight(line, state, cmake, kind == TextKind::GoCode), std::nullopt};
     const auto first = line.find_first_not_of(" \t");
     const bool hash = kind == TextKind::HashCode && first != std::string::npos &&
                       line[first] == '#' && !starts_at(line, first, "#!");

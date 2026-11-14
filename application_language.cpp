@@ -35,8 +35,9 @@ void Application::language_error(const lsp::Message& message)
 {
     std::cerr << "Language feature: " << message.error << '\n';
     if (message.method == "error") {
-        language_ready = false;
-        language_failure = message.error;
+        auto& language = message.language == "go" ? go_language : cpp_language;
+        language.ready = false;
+        language.failure = message.error;
     }
     if (message.id > 0 && (message.id == hover_request || message.id == navigation_request))
         show_popup(message.error, mouse_position);
@@ -44,19 +45,15 @@ void Application::language_error(const lsp::Message& message)
 
 void Application::language_initialized(const lsp::Message& message)
 {
-    language_ready = true;
+    auto& language = message.language == "go" ? go_language : cpp_language;
+    language.ready = true;
     if (message.result.contains("semanticTokensProvider")) {
         const auto& legend = message.result["semanticTokensProvider"]["legend"];
-        token_legend = legend["tokenTypes"].get<std::vector<std::string>>();
+        language.token_legend = legend["tokenTypes"].get<std::vector<std::string>>();
         const auto modifiers = legend["tokenModifiers"].get<std::vector<std::string>>();
-        for (std::size_t i = 0; i < modifiers.size() && i < 32; ++i) {
+        for (std::size_t i = 0; i < modifiers.size() && i < 32; ++i)
             if (modifiers[i] == "deprecated")
-                deprecated_modifier = 1u << i;
-            else if (modifiers[i] == "definition")
-                definition_modifier = 1u << i;
-            if (modifiers[i] == "declaration" || modifiers[i] == "definition")
-                declaration_modifiers |= 1u << i;
-        }
+                language.deprecated_modifier = 1u << i;
     }
 }
 
@@ -93,8 +90,9 @@ void Application::language_styles(const lsp::Message& message)
     if (found == panels.end())
         return;
     if (message.method == "textDocument/semanticTokens/full" && message.result.is_object()) {
+        const auto& language = message.language == "go" ? go_language : cpp_language;
         found->semantics = lsp::semantic_tokens(message.result.value("data", lsp::Json::array()),
-                                                token_legend, found->text);
+                                                language.token_legend, found->text);
     } else if (message.method == "textDocument/publishDiagnostics")
         found->diagnostics = message.result;
     else if (message.method == "textDocument/diagnostic")

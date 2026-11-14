@@ -76,9 +76,14 @@ bool Application::open_link(const std::string& destination)
                     {"range", {{"start", {{"line", line}, {"character", column}}}}}});
 }
 
+Application::LanguageState* Application::language_for(const SourcePanel& panel)
+{
+    return panel.go ? &go_language : panel.cpp ? &cpp_language : nullptr;
+}
 lsp::LanguageServer* Application::server_for(const SourcePanel& panel)
 {
-    return panel.cpp ? language_server.get() : nullptr;
+    auto* language = language_for(panel);
+    return language ? language->server.get() : nullptr;
 }
 bool Application::open_document_link(Vec2 pointer)
 {

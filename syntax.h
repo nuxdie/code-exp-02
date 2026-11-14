@@ -39,6 +39,7 @@ struct ProseLine {
 
 enum class TextKind {
     Code,     // comments as in C and its many descendants
+    GoCode,   // Go keywords and raw strings
     HashCode, // "#" starts a comment
     Prose     // a document: every line is prose, except fenced code
 };
@@ -50,7 +51,8 @@ struct StyledLine {
 };
 
 Syntax semantic_syntax(std::string_view type);
-std::vector<Token> highlight(std::string_view line, HighlightState& state, bool cmake = false);
+std::vector<Token> highlight(std::string_view line, HighlightState& state, bool cmake = false,
+                             bool go = false);
 
 StyledLine style_line(std::string_view line, TextKind kind, HighlightState& state,
                       bool cmake = false);

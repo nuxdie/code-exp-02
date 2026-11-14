@@ -29,7 +29,7 @@ struct ApplicationTestAccess {
     {
         const auto deadline = Application::Clock::now() + 8s;
         while (app.panels.front().symbols.empty() && Application::Clock::now() < deadline) {
-            for (const auto& message : app.language_server->take_messages())
+            for (const auto& message : app.cpp_language.server->take_messages())
                 app.handle_message(message);
             std::this_thread::sleep_for(5ms);
         }

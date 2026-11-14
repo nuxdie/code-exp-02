@@ -221,8 +221,9 @@ bool Application::add_workspace_panel()
     if (load.session.is_object())
         restore_folds(panel, load.session["files"].value(file.path, lsp::Json::object()));
     update_mesh(panel);
-    if (panel.cpp && documents.size() < 3) {
-        documents.push_back({panel.uri, panel.source});
+    auto* language = language_for(panel);
+    if (language && language->initial_documents.size() < 3) {
+        language->initial_documents.push_back({panel.uri, panel.source});
         opened_documents.insert(panel.uri);
     }
     file.size = panel.bounds.size;
@@ -268,16 +269,25 @@ void Application::draw_workspace_preview(const Viewport& view)
 
 void Application::finish_workspace_load()
 {
-    try {
-        language_server = std::make_unique<lsp::LanguageServer>(
-            clangd_executable, workspace_root, workspace_build, std::move(documents));
-    } catch (const std::exception& error) {
-        language_failure = error.what();
-    }
+    start_language_server(cpp_language, clangd_executable, "cpp");
+    if (!go_language.initial_documents.empty())
+        start_language_server(go_language, gopls_executable, "go");
     initialize_chat();
     load_intent_margin();
     workspace_load.reset();
     redraw = true;
+}
+
+void Application::start_language_server(LanguageState& language, const char* executable,
+                                        std::string language_id)
+{
+    try {
+        language.server = std::make_unique<lsp::LanguageServer>(
+            executable, workspace_root, workspace_build, std::move(language.initial_documents),
+            lsp::ServerOptions{.language = std::move(language_id)});
+    } catch (const std::exception& error) {
+        language.failure = error.what();
+    }
 }
 
 void Application::open_directory_picker()

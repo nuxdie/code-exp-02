@@ -16,11 +16,11 @@ struct ApplicationTestAccess {
         while (!predicate() && Application::Clock::now() < deadline) {
             std::array<pollfd, 2> fds{
                 {{app.project_watcher->event_fd(), POLLIN, 0},
-                 {app.language_server ? app.language_server->event_fd() : -1, POLLIN, 0}}};
+                 {app.cpp_language.server ? app.cpp_language.server->event_fd() : -1, POLLIN, 0}}};
             poll(fds.data(), fds.size(), 50);
             app.poll_project();
-            if (app.language_server)
-                for (const auto& message : app.language_server->take_messages())
+            if (app.cpp_language.server)
+                for (const auto& message : app.cpp_language.server->take_messages())
                     app.handle_message(message);
         }
         if (!predicate()) {
@@ -84,7 +84,7 @@ struct ApplicationTestAccess {
     {
         const auto& caller = panel(app, "main.cpp");
         const auto& target = panel(app, "widget.h");
-        wait_for(app, [&] { return app.language_ready && !caller.semantics.empty(); });
+        wait_for(app, [&] { return app.cpp_language.ready && !caller.semantics.empty(); });
         expect(app.connection_links.empty() && !app.connection_subject.active,
                "Nothing is connected until a symbol is chosen");
         app.initial_view = false;

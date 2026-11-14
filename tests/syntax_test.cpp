@@ -1,5 +1,6 @@
 #include "syntax.h"
 
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 
@@ -76,8 +77,26 @@ void check_prose()
     style_line("```", TextKind::Prose, page);
     check(!page.fenced && text_kind("docs/notes.md") == TextKind::Prose &&
               text_kind("tools/run.py") == TextKind::HashCode &&
+              text_kind("src/main.go") == TextKind::GoCode &&
               text_kind("src/main.rs") == TextKind::Code,
           "The kind of text must follow from the file's name");
+}
+
+void check_go()
+{
+    HighlightState state;
+    const auto first = style_line("package main", TextKind::GoCode, state);
+    check(!first.tokens.empty() && first.tokens.front().syntax == Syntax::Keyword,
+          "Go keywords must be highlighted");
+    const auto opening = style_line("s := `line one", TextKind::GoCode, state);
+    check(opening.tokens.back().syntax == Syntax::String && state.raw_string_end == "`",
+          "Go raw strings must span lines");
+    const auto closing = style_line("// still string`; func run() {}", TextKind::GoCode, state);
+    check(closing.tokens.front().syntax == Syntax::String && state.raw_string_end.empty(),
+          "Go raw string contents must not become comments");
+    check(std::ranges::any_of(closing.tokens,
+                              [](const Token& token) { return token.syntax == Syntax::Keyword; }),
+          "Go keywords after a raw string must be highlighted");
 }
 
 int main()
@@ -105,6 +124,7 @@ int main()
         if (!state.raw_string_end.empty() || state.block_comment)
             throw std::runtime_error("Leaked lexer state");
         check_prose();
+        check_go();
         std::cout << "Syntax, escaped strings and multiline state checks passed.\n";
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
